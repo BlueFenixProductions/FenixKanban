@@ -57,6 +57,11 @@ struct ContentView: View {
                        let board = try? context.existingObject(with: boardID) as? Board {
                         BoardView(board: board, context: context)
                             .adaptiveLayout()
+                            // Force a fresh BoardView (and fresh @StateObject
+                            // BoardViewModel) for each distinct board so
+                            // selecting a different board actually updates
+                            // the detail pane.
+                            .id(boardID)
                     } else {
                         EmptyStateView(
                             icon: "sidebar.squares.left",
