@@ -9,23 +9,46 @@
 /* Begin PBXBuildFile section */
 		0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
 		098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */; };
+		1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */; };
 		280FE176F4F5E3DF15AAB119 /* View+AdaptiveLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5AF375736749B5845C69519 /* View+AdaptiveLayout.swift */; };
+		2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E20A59A4E9DDCD06081E6A7 /* CardView.swift */; };
+		2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A14F077027BF8262193AEE /* LabelBadge.swift */; };
+		3006918E8F888BD08EEDD237 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */; };
 		32BA63F4742BBE3D1371E561 /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
+		32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05B5FFB9A7288FA077C6870 /* ColumnView.swift */; };
+		431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2D11BAE72815F0D7F274CD /* AuthView.swift */; };
 		443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */; };
 		49E731B3D3082D79E09013C6 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE77B96655930ABFC5A54DA /* Color+Hex.swift */; };
+		4C558BCB1F1A5E83A77D351E /* BoardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B641E69411C4F09DB4A6E2DD /* BoardListView.swift */; };
 		4D66DB2B5491D5E5DC10E614 /* Date+Relative.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */; };
+		4EE391539AF6711C5060C0E7 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BB675BD426DD316D476C37 /* BoardView.swift */; };
+		5E7BDD56C001FD9FF4B9C87C /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */; };
 		63D0C71A1CC4E212A545376F /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */; };
 		6821052820164D6848537418 /* BoardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0906AE18DFC56CF8C029EE3E /* BoardRepositoryTests.swift */; };
 		69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CACAAF5DC4AC402C5BBD81E2 /* CardRepository.swift */; };
 		6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9D9F931CC1F616741916216 /* Assets.xcassets */; };
 		7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
+		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
 		865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */; };
+		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
+		9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88157336039C94037EF998 /* CardDetailViewModel.swift */; };
+		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
+		B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1964FFB87532CE5ED41070 /* BoardRowView.swift */; };
 		B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E468616D12A084C045616D44 /* FenixKanbanTests.swift */; };
+		C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */; };
 		C4AA7AF76E843E21FD235E1C /* Column+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */; };
+		C7DC1F515DF0710E60B122EE /* BoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */; };
 		D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
+		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
+		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
+		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
+		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
+		F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */; };
+		FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */; };
+		FDE100082D4EC59095D416DD /* BoardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,31 +62,74 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModelTests.swift; sourceTree = "<group>"; };
 		0906AE18DFC56CF8C029EE3E /* BoardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepositoryTests.swift; sourceTree = "<group>"; };
+		0E2D11BAE72815F0D7F274CD /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
 		1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepository.swift; sourceTree = "<group>"; };
+		2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
+		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
+		27A14F077027BF8262193AEE /* LabelBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelBadge.swift; sourceTree = "<group>"; };
+		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
 		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DueDateBadge.swift; sourceTree = "<group>"; };
 		5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Board+CoreDataClass.swift"; sourceTree = "<group>"; };
+		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardSheet.swift; sourceTree = "<group>"; };
+		705401ADCC82CB1481075EA4 /* LabelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelPickerView.swift; sourceTree = "<group>"; };
 		7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryTests.swift; sourceTree = "<group>"; };
+		8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewColumnSheet.swift; sourceTree = "<group>"; };
 		85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanApp.swift; sourceTree = "<group>"; };
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
 		8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Relative.swift"; sourceTree = "<group>"; };
 		8F3DBD8353B993911279540C /* FenixKanban.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FenixKanban.entitlements; sourceTree = "<group>"; };
+		8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModel.swift; sourceTree = "<group>"; };
 		9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Column+CoreDataClass.swift"; sourceTree = "<group>"; };
 		9A78B1699150F1C5A72D387C /* LabelRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepository.swift; sourceTree = "<group>"; };
+		9E20A59A4E9DDCD06081E6A7 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
+		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
+		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		C9D9F931CC1F616741916216 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CACAAF5DC4AC402C5BBD81E2 /* CardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepository.swift; sourceTree = "<group>"; };
+		D05B5FFB9A7288FA077C6870 /* ColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnView.swift; sourceTree = "<group>"; };
+		D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
+		DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelTests.swift; sourceTree = "<group>"; };
 		E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		E468616D12A084C045616D44 /* FenixKanbanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanTests.swift; sourceTree = "<group>"; };
 		E5AF375736749B5845C69519 /* View+AdaptiveLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+AdaptiveLayout.swift"; sourceTree = "<group>"; };
+		E7628BACE24DA03CDF86556D /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSManagedObject+Extensions.swift"; sourceTree = "<group>"; };
+		E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModel.swift; sourceTree = "<group>"; };
+		F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		FAE77B96655930ABFC5A54DA /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		05B48BF4B473AEFDFC63906C /* Labels */ = {
+			isa = PBXGroup;
+			children = (
+				146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */,
+				705401ADCC82CB1481075EA4 /* LabelPickerView.swift */,
+			);
+			path = Labels;
+			sourceTree = "<group>";
+		};
+		0CDD1CAD1F142D563C1A612B /* Card */ = {
+			isa = PBXGroup;
+			children = (
+				2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */,
+				2C88157336039C94037EF998 /* CardDetailViewModel.swift */,
+				9E20A59A4E9DDCD06081E6A7 /* CardView.swift */,
+				6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */,
+			);
+			path = Card;
+			sourceTree = "<group>";
+		};
 		15D58E3741D33B3C8B6C1B1D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -82,6 +148,17 @@
 			);
 			sourceTree = "<group>";
 		};
+		213B05F03EA16355A3DD3E04 /* Board */ = {
+			isa = PBXGroup;
+			children = (
+				B2BB675BD426DD316D476C37 /* BoardView.swift */,
+				8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */,
+				D05B5FFB9A7288FA077C6870 /* ColumnView.swift */,
+				8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */,
+			);
+			path = Board;
+			sourceTree = "<group>";
+		};
 		2234D747A95BEE4D21580ED2 /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
@@ -92,9 +169,25 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
+		3A956BD31899F5633C596B02 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */,
+				628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */,
+				27A14F077027BF8262193AEE /* LabelBadge.swift */,
+				D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		3E79D7ED2835B50A526E19C8 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				9F7F63F146DCE5A5D0241825 /* Auth */,
+				213B05F03EA16355A3DD3E04 /* Board */,
+				C437AC694A256CC96E54074C /* BoardList */,
+				0CDD1CAD1F142D563C1A612B /* Card */,
+				05B48BF4B473AEFDFC63906C /* Labels */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -104,6 +197,7 @@
 			children = (
 				62FA3FB1C6FA436B16FA6EDB /* Persistence */,
 				2234D747A95BEE4D21580ED2 /* Repositories */,
+				96DDEE00F91795695589CA9B /* Services */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -122,16 +216,54 @@
 			path = Persistence;
 			sourceTree = "<group>";
 		};
+		7F68A8D5B1BEE2A3B176B872 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */,
+				DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */,
+				0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		80557794546CE78EEA063AB3 /* FenixKanban */ = {
 			isa = PBXGroup;
 			children = (
 				85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */,
+				3A956BD31899F5633C596B02 /* Components */,
 				498E8C11D23914AF73EE7AAB /* Core */,
 				F18E30A529E95B92AD48B5D9 /* Extensions */,
 				3E79D7ED2835B50A526E19C8 /* Features */,
 				15D58E3741D33B3C8B6C1B1D /* Resources */,
 			);
 			path = FenixKanban;
+			sourceTree = "<group>";
+		};
+		96DDEE00F91795695589CA9B /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E7628BACE24DA03CDF86556D /* AuthenticationService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		9F7F63F146DCE5A5D0241825 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				0E2D11BAE72815F0D7F274CD /* AuthView.swift */,
+				F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		C437AC694A256CC96E54074C /* BoardList */ = {
+			isa = PBXGroup;
+			children = (
+				B641E69411C4F09DB4A6E2DD /* BoardListView.swift */,
+				E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */,
+				AD1964FFB87532CE5ED41070 /* BoardRowView.swift */,
+			);
+			path = BoardList;
 			sourceTree = "<group>";
 		};
 		CEB25DA70C666F89336E18F6 /* Repositories */ = {
@@ -168,6 +300,7 @@
 			children = (
 				E468616D12A084C045616D44 /* FenixKanbanTests.swift */,
 				CEB25DA70C666F89336E18F6 /* Repositories */,
+				7F68A8D5B1BEE2A3B176B872 /* ViewModels */,
 			);
 			path = FenixKanbanTests;
 			sourceTree = "<group>";
@@ -258,19 +391,39 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */,
+				FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */,
+				F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */,
 				443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */,
+				4C558BCB1F1A5E83A77D351E /* BoardListView.swift in Sources */,
+				C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */,
 				ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */,
+				B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */,
+				4EE391539AF6711C5060C0E7 /* BoardView.swift in Sources */,
+				C7DC1F515DF0710E60B122EE /* BoardViewModel.swift in Sources */,
 				63D0C71A1CC4E212A545376F /* Card+CoreDataClass.swift in Sources */,
+				3006918E8F888BD08EEDD237 /* CardDetailView.swift in Sources */,
+				9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */,
 				69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */,
+				2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */,
 				49E731B3D3082D79E09013C6 /* Color+Hex.swift in Sources */,
 				C4AA7AF76E843E21FD235E1C /* Column+CoreDataClass.swift in Sources */,
+				32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */,
 				4D66DB2B5491D5E5DC10E614 /* Date+Relative.swift in Sources */,
+				F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */,
+				9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */,
 				32BA63F4742BBE3D1371E561 /* FenixKanban.xcdatamodeld in Sources */,
 				098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */,
 				0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */,
+				2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */,
+				87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */,
+				DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */,
 				81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */,
 				D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */,
+				E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */,
+				EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */,
 				DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */,
+				5E7BDD56C001FD9FF4B9C87C /* SyncStatusIndicator.swift in Sources */,
 				280FE176F4F5E3DF15AAB119 /* View+AdaptiveLayout.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -279,7 +432,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FDE100082D4EC59095D416DD /* BoardListViewModelTests.swift in Sources */,
 				6821052820164D6848537418 /* BoardRepositoryTests.swift in Sources */,
+				1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */,
+				85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
