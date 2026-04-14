@@ -4,8 +4,12 @@ import CoreData
 struct BoardListView: View {
     @StateObject private var viewModel: BoardListViewModel
     @Binding var selection: NSManagedObjectID?
-    @State private var newBoardName = ""
-    @State private var newBoardColor = "#0F3460"
+
+    // Board sheet state — handles both create and edit
+    @State private var boardSheetName = ""
+    @State private var boardSheetColor = "#0F3460"
+    @State private var editingBoard: Board? = nil
+    @State private var showBoardSheet = false
 
     init(context: NSManagedObjectContext, selection: Binding<NSManagedObjectID?> = .constant(nil)) {
         _viewModel = StateObject(wrappedValue: BoardListViewModel(context: context))
@@ -27,7 +31,7 @@ struct BoardListView: View {
                     message: "Create your first board to get started",
                     actionTitle: "New Board"
                 ) {
-                    viewModel.showNewBoardSheet = true
+                    presentNewBoardSheet()
                 }
             } else {
                 boardList
@@ -37,25 +41,53 @@ struct BoardListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    viewModel.showNewBoardSheet = true
+                    presentNewBoardSheet()
                 } label: {
                     Image(systemName: "plus")
                 }
             }
         }
-        .sheet(isPresented: $viewModel.showNewBoardSheet) {
-            NewBoardSheet(
-                name: $newBoardName,
-                colorHex: $newBoardColor
+        .sheet(isPresented: $showBoardSheet) {
+            BoardEditorSheet(
+                name: $boardSheetName,
+                colorHex: $boardSheetColor,
+                isEditing: editingBoard != nil
             ) {
-                if !newBoardName.trimmingCharacters(in: .whitespaces).isEmpty {
-                    viewModel.createBoard(name: newBoardName, colorHex: newBoardColor)
-                    newBoardName = ""
-                    newBoardColor = "#0F3460"
+                let trimmed = boardSheetName.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return }
+                if let existing = editingBoard {
+                    viewModel.updateBoard(existing, name: trimmed, colorHex: boardSheetColor)
+                } else {
+                    viewModel.createBoard(name: trimmed, colorHex: boardSheetColor)
                 }
+                resetBoardSheet()
             }
         }
     }
+
+    // MARK: - Sheet Helpers
+
+    private func presentNewBoardSheet() {
+        editingBoard = nil
+        boardSheetName = ""
+        boardSheetColor = "#0F3460"
+        showBoardSheet = true
+    }
+
+    private func presentEditBoardSheet(for board: Board) {
+        editingBoard = board
+        boardSheetName = board.name ?? ""
+        boardSheetColor = board.colorHex ?? "#0F3460"
+        showBoardSheet = true
+    }
+
+    private func resetBoardSheet() {
+        editingBoard = nil
+        boardSheetName = ""
+        boardSheetColor = "#0F3460"
+    }
+
+    // MARK: - Board List
 
     private var boardList: some View {
         List(selection: $selection) {
@@ -63,6 +95,26 @@ struct BoardListView: View {
                 BoardRowView(board: board)
                     .tag(board.objectID)
                     .listRowBackground(Color(.secondarySystemBackground))
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        Button {
+                            presentEditBoardSheet(for: board)
+                        } label: {
+                            SwiftUI.Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                    }
+                    .contextMenu {
+                        Button {
+                            presentEditBoardSheet(for: board)
+                        } label: {
+                            SwiftUI.Label("Edit Board", systemImage: "pencil")
+                        }
+                        Button(role: .destructive) {
+                            viewModel.deleteBoard(board)
+                        } label: {
+                            SwiftUI.Label("Delete Board", systemImage: "trash")
+                        }
+                    }
             }
             .onDelete(perform: viewModel.deleteBoards)
             .onMove(perform: viewModel.moveBoard)
@@ -71,10 +123,11 @@ struct BoardListView: View {
     }
 }
 
-struct NewBoardSheet: View {
+struct BoardEditorSheet: View {
     @Binding var name: String
     @Binding var colorHex: String
-    let onCreate: () -> Void
+    let isEditing: Bool
+    let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     private let presetColors = [
@@ -105,15 +158,15 @@ struct NewBoardSheet: View {
                     .padding(.vertical, 8)
                 }
             }
-            .navigationTitle("New Board")
+            .navigationTitle(isEditing ? "Edit Board" : "New Board")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        onCreate()
+                    Button(isEditing ? "Save" : "Create") {
+                        onSave()
                         dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)

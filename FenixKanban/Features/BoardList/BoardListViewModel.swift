@@ -3,7 +3,6 @@ import SwiftUI
 
 final class BoardListViewModel: ObservableObject {
     @Published var boards: [Board] = []
-    @Published var showNewBoardSheet = false
 
     private let boardRepository: BoardRepository
     private let context: NSManagedObjectContext
@@ -21,6 +20,11 @@ final class BoardListViewModel: ObservableObject {
 
     func createBoard(name: String, colorHex: String?) {
         _ = boardRepository.createBoard(name: name, colorHex: colorHex)
+        fetchBoards()
+    }
+
+    func updateBoard(_ board: Board, name: String? = nil, colorHex: String? = nil) {
+        boardRepository.updateBoard(board, name: name, colorHex: colorHex)
         fetchBoards()
     }
 
