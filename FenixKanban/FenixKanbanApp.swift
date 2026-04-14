@@ -30,19 +30,28 @@ struct ContentView: View {
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var syncMonitor: SyncMonitor
     @Environment(\.managedObjectContext) private var context
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedBoardID: NSManagedObjectID?
     @State private var showSettings = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @AppStorage("hasSkippedAuth") private var hasSkippedAuth = false
 
     var body: some View {
         Group {
             if !authService.isAuthenticated && authService.userID == nil && !hasSkippedAuth {
                 AuthView(viewModel: AuthViewModel(authService: authService))
-            } else if horizontalSizeClass == .regular {
-                // iPad / Mac: NavigationSplitView
-                NavigationSplitView {
-                    boardListSidebar
+            } else {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    BoardListView(context: context, selection: $selectedBoardID)
+                        .toolbar {
+                            ToolbarItem(placement: .automatic) {
+                                HStack(spacing: 12) {
+                                    SyncStatusIndicator(status: syncMonitor.status)
+                                    Button { showSettings = true } label: {
+                                        Image(systemName: "gearshape")
+                                    }
+                                }
+                            }
+                        }
                 } detail: {
                     if let boardID = selectedBoardID,
                        let board = try? context.existingObject(with: boardID) as? Board {
@@ -56,36 +65,12 @@ struct ContentView: View {
                         )
                     }
                 }
-            } else {
-                // iPhone: NavigationStack
-                NavigationStack {
-                    boardListSidebar
-                        .navigationDestination(for: NSManagedObjectID.self) { boardID in
-                            if let board = try? context.existingObject(with: boardID) as? Board {
-                                BoardView(board: board, context: context)
-                                    .adaptiveLayout()
-                            }
-                        }
-                }
+                .navigationSplitViewStyle(.balanced)
             }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(authService: authService, persistence: .shared)
                 .environment(\.managedObjectContext, context)
         }
-    }
-
-    private var boardListSidebar: some View {
-        BoardListView(context: context)
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    HStack(spacing: 12) {
-                        SyncStatusIndicator(status: syncMonitor.status)
-                        Button { showSettings = true } label: {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                }
-            }
     }
 }

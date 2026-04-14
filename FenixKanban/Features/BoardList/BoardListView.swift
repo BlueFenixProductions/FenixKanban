@@ -3,16 +3,19 @@ import CoreData
 
 struct BoardListView: View {
     @StateObject private var viewModel: BoardListViewModel
+    @Binding var selection: NSManagedObjectID?
     @State private var newBoardName = ""
     @State private var newBoardColor = "#0F3460"
 
-    init(context: NSManagedObjectContext) {
+    init(context: NSManagedObjectContext, selection: Binding<NSManagedObjectID?> = .constant(nil)) {
         _viewModel = StateObject(wrappedValue: BoardListViewModel(context: context))
+        _selection = selection
     }
 
     // For preview injection
-    init(viewModel: BoardListViewModel) {
+    init(viewModel: BoardListViewModel, selection: Binding<NSManagedObjectID?> = .constant(nil)) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _selection = selection
     }
 
     var body: some View {
@@ -52,15 +55,20 @@ struct BoardListView: View {
                 }
             }
         }
+        .onAppear {
+            // Auto-select first board if nothing is selected and at least one exists
+            if selection == nil, let first = viewModel.boards.first {
+                selection = first.objectID
+            }
+        }
     }
 
     private var boardList: some View {
-        List {
+        List(selection: $selection) {
             ForEach(viewModel.boards, id: \.objectID) { board in
-                NavigationLink(value: board.objectID) {
-                    BoardRowView(board: board)
-                }
-                .listRowBackground(Color(.secondarySystemBackground))
+                BoardRowView(board: board)
+                    .tag(board.objectID)
+                    .listRowBackground(Color(.secondarySystemBackground))
             }
             .onDelete(perform: viewModel.deleteBoards)
             .onMove(perform: viewModel.moveBoard)
