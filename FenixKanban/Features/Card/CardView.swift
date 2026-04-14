@@ -2,6 +2,19 @@ import SwiftUI
 
 struct CardView: View {
     @ObservedObject var card: Card
+    var columnColor: Color? = nil
+
+    private var backgroundFill: Color {
+        if let columnColor {
+            // Blend the column color with the dark card background for a subtle tint
+            return columnColor.opacity(0.18)
+        }
+        return Color(.tertiarySystemBackground)
+    }
+
+    private var borderColor: Color {
+        columnColor?.opacity(0.55) ?? Color.clear
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -27,7 +40,16 @@ struct CardView: View {
             }
         }
         .padding(12)
-        .background(Color(.tertiarySystemBackground))
+        .background(
+            ZStack {
+                Color(.tertiarySystemBackground)
+                backgroundFill
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(borderColor, lineWidth: columnColor == nil ? 0 : 1.5)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

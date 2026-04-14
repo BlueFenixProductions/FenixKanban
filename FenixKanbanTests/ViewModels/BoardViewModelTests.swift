@@ -38,8 +38,19 @@ final class BoardViewModelTests: XCTestCase {
 
     func testRenameColumn() {
         viewModel.addColumn(name: "Original")
-        viewModel.renameColumn(viewModel.columns[0], to: "Renamed")
+        viewModel.updateColumn(viewModel.columns[0], name: "Renamed")
         XCTAssertEqual(viewModel.columns[0].name, "Renamed")
+    }
+
+    func testAddColumnWithColor() {
+        viewModel.addColumn(name: "Dev", colorHex: "#0F3460")
+        XCTAssertEqual(viewModel.columns[0].colorHex, "#0F3460")
+    }
+
+    func testUpdateColumnColor() {
+        viewModel.addColumn(name: "Col")
+        viewModel.updateColumn(viewModel.columns[0], colorHex: "#E94560")
+        XCTAssertEqual(viewModel.columns[0].colorHex, "#E94560")
     }
 
     func testAddCard() {

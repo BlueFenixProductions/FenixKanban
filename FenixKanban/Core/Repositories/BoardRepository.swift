@@ -6,8 +6,8 @@ protocol BoardRepositoryProtocol {
     func updateBoard(_ board: Board, name: String?, colorHex: String?)
     func deleteBoard(_ board: Board)
     func reorderBoard(_ board: Board, to newIndex: Int, in boards: [Board])
-    func createColumn(in board: Board, name: String) -> Column
-    func updateColumn(_ column: Column, name: String)
+    func createColumn(in board: Board, name: String, colorHex: String?) -> Column
+    func updateColumn(_ column: Column, name: String?, colorHex: String?)
     func deleteColumn(_ column: Column)
     func reorderColumn(_ column: Column, to newIndex: Int, in columns: [Column])
 }
@@ -65,10 +65,11 @@ final class BoardRepository: BoardRepositoryProtocol {
         save()
     }
 
-    func createColumn(in board: Board, name: String) -> Column {
+    func createColumn(in board: Board, name: String, colorHex: String? = nil) -> Column {
         let column = Column(context: context)
         column.id = UUID()
         column.name = name
+        column.colorHex = colorHex
         column.createdAt = Date()
         column.modifiedAt = Date()
         column.board = board
@@ -81,8 +82,9 @@ final class BoardRepository: BoardRepositoryProtocol {
         return column
     }
 
-    func updateColumn(_ column: Column, name: String) {
-        column.name = name
+    func updateColumn(_ column: Column, name: String? = nil, colorHex: String? = nil) {
+        if let name = name { column.name = name }
+        if let colorHex = colorHex { column.colorHex = colorHex }
         column.modifiedAt = Date()
         column.board?.modifiedAt = Date()
         save()

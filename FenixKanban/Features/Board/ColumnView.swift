@@ -7,15 +7,28 @@ struct ColumnView: View {
     let onDeleteCard: (Card) -> Void
     let onSelectCard: (Card) -> Void
     let onDropCard: (UUID, Int) -> Void
+    let onEditColumn: () -> Void
+    let onDeleteColumn: () -> Void
+
+    private var columnColor: Color? {
+        guard let hex = column.colorHex else { return nil }
+        return Color(hex: hex)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Column header
             HStack(spacing: 8) {
+                if let color = columnColor {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 10, height: 10)
+                }
+
                 Text(column.name ?? "Untitled")
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(columnColor ?? .secondary)
 
                 Text("\(cards.count)")
                     .font(.caption2)
@@ -26,6 +39,25 @@ struct ColumnView: View {
                     .clipShape(Capsule())
 
                 Spacer()
+
+                Menu {
+                    Button {
+                        onEditColumn()
+                    } label: {
+                        SwiftUI.Label("Edit Column", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        onDeleteColumn()
+                    } label: {
+                        SwiftUI.Label("Delete Column", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -34,9 +66,9 @@ struct ColumnView: View {
             ScrollView {
                 LazyVStack(spacing: 6) {
                     ForEach(cards, id: \.objectID) { card in
-                        CardView(card: card)
+                        CardView(card: card, columnColor: columnColor)
                             .draggable(card.id?.uuidString ?? "") {
-                                CardView(card: card)
+                                CardView(card: card, columnColor: columnColor)
                                     .frame(width: 250)
                                     .opacity(0.8)
                             }
@@ -62,7 +94,7 @@ struct ColumnView: View {
                                 .fontWeight(.medium)
                             Spacer()
                         }
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(columnColor ?? .secondary)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 12)
                         .frame(maxWidth: .infinity)

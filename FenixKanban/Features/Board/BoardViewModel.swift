@@ -6,8 +6,6 @@ final class BoardViewModel: ObservableObject {
     @Published var board: Board
     @Published var columns: [Column] = []
     @Published var selectedColumnIndex: Int = 0
-    @Published var showNewColumnSheet = false
-    @Published var showNewCardSheet = false
     @Published var selectedColumnForNewCard: Column?
 
     private let boardRepository: BoardRepository
@@ -30,8 +28,8 @@ final class BoardViewModel: ObservableObject {
 
     // MARK: - Column Operations
 
-    func addColumn(name: String) {
-        _ = boardRepository.createColumn(in: board, name: name)
+    func addColumn(name: String, colorHex: String? = nil) {
+        _ = boardRepository.createColumn(in: board, name: name, colorHex: colorHex)
         refreshColumns()
     }
 
@@ -43,8 +41,8 @@ final class BoardViewModel: ObservableObject {
         }
     }
 
-    func renameColumn(_ column: Column, to name: String) {
-        boardRepository.updateColumn(column, name: name)
+    func updateColumn(_ column: Column, name: String? = nil, colorHex: String? = nil) {
+        boardRepository.updateColumn(column, name: name, colorHex: colorHex)
         refreshColumns()
     }
 

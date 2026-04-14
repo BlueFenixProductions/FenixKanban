@@ -5,8 +5,13 @@ struct BoardView: View {
     @StateObject private var viewModel: BoardViewModel
     @Environment(\.adaptiveLayout) private var layout
     @State private var selectedCard: Card?
-    @State private var newColumnName = ""
     @State private var newCardTitle = ""
+
+    // Column sheet state — handles both create and edit
+    @State private var columnSheetName = ""
+    @State private var columnSheetColor: String? = nil
+    @State private var editingColumn: Column? = nil
+    @State private var showColumnSheet = false
 
     init(board: Board, context: NSManagedObjectContext) {
         _viewModel = StateObject(wrappedValue: BoardViewModel(board: board, context: context))
@@ -17,12 +22,20 @@ struct BoardView: View {
             .navigationTitle(viewModel.board.name ?? "Board")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(content: boardToolbar)
-            .sheet(isPresented: $viewModel.showNewColumnSheet) {
-                NewColumnSheet(name: $newColumnName) {
-                    if !newColumnName.trimmingCharacters(in: .whitespaces).isEmpty {
-                        viewModel.addColumn(name: newColumnName)
-                        newColumnName = ""
+            .sheet(isPresented: $showColumnSheet) {
+                NewColumnSheet(
+                    name: $columnSheetName,
+                    colorHex: $columnSheetColor,
+                    isEditing: editingColumn != nil
+                ) {
+                    let trimmed = columnSheetName.trimmingCharacters(in: .whitespaces)
+                    guard !trimmed.isEmpty else { return }
+                    if let existing = editingColumn {
+                        viewModel.updateColumn(existing, name: trimmed, colorHex: columnSheetColor)
+                    } else {
+                        viewModel.addColumn(name: trimmed, colorHex: columnSheetColor)
                     }
+                    resetColumnSheet()
                 }
             }
             .sheet(item: $viewModel.selectedColumnForNewCard) { column in
@@ -43,7 +56,7 @@ struct BoardView: View {
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button {
-                    viewModel.showNewColumnSheet = true
+                    presentNewColumnSheet()
                 } label: {
                     SwiftUI.Label("New Column", systemImage: "rectangle.split.3x1")
                 }
@@ -62,13 +75,35 @@ struct BoardView: View {
                 message: "Add a column to start organizing cards",
                 actionTitle: "Add Column"
             ) {
-                viewModel.showNewColumnSheet = true
+                presentNewColumnSheet()
             }
         } else if layout.showMultiColumn {
             multiColumnLayout
         } else {
             singleColumnLayout
         }
+    }
+
+    // MARK: - Column Sheet Helpers
+
+    private func presentNewColumnSheet() {
+        editingColumn = nil
+        columnSheetName = ""
+        columnSheetColor = nil
+        showColumnSheet = true
+    }
+
+    private func presentEditColumnSheet(for column: Column) {
+        editingColumn = column
+        columnSheetName = column.name ?? ""
+        columnSheetColor = column.colorHex
+        showColumnSheet = true
+    }
+
+    private func resetColumnSheet() {
+        editingColumn = nil
+        columnSheetName = ""
+        columnSheetColor = nil
     }
 
     // MARK: - Multi-Column (iPad / Mac / Landscape)
@@ -91,6 +126,12 @@ struct BoardView: View {
                         },
                         onDropCard: { cardID, index in
                             viewModel.moveCard(cardID, to: column, at: index)
+                        },
+                        onEditColumn: {
+                            presentEditColumnSheet(for: column)
+                        },
+                        onDeleteColumn: {
+                            viewModel.deleteColumn(column)
                         }
                     )
                     .frame(width: 280)
@@ -140,6 +181,12 @@ struct BoardView: View {
                                 to: idx,
                                 in: column
                             )
+                        },
+                        onEditColumn: {
+                            presentEditColumnSheet(for: column)
+                        },
+                        onDeleteColumn: {
+                            viewModel.deleteColumn(column)
                         }
                     )
                     .tag(index)
