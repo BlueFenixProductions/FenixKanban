@@ -58,6 +58,16 @@ final class BoardViewModel: ObservableObject {
         refreshColumns()
     }
 
+    func moveCardUp(_ card: Card) {
+        cardRepository.moveCardUp(card)
+        refreshColumns()
+    }
+
+    func moveCardDown(_ card: Card) {
+        cardRepository.moveCardDown(card)
+        refreshColumns()
+    }
+
     // MARK: - Drag & Drop
 
     func moveCard(_ cardID: UUID, to column: Column, at index: Int) {

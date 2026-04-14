@@ -9,6 +9,8 @@ struct ColumnView: View {
     let onDropCard: (UUID, Int) -> Void
     let onEditColumn: () -> Void
     let onDeleteColumn: () -> Void
+    let onMoveCardUp: (Card) -> Void
+    let onMoveCardDown: (Card) -> Void
 
     private var columnColor: Color? {
         guard let hex = column.colorHex else { return nil }
@@ -65,7 +67,7 @@ struct ColumnView: View {
             // Cards list
             ScrollView {
                 LazyVStack(spacing: 6) {
-                    ForEach(cards, id: \.objectID) { card in
+                    ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
                         CardView(card: card, columnColor: columnColor)
                             .draggable(card.id?.uuidString ?? "") {
                                 CardView(card: card, columnColor: columnColor)
@@ -76,6 +78,22 @@ struct ColumnView: View {
                                 onSelectCard(card)
                             }
                             .contextMenu {
+                                Button {
+                                    onMoveCardUp(card)
+                                } label: {
+                                    SwiftUI.Label("Move Up", systemImage: "arrow.up")
+                                }
+                                .disabled(index == 0)
+
+                                Button {
+                                    onMoveCardDown(card)
+                                } label: {
+                                    SwiftUI.Label("Move Down", systemImage: "arrow.down")
+                                }
+                                .disabled(index == cards.count - 1)
+
+                                Divider()
+
                                 Button(role: .destructive) {
                                     onDeleteCard(card)
                                 } label: {

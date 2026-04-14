@@ -172,6 +172,12 @@ struct BoardView: View {
                         },
                         onDeleteColumn: {
                             columnPendingDelete = column
+                        },
+                        onMoveCardUp: { card in
+                            viewModel.moveCardUp(card)
+                        },
+                        onMoveCardDown: { card in
+                            viewModel.moveCardDown(card)
                         }
                     )
                     .frame(width: 280)
@@ -225,6 +231,12 @@ struct BoardView: View {
                         },
                         onDeleteColumn: {
                             columnPendingDelete = column
+                        },
+                        onMoveCardUp: { card in
+                            viewModel.moveCardUp(card)
+                        },
+                        onMoveCardDown: { card in
+                            viewModel.moveCardDown(card)
                         }
                     )
                     .tag(index)

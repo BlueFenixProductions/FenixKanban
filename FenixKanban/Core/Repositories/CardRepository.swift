@@ -9,6 +9,8 @@ protocol CardRepositoryProtocol {
     func deleteCard(_ card: Card)
     func moveCard(_ card: Card, to column: Column, at index: Int)
     func reorderCard(_ card: Card, to newIndex: Int, in cards: [Card])
+    func moveCardUp(_ card: Card)
+    func moveCardDown(_ card: Card)
 }
 
 final class CardRepository: CardRepositoryProtocol {
@@ -115,6 +117,36 @@ final class CardRepository: CardRepositoryProtocol {
                 c.sortOrder = Int32(i * 1000)
             }
         }
+
+        save()
+    }
+
+    func moveCardUp(_ card: Card) {
+        swapAdjacent(card, offset: -1)
+    }
+
+    func moveCardDown(_ card: Card) {
+        swapAdjacent(card, offset: 1)
+    }
+
+    // Swap this card's sortOrder with the adjacent card at +/- offset.
+    // No-op if the adjacent card doesn't exist (card is first/last).
+    private func swapAdjacent(_ card: Card, offset: Int) {
+        guard let column = card.column else { return }
+        let sorted = column.sortedCards
+        guard let currentIndex = sorted.firstIndex(where: { $0.objectID == card.objectID }) else { return }
+        let targetIndex = currentIndex + offset
+        guard targetIndex >= 0 && targetIndex < sorted.count else { return }
+
+        let other = sorted[targetIndex]
+        let tempOrder = card.sortOrder
+        card.sortOrder = other.sortOrder
+        other.sortOrder = tempOrder
+
+        let now = Date()
+        card.modifiedAt = now
+        other.modifiedAt = now
+        column.modifiedAt = now
 
         save()
     }

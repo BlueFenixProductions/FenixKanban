@@ -122,4 +122,48 @@ final class CardRepositoryTests: XCTestCase {
         boardRepo.deleteColumn(column)
         XCTAssertEqual((try? persistence.viewContext.fetch(cardFetch))?.count, 0)
     }
+
+    // MARK: - Move Up / Down
+
+    func testMoveCardUp() {
+        _ = cardRepo.createCard(in: column, title: "A")
+        let b = cardRepo.createCard(in: column, title: "B")
+        _ = cardRepo.createCard(in: column, title: "C")
+
+        cardRepo.moveCardUp(b)
+
+        let titles = column.sortedCards.map { $0.title ?? "" }
+        XCTAssertEqual(titles, ["B", "A", "C"])
+    }
+
+    func testMoveCardDown() {
+        _ = cardRepo.createCard(in: column, title: "A")
+        let b = cardRepo.createCard(in: column, title: "B")
+        _ = cardRepo.createCard(in: column, title: "C")
+
+        cardRepo.moveCardDown(b)
+
+        let titles = column.sortedCards.map { $0.title ?? "" }
+        XCTAssertEqual(titles, ["A", "C", "B"])
+    }
+
+    func testMoveCardUpAtTopIsNoOp() {
+        let a = cardRepo.createCard(in: column, title: "A")
+        _ = cardRepo.createCard(in: column, title: "B")
+
+        cardRepo.moveCardUp(a)
+
+        let titles = column.sortedCards.map { $0.title ?? "" }
+        XCTAssertEqual(titles, ["A", "B"])
+    }
+
+    func testMoveCardDownAtBottomIsNoOp() {
+        _ = cardRepo.createCard(in: column, title: "A")
+        let b = cardRepo.createCard(in: column, title: "B")
+
+        cardRepo.moveCardDown(b)
+
+        let titles = column.sortedCards.map { $0.title ?? "" }
+        XCTAssertEqual(titles, ["A", "B"])
+    }
 }
