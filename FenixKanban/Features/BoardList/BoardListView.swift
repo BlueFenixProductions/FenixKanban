@@ -11,6 +11,8 @@ struct BoardListView: View {
     @State private var editingBoard: Board? = nil
     @State private var showBoardSheet = false
 
+    @State private var boardPendingDelete: Board?
+
     init(context: NSManagedObjectContext, selection: Binding<NSManagedObjectID?> = .constant(nil)) {
         _viewModel = StateObject(wrappedValue: BoardListViewModel(context: context))
         _selection = selection
@@ -63,6 +65,31 @@ struct BoardListView: View {
                 resetBoardSheet()
             }
         }
+        .confirmationDialog(
+            "Delete Board?",
+            isPresented: Binding(
+                get: { boardPendingDelete != nil },
+                set: { if !$0 { boardPendingDelete = nil } }
+            ),
+            presenting: boardPendingDelete
+        ) { board in
+            Button("Delete", role: .destructive) {
+                if selection == board.objectID {
+                    selection = nil
+                }
+                viewModel.deleteBoard(board)
+                boardPendingDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                boardPendingDelete = nil
+            }
+        } message: { board in
+            let columnCount = board.columnCount
+            let cardCount = board.totalCardCount
+            let columnSuffix = columnCount == 1 ? "column" : "columns"
+            let cardSuffix = cardCount == 1 ? "card" : "cards"
+            Text("\"\(board.name ?? "Untitled")\" and its \(columnCount) \(columnSuffix) (\(cardCount) \(cardSuffix)) will be permanently deleted. This cannot be undone.")
+        }
     }
 
     // MARK: - Sheet Helpers
@@ -114,13 +141,18 @@ struct BoardListView: View {
                         SwiftUI.Label("Edit Board", systemImage: "pencil")
                     }
                     Button(role: .destructive) {
-                        viewModel.deleteBoard(board)
+                        boardPendingDelete = board
                     } label: {
                         SwiftUI.Label("Delete Board", systemImage: "trash")
                     }
                 }
             }
-            .onDelete(perform: viewModel.deleteBoards)
+            .onDelete { offsets in
+                // Route swipe-to-delete through the confirmation dialog.
+                if let index = offsets.first {
+                    boardPendingDelete = viewModel.boards[index]
+                }
+            }
             .onMove(perform: viewModel.moveBoard)
         }
         .listStyle(.sidebar)

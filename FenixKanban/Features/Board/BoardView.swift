@@ -7,6 +7,7 @@ struct BoardView: View {
     @State private var selectedCard: Card?
     @State private var newCardTitle = ""
     @State private var cardPendingDelete: Card?
+    @State private var columnPendingDelete: Column?
 
     // Column sheet state — handles both create and edit
     @State private var columnSheetName = ""
@@ -67,6 +68,26 @@ struct BoardView: View {
                 }
             } message: { card in
                 Text("\"\(card.title ?? "Untitled")\" will be permanently deleted. This cannot be undone.")
+            }
+            .confirmationDialog(
+                "Delete Column?",
+                isPresented: Binding(
+                    get: { columnPendingDelete != nil },
+                    set: { if !$0 { columnPendingDelete = nil } }
+                ),
+                presenting: columnPendingDelete
+            ) { column in
+                Button("Delete", role: .destructive) {
+                    viewModel.deleteColumn(column)
+                    columnPendingDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    columnPendingDelete = nil
+                }
+            } message: { column in
+                let cardCount = column.cardCount
+                let cardSuffix = cardCount == 1 ? "card" : "cards"
+                Text("\"\(column.name ?? "Untitled")\" and its \(cardCount) \(cardSuffix) will be permanently deleted. This cannot be undone.")
             }
     }
 
@@ -150,7 +171,7 @@ struct BoardView: View {
                             presentEditColumnSheet(for: column)
                         },
                         onDeleteColumn: {
-                            viewModel.deleteColumn(column)
+                            columnPendingDelete = column
                         }
                     )
                     .frame(width: 280)
@@ -203,7 +224,7 @@ struct BoardView: View {
                             presentEditColumnSheet(for: column)
                         },
                         onDeleteColumn: {
-                            viewModel.deleteColumn(column)
+                            columnPendingDelete = column
                         }
                     )
                     .tag(index)
