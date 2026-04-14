@@ -92,34 +92,38 @@ struct BoardListView: View {
     private var boardList: some View {
         List(selection: $selection) {
             ForEach(viewModel.boards, id: \.objectID) { board in
-                BoardRowView(board: board)
-                    .tag(board.objectID)
-                    .listRowBackground(Color(.secondarySystemBackground))
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        Button {
-                            presentEditBoardSheet(for: board)
-                        } label: {
-                            SwiftUI.Label("Edit", systemImage: "pencil")
-                        }
-                        .tint(.blue)
+                // NavigationLink(value:) is the canonical pattern for
+                // NavigationSplitView sidebars — pairs with the selection
+                // binding to update the detail column on tap.
+                NavigationLink(value: board.objectID) {
+                    BoardRowView(board: board)
+                }
+                .listRowBackground(Color(.secondarySystemBackground))
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button {
+                        presentEditBoardSheet(for: board)
+                    } label: {
+                        SwiftUI.Label("Edit", systemImage: "pencil")
                     }
-                    .contextMenu {
-                        Button {
-                            presentEditBoardSheet(for: board)
-                        } label: {
-                            SwiftUI.Label("Edit Board", systemImage: "pencil")
-                        }
-                        Button(role: .destructive) {
-                            viewModel.deleteBoard(board)
-                        } label: {
-                            SwiftUI.Label("Delete Board", systemImage: "trash")
-                        }
+                    .tint(.blue)
+                }
+                .contextMenu {
+                    Button {
+                        presentEditBoardSheet(for: board)
+                    } label: {
+                        SwiftUI.Label("Edit Board", systemImage: "pencil")
                     }
+                    Button(role: .destructive) {
+                        viewModel.deleteBoard(board)
+                    } label: {
+                        SwiftUI.Label("Delete Board", systemImage: "trash")
+                    }
+                }
             }
             .onDelete(perform: viewModel.deleteBoards)
             .onMove(perform: viewModel.moveBoard)
         }
-        .listStyle(.plain)
+        .listStyle(.sidebar)
     }
 }
 
