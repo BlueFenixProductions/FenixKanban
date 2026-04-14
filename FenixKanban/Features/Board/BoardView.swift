@@ -176,11 +176,9 @@ struct BoardView: View {
                             selectedCard = card
                         },
                         onDropCard: { cardID, idx in
-                            viewModel.reorderCard(
-                                column.sortedCards.first { $0.id?.uuidString == String(describing: cardID) }!,
-                                to: idx,
-                                in: column
-                            )
+                            // Use moveCard which handles both same-column reorder
+                            // and cross-column move without force-unwrapping.
+                            viewModel.moveCard(cardID, to: column, at: idx)
                         },
                         onEditColumn: {
                             presentEditColumnSheet(for: column)

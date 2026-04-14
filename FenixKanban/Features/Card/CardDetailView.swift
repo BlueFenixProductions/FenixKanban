@@ -21,11 +21,32 @@ struct CardDetailView: View {
                 }
 
                 Section {
-                    // Column picker
+                    // Column picker (Menu avoids the Binding<Column> re-entrance
+                    // crash from the earlier Picker implementation — actions run
+                    // on tap, not during SwiftUI state evaluation)
                     if viewModel.availableColumns.count > 1 {
-                        Picker("Column", selection: columnBinding) {
+                        Menu {
                             ForEach(viewModel.availableColumns, id: \.objectID) { column in
-                                Text(column.name ?? "Untitled").tag(column)
+                                Button {
+                                    viewModel.moveToColumn(column)
+                                } label: {
+                                    if column.objectID == viewModel.card.column?.objectID {
+                                        SwiftUI.Label(column.name ?? "Untitled", systemImage: "checkmark")
+                                    } else {
+                                        Text(column.name ?? "Untitled")
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text("Column")
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text(viewModel.card.column?.name ?? "None")
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
                             }
                         }
                     }
@@ -99,13 +120,6 @@ struct CardDetailView: View {
                 viewModel.save()
             }
         }
-    }
-
-    private var columnBinding: Binding<Column> {
-        Binding(
-            get: { viewModel.card.column ?? viewModel.availableColumns[0] },
-            set: { viewModel.moveToColumn($0) }
-        )
     }
 
     private var dueDatePicker: some View {
