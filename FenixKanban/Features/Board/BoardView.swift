@@ -6,6 +6,7 @@ struct BoardView: View {
     @Environment(\.adaptiveLayout) private var layout
     @State private var selectedCard: Card?
     @State private var newCardTitle = ""
+    @State private var cardPendingDelete: Card?
 
     // Column sheet state — handles both create and edit
     @State private var columnSheetName = ""
@@ -48,6 +49,24 @@ struct BoardView: View {
             }
             .sheet(item: $selectedCard) { card in
                 CardDetailView(card: card, context: viewModel.board.managedObjectContext!)
+            }
+            .confirmationDialog(
+                "Delete Card?",
+                isPresented: Binding(
+                    get: { cardPendingDelete != nil },
+                    set: { if !$0 { cardPendingDelete = nil } }
+                ),
+                presenting: cardPendingDelete
+            ) { card in
+                Button("Delete", role: .destructive) {
+                    viewModel.deleteCard(card)
+                    cardPendingDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    cardPendingDelete = nil
+                }
+            } message: { card in
+                Text("\"\(card.title ?? "Untitled")\" will be permanently deleted. This cannot be undone.")
             }
     }
 
@@ -119,7 +138,7 @@ struct BoardView: View {
                             viewModel.selectedColumnForNewCard = column
                         },
                         onDeleteCard: { card in
-                            viewModel.deleteCard(card)
+                            cardPendingDelete = card
                         },
                         onSelectCard: { card in
                             selectedCard = card
@@ -170,7 +189,7 @@ struct BoardView: View {
                             viewModel.selectedColumnForNewCard = column
                         },
                         onDeleteCard: { card in
-                            viewModel.deleteCard(card)
+                            cardPendingDelete = card
                         },
                         onSelectCard: { card in
                             selectedCard = card
