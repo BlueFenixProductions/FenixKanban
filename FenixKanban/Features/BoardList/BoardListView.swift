@@ -55,12 +55,6 @@ struct BoardListView: View {
                 }
             }
         }
-        .onAppear {
-            // Auto-select first board if nothing is selected and at least one exists
-            if selection == nil, let first = viewModel.boards.first {
-                selection = first.objectID
-            }
-        }
     }
 
     private var boardList: some View {
