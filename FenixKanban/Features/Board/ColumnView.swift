@@ -11,7 +11,7 @@ struct ColumnView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Column header
-            HStack {
+            HStack(spacing: 8) {
                 Text(column.name ?? "Untitled")
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -26,12 +26,6 @@ struct ColumnView: View {
                     .clipShape(Capsule())
 
                 Spacer()
-
-                Button(action: onAddCard) {
-                    Image(systemName: "plus")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -57,6 +51,25 @@ struct ColumnView: View {
                                 }
                             }
                     }
+
+                    // Placeholder card acting as the "Add Card" button
+                    Button(action: onAddCard) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.subheadline)
+                            Text("Add Card")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Spacer()
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.quaternarySystemFill))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
