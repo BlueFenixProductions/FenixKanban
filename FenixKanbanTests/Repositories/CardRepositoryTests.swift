@@ -123,6 +123,36 @@ final class CardRepositoryTests: XCTestCase {
         XCTAssertEqual((try? persistence.viewContext.fetch(cardFetch))?.count, 0)
     }
 
+    // MARK: - Parent Board modifiedAt Propagation
+    // Regression: adding/deleting/moving a card used to only bump
+    // column.modifiedAt. BoardRowView's @ObservedObject only fires
+    // on the Board's own attribute changes, so stale card counts
+    // remained on the home page until app restart.
+
+    func testCreateCardBumpsBoardModifiedAt() {
+        let originalModified = board.modifiedAt ?? Date.distantPast
+        Thread.sleep(forTimeInterval: 0.01)
+        _ = cardRepo.createCard(in: column, title: "Card")
+        XCTAssertGreaterThan(board.modifiedAt ?? Date.distantPast, originalModified)
+    }
+
+    func testDeleteCardBumpsBoardModifiedAt() {
+        let card = cardRepo.createCard(in: column, title: "Card")
+        let beforeDelete = board.modifiedAt ?? Date.distantPast
+        Thread.sleep(forTimeInterval: 0.01)
+        cardRepo.deleteCard(card)
+        XCTAssertGreaterThan(board.modifiedAt ?? Date.distantPast, beforeDelete)
+    }
+
+    func testMoveCardBumpsBoardModifiedAt() {
+        let column2 = boardRepo.createColumn(in: board, name: "Done")
+        let card = cardRepo.createCard(in: column, title: "Card")
+        let beforeMove = board.modifiedAt ?? Date.distantPast
+        Thread.sleep(forTimeInterval: 0.01)
+        cardRepo.moveCard(card, to: column2, at: 0)
+        XCTAssertGreaterThan(board.modifiedAt ?? Date.distantPast, beforeMove)
+    }
+
     // MARK: - Move Up / Down
 
     func testMoveCardUp() {

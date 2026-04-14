@@ -47,7 +47,11 @@ final class CardRepository: CardRepositoryProtocol {
         let maxSort = column.sortedCards.last?.sortOrder ?? -1000
         card.sortOrder = maxSort + 1000
 
-        column.modifiedAt = Date()
+        let now = Date()
+        column.modifiedAt = now
+        // Bump the board too so BoardRowView's @ObservedObject
+        // re-renders the card count on the home page.
+        column.board?.modifiedAt = now
         save()
         return card
     }
@@ -76,20 +80,29 @@ final class CardRepository: CardRepositoryProtocol {
     }
 
     func deleteCard(_ card: Card) {
-        card.column?.modifiedAt = Date()
+        let now = Date()
+        card.column?.modifiedAt = now
+        card.column?.board?.modifiedAt = now
         context.delete(card)
         save()
     }
 
     func moveCard(_ card: Card, to column: Column, at index: Int) {
-        card.column?.modifiedAt = Date()
+        let now = Date()
+        let previousColumn = card.column
+        previousColumn?.modifiedAt = now
+        previousColumn?.board?.modifiedAt = now
+
         card.column = column
-        column.modifiedAt = Date()
+        column.modifiedAt = now
+        // Bump the destination board (usually the same as source, but
+        // safe to cover any future cross-board move scenarios).
+        column.board?.modifiedAt = now
 
         let targetCards = column.sortedCards.filter { $0.id != card.id }
         let newSortOrder = calculateSortOrder(for: index, in: targetCards.map(\.sortOrder))
         card.sortOrder = newSortOrder
-        card.modifiedAt = Date()
+        card.modifiedAt = now
 
         if needsNormalization(targetCards.map(\.sortOrder), inserting: newSortOrder) {
             var ordered = targetCards
