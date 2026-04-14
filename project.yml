@@ -47,3 +47,4 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanbanTests
+        GENERATE_INFOPLIST_FILE: YES
