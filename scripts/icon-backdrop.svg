@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a2140"/>
+      <stop offset="70%" stop-color="#0a0e1f"/>
+      <stop offset="100%" stop-color="#050710"/>
+    </radialGradient>
+    <linearGradient id="colCol" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e2847" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0d1328" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d3a66"/>
+      <stop offset="100%" stop-color="#1f2a4d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- Kanban columns: 4 columns with varying heights, centered horizontally -->
+  <!-- Canvas is 1024 wide. Columns + gaps: 4 * 180 + 3 * 24 = 792. Start at (1024-792)/2 = 116 -->
+
+  <!-- Column 1: tallest — "To Do" with 4 cards -->
+  <g>
+    <rect x="116" y="180" width="180" height="664" rx="14" fill="url(#colCol)"/>
+    <!-- Column header bar -->
+    <rect x="130" y="200" width="100" height="8" rx="4" fill="#4a5a8a" opacity="0.7"/>
+    <!-- Cards -->
+    <rect x="130" y="240" width="152" height="70" rx="8" fill="url(#card)"/>
+    <rect x="130" y="325" width="152" height="88" rx="8" fill="url(#card)"/>
+    <rect x="130" y="428" width="152" height="62" rx="8" fill="url(#card)"/>
+    <rect x="130" y="505" width="152" height="78" rx="8" fill="url(#card)"/>
+  </g>
+
+  <!-- Column 2: medium — "In Progress" with 3 cards -->
+  <g>
+    <rect x="320" y="260" width="180" height="504" rx="14" fill="url(#colCol)"/>
+    <rect x="334" y="280" width="100" height="8" rx="4" fill="#e9a84a" opacity="0.7"/>
+    <rect x="334" y="320" width="152" height="78" rx="8" fill="url(#card)"/>
+    <rect x="334" y="413" width="152" height="94" rx="8" fill="url(#card)"/>
+    <rect x="334" y="522" width="152" height="66" rx="8" fill="url(#card)"/>
+  </g>
+
+  <!-- Column 3: short — "Review" with 2 cards -->
+  <g>
+    <rect x="524" y="340" width="180" height="380" rx="14" fill="url(#colCol)"/>
+    <rect x="538" y="360" width="100" height="8" rx="4" fill="#7b4ae9" opacity="0.7"/>
+    <rect x="538" y="400" width="152" height="82" rx="8" fill="url(#card)"/>
+    <rect x="538" y="497" width="152" height="70" rx="8" fill="url(#card)"/>
+  </g>
+
+  <!-- Column 4: medium-tall — "Done" with 3 cards -->
+  <g>
+    <rect x="728" y="220" width="180" height="584" rx="14" fill="url(#colCol)"/>
+    <rect x="742" y="240" width="100" height="8" rx="4" fill="#4ae99a" opacity="0.7"/>
+    <rect x="742" y="280" width="152" height="72" rx="8" fill="url(#card)"/>
+    <rect x="742" y="367" width="152" height="86" rx="8" fill="url(#card)"/>
+    <rect x="742" y="468" width="152" height="74" rx="8" fill="url(#card)"/>
+    <rect x="742" y="557" width="152" height="66" rx="8" fill="url(#card)"/>
+  </g>
+</svg>
