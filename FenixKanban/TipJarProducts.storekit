@@ -1,0 +1,82 @@
+{
+  "identifier" : "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+  "nonConsumableProducts" : [
+
+  ],
+  "consumableProducts" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "11111111-1111-1111-1111-111111111111",
+      "localizations" : [
+        {
+          "description" : "A small tip to say thanks for FenixKanban",
+          "displayName" : "Small Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.bluefenixproductions.fenixkanban.tip.small",
+      "referenceName" : "Small Tip",
+      "type" : "consumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "22222222-2222-2222-2222-222222222222",
+      "localizations" : [
+        {
+          "description" : "A medium tip to support FenixKanban development",
+          "displayName" : "Medium Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.bluefenixproductions.fenixkanban.tip.medium",
+      "referenceName" : "Medium Tip",
+      "type" : "consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "33333333-3333-3333-3333-333333333333",
+      "localizations" : [
+        {
+          "description" : "A large tip to support FenixKanban development",
+          "displayName" : "Large Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.bluefenixproductions.fenixkanban.tip.large",
+      "referenceName" : "Large Tip",
+      "type" : "consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "44444444-4444-4444-4444-444444444444",
+      "localizations" : [
+        {
+          "description" : "A huge tip — you are amazing!",
+          "displayName" : "Huge Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.bluefenixproductions.fenixkanban.tip.huge",
+      "referenceName" : "Huge Tip",
+      "type" : "consumable"
+    }
+  ],
+  "subscriptionGroups" : [
+
+  ],
+  "settings" : {
+    "_developerTeamID" : "QU2C2R55C4",
+    "_lastSynchronizedDate" : "2026-04-20T00:00:00Z",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

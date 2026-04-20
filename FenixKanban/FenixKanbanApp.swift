@@ -1,4 +1,5 @@
 import CoreData
+import StoreKit
 import SwiftUI
 
 @main
@@ -21,6 +22,13 @@ struct FenixKanbanApp: App {
                 .preferredColorScheme(.dark)
                 .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
                     NotificationService.shared.refreshAllReminders(context: persistence.viewContext)
+                }
+                .task {
+                    for await result in Transaction.updates {
+                        if case .verified(let transaction) = result {
+                            await transaction.finish()
+                        }
+                    }
                 }
         }
     }
