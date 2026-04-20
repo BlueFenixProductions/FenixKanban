@@ -57,6 +57,12 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Integrations") {
+                    NavigationLink("Board Sync") {
+                        SyncSettingsView()
+                    }
+                }
+
                 Section("Support") {
                     NavigationLink("Tip Jar") {
                         TipJarView()
