@@ -3,25 +3,30 @@ import SwiftUI
 struct SyncStatusIndicator: View {
     let status: SyncStatus
 
-    var body: some View {
-        Group {
-            switch status {
-            case .idle, .succeeded:
-                Image(systemName: "checkmark.icloud")
-                    .foregroundStyle(.green)
-            case .syncing:
-                Image(systemName: "arrow.triangle.2.circlepath.icloud")
-                    .foregroundStyle(.blue)
-                    .symbolEffect(.variableColor)
-            case .failed:
-                Image(systemName: "exclamationmark.icloud")
-                    .foregroundStyle(.orange)
-            case .noAccount, .disabled:
-                Image(systemName: "icloud.slash")
-                    .foregroundStyle(.secondary)
-            }
+    private var iconName: String {
+        switch status {
+        case .idle, .succeeded:    return "checkmark.icloud"
+        case .syncing:             return "arrow.triangle.2.circlepath.icloud"
+        case .failed:              return "exclamationmark.icloud"
+        case .noAccount, .disabled: return "icloud.slash"
         }
-        .font(.subheadline)
+    }
+
+    private var iconColor: Color {
+        switch status {
+        case .idle, .succeeded:    return .green
+        case .syncing:             return .blue
+        case .failed:              return .orange
+        case .noAccount, .disabled: return Color(.secondaryLabel)
+        }
+    }
+
+    var body: some View {
+        Image(systemName: iconName)
+            .foregroundStyle(iconColor)
+            .symbolEffect(.variableColor, isActive: status == .syncing)
+            .contentTransition(.symbolEffect(.replace))
+            .font(.subheadline)
     }
 }
 
