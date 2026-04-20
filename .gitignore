@@ -32,3 +32,6 @@ Pods/
 *.swp
 *~
 .superpowers/
+
+# Local developer config (contains Team ID — copy from Config/Development.xcconfig.example)
+Config/Development.xcconfig
