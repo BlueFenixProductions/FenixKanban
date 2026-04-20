@@ -3,20 +3,12 @@ import SwiftUI
 struct SyncStatusIndicator: View {
     let status: SyncStatus
 
-    @State private var isVisible = true
-
     var body: some View {
         Group {
             switch status {
             case .idle, .succeeded:
                 Image(systemName: "checkmark.icloud")
                     .foregroundStyle(.green)
-                    .opacity(isVisible ? 1 : 0)
-                    .onAppear {
-                        withAnimation(.easeOut(duration: 0.5).delay(3)) {
-                            isVisible = false
-                        }
-                    }
             case .syncing:
                 Image(systemName: "arrow.triangle.2.circlepath.icloud")
                     .foregroundStyle(.blue)
@@ -30,9 +22,6 @@ struct SyncStatusIndicator: View {
             }
         }
         .font(.subheadline)
-        .onChange(of: status) {
-            isVisible = true
-        }
     }
 }
 
