@@ -113,6 +113,7 @@
 		91F0817152C485773F9923C6 /* TipJarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarView.swift; sourceTree = "<group>"; };
 		9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Column+CoreDataClass.swift"; sourceTree = "<group>"; };
 		9408D41208AD8931538011B8 /* LabelEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelEditorSheet.swift; sourceTree = "<group>"; };
+		99D93FD1E573B49C12DC2C27 /* Development.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
 		9A78B1699150F1C5A72D387C /* LabelRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepository.swift; sourceTree = "<group>"; };
 		9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		9E20A59A4E9DDCD06081E6A7 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
@@ -178,6 +179,7 @@
 		1E279A33AD90043CFE8686B0 = {
 			isa = PBXGroup;
 			children = (
+				6E714786600BB05DB13519D7 /* Config */,
 				80557794546CE78EEA063AB3 /* FenixKanban */,
 				FC1AC208A9E6B4BA1D3A553E /* FenixKanbanTests */,
 				F16B1B49246B6D4A03A47839 /* Products */,
@@ -264,6 +266,14 @@
 				EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */,
 			);
 			path = Persistence;
+			sourceTree = "<group>";
+		};
+		6E714786600BB05DB13519D7 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				99D93FD1E573B49C12DC2C27 /* Development.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		740E2BBCF3E5834908750AB6 /* Preview Content */ = {
@@ -609,6 +619,7 @@
 		};
 		21874AFDE288A36F86B329AB /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 99D93FD1E573B49C12DC2C27 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -644,7 +655,6 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = QU2C2R55C4;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -669,6 +679,7 @@
 		};
 		33DCF5DA61BE39A79CCD7270 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 99D93FD1E573B49C12DC2C27 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -704,7 +715,6 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = QU2C2R55C4;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;

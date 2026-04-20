@@ -3,6 +3,9 @@
 # This Makefile wraps the common iOS development commands so you don't have
 # to remember xcodebuild invocations and device UUIDs. Override variables on
 # the command line as needed, e.g. `make run DEVICE_ID=<uuid>`.
+#
+# To find a device UDID: plug it in, run `make devices`, and copy the
+# Identifier column. Or open Xcode > Window > Devices and Simulators.
 
 PROJECT       = FenixKanban.xcodeproj
 SCHEME        = FenixKanban
@@ -12,12 +15,15 @@ APP_NAME      = FenixKanban.app
 DERIVED_DATA  = $(HOME)/Library/Developer/Xcode/DerivedData
 APP_GLOB      = $(DERIVED_DATA)/FenixKanban-*/Build/Products/Debug-iphoneos/$(APP_NAME)
 
-# Named physical devices (update if device UUIDs change)
-SUSANOO       = BA3D11C6-B4A3-5E64-B65F-231B6E607E0F
-SHINO         = DAE55153-28D5-5775-B9EF-63D0AC67400F
+# Set these to your physical device UDIDs, e.g.:
+#   export DEVICE_1=00008110-001234567890001E
+#   export DEVICE_2=00008110-001234567890002E
+# Or pass them on the command line: make run-device-1 DEVICE_1=<udid>
+DEVICE_1     ?= $(error Set DEVICE_1 to your device UDID (run 'make devices' to list connected devices))
+DEVICE_2     ?= $(error Set DEVICE_2 to your device UDID (run 'make devices' to list connected devices))
 
 # Default device for single-device targets (overridable with DEVICE_ID=<uuid>)
-DEVICE_ID    ?= $(SUSANOO)
+DEVICE_ID    ?= $(DEVICE_1)
 
 SIM_DEST      = 'platform=iOS Simulator,name=$(SIMULATOR)'
 DEVICE_DEST   = 'platform=iOS,id=$(DEVICE_ID)'
@@ -25,7 +31,7 @@ GENERIC_DEST  = 'generic/platform=iOS'
 
 .DEFAULT_GOAL := help
 .PHONY: help generate build build-device test install launch run \
-        run-susanoo run-shino run-all _deploy-one clean devices icon
+        run-device-1 run-device-2 run-all _deploy-one clean devices icon
 
 help:
 	@echo "FenixKanban development targets:"
@@ -39,9 +45,9 @@ help:
 	@echo "  make run           build-device + install + launch on DEVICE_ID"
 	@echo ""
 	@echo "Multi-device convenience targets:"
-	@echo "  make run-susanoo   Deploy to Susanoo (iPhone Air)"
-	@echo "  make run-shino     Deploy to Shino (iPhone 13 mini)"
-	@echo "  make run-all       Deploy to BOTH Susanoo and Shino"
+	@echo "  make run-device-1  Deploy to DEVICE_1"
+	@echo "  make run-device-2  Deploy to DEVICE_2"
+	@echo "  make run-all       Deploy to BOTH DEVICE_1 and DEVICE_2"
 	@echo ""
 	@echo "  make clean         Clean build products and DerivedData"
 	@echo "  make devices       List available physical devices"
@@ -50,11 +56,9 @@ help:
 	@echo "Variables (override with VAR=value):"
 	@echo "  SIMULATOR   $(SIMULATOR)"
 	@echo "  DEVICE_ID   $(DEVICE_ID)"
+	@echo "  DEVICE_1    your first device UDID (export or pass on CLI)"
+	@echo "  DEVICE_2    your second device UDID (export or pass on CLI)"
 	@echo "  BUNDLE_ID   $(BUNDLE_ID)"
-	@echo ""
-	@echo "Named devices:"
-	@echo "  SUSANOO     $(SUSANOO)"
-	@echo "  SHINO       $(SHINO)"
 
 generate:
 	xcodegen generate
@@ -103,16 +107,16 @@ _deploy-one:
 	xcrun devicectl device install app --device $(TARGET) "$$APP"; \
 	xcrun devicectl device process launch --device $(TARGET) $(BUNDLE_ID)
 
-run-susanoo:
-	$(MAKE) run DEVICE_ID=$(SUSANOO)
+run-device-1:
+	$(MAKE) run DEVICE_ID=$(DEVICE_1)
 
-run-shino:
-	$(MAKE) run DEVICE_ID=$(SHINO)
+run-device-2:
+	$(MAKE) run DEVICE_ID=$(DEVICE_2)
 
 # Build once, deploy to both devices.
 run-all: build-device
-	$(MAKE) _deploy-one TARGET=$(SUSANOO)
-	$(MAKE) _deploy-one TARGET=$(SHINO)
+	$(MAKE) _deploy-one TARGET=$(DEVICE_1)
+	$(MAKE) _deploy-one TARGET=$(DEVICE_2)
 
 clean:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) clean
