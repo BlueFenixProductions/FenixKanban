@@ -24,8 +24,6 @@ struct SyncStatusIndicator: View {
     var body: some View {
         Image(systemName: iconName)
             .foregroundStyle(iconColor)
-            .symbolEffect(.variableColor, isActive: status == .syncing)
-            .contentTransition(.symbolEffect(.replace))
             .font(.subheadline)
     }
 }
