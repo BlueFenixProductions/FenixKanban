@@ -41,6 +41,9 @@ struct BoardListView: View {
         }
         .navigationTitle("Boards")
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                EditButton()
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     presentNewBoardSheet()
