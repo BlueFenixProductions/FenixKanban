@@ -32,7 +32,7 @@ struct OpenCardIntentTests {
 
     @Test func performThrowsWhenCardNoLongerExists() async throws {
         let (persistence, _, _, navigator) = setup()
-        let entity = CardEntity(id: UUID(), title: "Ghost", cardDescription: nil, dueDate: nil, isCompleted: false)
+        let entity = CardEntity(id: UUID(), title: "Ghost", cardDescription: nil, dueDate: nil, isCompleted: false, isGolden: false)
 
         var intent = OpenCardIntent()
         intent.card = entity

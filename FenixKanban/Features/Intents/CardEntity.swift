@@ -14,17 +14,22 @@ struct CardEntity: AppEntity {
     var cardDescription: String?
     var dueDate: Date?
     var isCompleted: Bool
+    var isGolden: Bool
 
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(title)")
+        DisplayRepresentation(
+            title: "\(title)",
+            subtitle: isGolden ? "Golden ticket" : nil
+        )
     }
 
-    init(id: UUID, title: String, cardDescription: String?, dueDate: Date?, isCompleted: Bool) {
+    init(id: UUID, title: String, cardDescription: String?, dueDate: Date?, isCompleted: Bool, isGolden: Bool) {
         self.id = id
         self.title = title
         self.cardDescription = cardDescription
         self.dueDate = dueDate
         self.isCompleted = isCompleted
+        self.isGolden = isGolden
     }
 
     init(from card: Card) throws {
@@ -36,6 +41,7 @@ struct CardEntity: AppEntity {
         self.cardDescription = card.cardDescription
         self.dueDate = card.dueDate
         self.isCompleted = card.isCompleted
+        self.isGolden = card.isGolden
     }
 }
 
