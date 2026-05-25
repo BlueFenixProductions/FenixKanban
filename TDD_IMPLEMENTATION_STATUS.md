@@ -645,3 +645,37 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **Test Coverage:** 4/4 new tests; full suite 131/131.
 
 **Follow-up:** Light-mode contrast audit for `goldenTicket`/`goldenTicketIcon` (`FenixKanban/Extensions/Color+CrossPlatform.swift:55-85`) — flagged in spec, not blocking.
+
+---
+
+## 🪢 2026-05-25 — Fizzy Integration Phase 1 Task 1: Test Fixtures + Bundle Wiring
+
+**Status:** ✅ COMPLETE
+
+Per `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md` (Spec §7 Testing) and `docs/superpowers/plans/2026-05-25-fizzy-phase-1-client.md`.
+
+**Task:** Land hand-transcribed JSON fixtures from `~/Documents/GitHub/fizzy/docs/api/sections/*.md` and wire them into `FenixKanbanTests` bundle at build time via `project.yml` resources block.
+
+**Deliverables:**
+
+1. ✅ `FenixKanbanTests/Fixtures/fizzy/identity.json` — `GET /my/identity` response (accounts array)
+2. ✅ `FenixKanbanTests/Fixtures/fizzy/boards.json` — `GET /:account/boards` response (board list)
+3. ✅ `FenixKanbanTests/Fixtures/fizzy/columns.json` — `GET /:account/boards/:board_id/columns` response
+4. ✅ `FenixKanbanTests/Fixtures/fizzy/cards.json` — `GET /:account/cards` response (list, no `column` field per Fizzy docs)
+5. ✅ `FenixKanbanTests/Fixtures/fizzy/card_single.json` — `GET /:account/cards/:number` response (includes `column`, `steps`)
+6. ✅ `FenixKanbanTests/Fixtures/fizzy/README.md` — refresh guidance and field inventory
+
+**Modified:**
+
+- ✅ `project.yml` — added `resources: [path: FenixKanbanTests/Fixtures]` and `excludes: [Fixtures/**/*.json, Fixtures/**/*.md]` to `FenixKanbanTests` target
+
+**Verification:**
+
+- ✅ `xcodebuild build-for-testing` → `** TEST BUILD SUCCEEDED **`
+- ✅ All 6 fixture files present with exact transcribed content
+- ✅ `make generate` succeeded; shared scheme preserved
+- ✅ `git commit` landed commit `e2d5889`: "test(fizzy): Fizzy API JSON fixtures + test-bundle wiring"
+
+**TDD note:** This is a fixture-only task (test infrastructure, not behavior). No Swift code logic to red-green-refactor; verification is build success and file presence. Task does not assume any HttpClient or DTO decoding yet — those are Phase 1 Task 2+.
+
+**Next:** Phase 1 Task 2 will write MockURLProtocol tests using these fixtures to verify DTO decode. Phase 1 Task 3+ will build the Fizzy client and error type.
