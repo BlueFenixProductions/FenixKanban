@@ -69,5 +69,8 @@ struct CardView: View {
                     .accessibilityLabel("Golden ticket priority")
             }
         }
+        .goldenSwipe(isGolden: card.isGolden) {
+            onToggleGolden(card)
+        }
     }
 }
