@@ -34,7 +34,7 @@ struct LabelManagementView: View {
                             Spacer()
 
                             Text("\(label.cardCount) cards")
-                                .font(.caption)
+                                .font(.crossPlatformCaption)
                                 .foregroundStyle(.tertiary)
                         }
                         .contentShape(Rectangle())

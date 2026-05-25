@@ -14,11 +14,11 @@ struct EmptyStateView: View {
                 .foregroundStyle(.tertiary)
 
             Text(title)
-                .font(.headline)
+                .font(.crossPlatformHeadline)
                 .foregroundStyle(.secondary)
 
             Text(message)
-                .font(.subheadline)
+                .font(.crossPlatformSubheadline)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
 

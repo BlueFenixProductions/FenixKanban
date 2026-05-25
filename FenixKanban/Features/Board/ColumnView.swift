@@ -28,12 +28,12 @@ struct ColumnView: View {
                 }
 
                 Text(column.name ?? "Untitled")
-                    .font(.subheadline)
+                    .font(.crossPlatformSubheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(columnColor ?? .secondary)
 
                 Text("\(cards.count)")
-                    .font(.caption2)
+                    .font(.crossPlatformCaption2)
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -55,7 +55,7 @@ struct ColumnView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.subheadline)
+                        .font(.crossPlatformSubheadline)
                         .foregroundStyle(.secondary)
                         .frame(width: 32, height: 32)
                         .contentShape(Rectangle())
@@ -110,9 +110,9 @@ struct ColumnView: View {
                         Button(action: onAddCard) {
                             HStack(spacing: 6) {
                                 Image(systemName: "plus.circle.fill")
-                                    .font(.subheadline)
+                                    .font(.crossPlatformSubheadline)
                                 Text("Add Card")
-                                    .font(.subheadline)
+                                    .font(.crossPlatformSubheadline)
                                     .fontWeight(.medium)
                                 Spacer()
                             }

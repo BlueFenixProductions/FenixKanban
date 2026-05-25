@@ -14,7 +14,7 @@ struct CardDetailView: View {
             Form {
                 Section {
                     TextField("Title", text: $viewModel.title)
-                        .font(.headline)
+                        .font(.crossPlatformHeadline)
 
                     TextField("Description", text: $viewModel.cardDescription, axis: .vertical)
                         .lineLimit(3...8)
@@ -45,7 +45,7 @@ struct CardDetailView: View {
                                 Text(viewModel.card.column?.name ?? "None")
                                     .foregroundStyle(.secondary)
                                 Image(systemName: "chevron.up.chevron.down")
-                                    .font(.caption2)
+                                    .font(.crossPlatformCaption2)
                                     .foregroundStyle(.tertiary)
                             }
                         }
@@ -65,7 +65,7 @@ struct CardDetailView: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
-                                    .font(.caption)
+                                    .font(.crossPlatformCaption)
                             }
                         } else {
                             Button("Select") { viewModel.showLabelPicker = true }
@@ -85,7 +85,7 @@ struct CardDetailView: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
-                                    .font(.caption)
+                                    .font(.crossPlatformCaption)
                             }
                         } else {
                             Button("Set") { viewModel.showDatePicker = true }

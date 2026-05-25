@@ -198,11 +198,11 @@ struct BoardView: View {
             if viewModel.columns.count > 1 {
                 HStack {
                     Text(viewModel.columns[viewModel.selectedColumnIndex].name ?? "")
-                        .font(.subheadline)
+                        .font(.crossPlatformSubheadline)
                         .fontWeight(.semibold)
                     Spacer()
                     Text("\(viewModel.selectedColumnIndex + 1) of \(viewModel.columns.count)")
-                        .font(.caption)
+                        .font(.crossPlatformCaption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal)

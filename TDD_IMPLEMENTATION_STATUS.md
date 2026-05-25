@@ -469,3 +469,60 @@ Follow-on work to the minimal sweep, captured in commit `cb19636`.
 **Relationship to #3 (Icon Composer rebuild):** This is the raster stopgap. The longer-term work in `docs/icon-composer-setup.md` (layered `.icon` document with light/dark/clear/tinted variants) is still outstanding and remains the right target for the Liquid Glass era. When that lands, `AppIcon.appiconset/` is deleted in its entirety and replaced by `AppIcon.icon/`.
 
 **TDD note:** This is a resource-manifest change (asset catalog JSON); there's no Swift behavior to red-green-refactor. Verification is the successful build + the presence of all ten icon representations in the compiled `.icns`.
+
+---
+
+## 🔤 May 25, 2026 — macOS Font Size Bump
+
+**Symptom:** Text on macOS was hard to read — semantic font styles (`.subheadline`, `.caption`, `.caption2`) baseline ~2–4pt smaller on macOS than iOS, and the codebase uses those styles almost everywhere (see `grep -rn "\.font(" --include="*.swift" FenixKanban/`).
+
+**Fix:** Set `.dynamicTypeSize(.xxLarge)` on `ContentView` in `FenixKanbanApp.swift`, guarded by `#if os(macOS)`. This scales every semantic font style on macOS up to roughly iOS sizes (`.body` ~13pt → ~16pt, `.subheadline` ~11pt → ~14pt, `.caption2` ~10pt → ~13pt) while still letting users push higher via System Settings → Accessibility → Display → Text Size. iOS unchanged.
+
+**Why this instead of bumping individual `.font(...)` calls:** Single root-level modifier, no per-view conditionals, respects accessibility, easy to dial up/down by changing one constant. Touches only `FenixKanbanApp.swift`.
+
+**Incidental fix:** Building first surfaced a pre-existing pbxproj rot — 36 stale `.remember/logs/autonomous/save-*.log` references that xcodegen had picked up as app resources during an earlier run. Added `"**/.remember/**"` to `sources.excludes` in `project.yml` and ran `xcodegen generate`. `.remember/` is Claude session state (per the SessionStart hook), never app content.
+
+**Verification:**
+
+- macOS build: `xcodebuild -project FenixKanban.xcodeproj -scheme FenixKanban -destination 'platform=macOS' -configuration Debug CODE_SIGNING_ALLOWED=NO build` → `** BUILD SUCCEEDED **`
+- iOS Simulator build: `xcodebuild ... -destination 'generic/platform=iOS Simulator' ... build` → `** BUILD SUCCEEDED **`
+- Visual confirmation pending — open the built `.app` from DerivedData and confirm card titles, column headers, and caption text are comfortably legible.
+
+**TDD note:** Visual style change; no unit-testable behavior. Verified via dual-platform build + visual confirmation.
+
+---
+
+## 🔤 May 25, 2026 — macOS Font Size, Take 2: Cross-Platform Helpers
+
+**Why a take 2:** The first attempt (`.dynamicTypeSize(.xxLarge)` at the app root) didn't solve the real problem. macOS's semantic font styles collapse three styles into the same physical size — `.subheadline` 11pt, `.caption` 10pt, `.caption2` 10pt — and scaling all three proportionally still leaves them visually indistinguishable. The user reported "all fonts are the same size and the sidebar is too small," which matches that diagnosis exactly.
+
+**Real fix:** Reverted the root-level `dynamicTypeSize` modifier on `ContentView` (back to no platform-conditional in `FenixKanbanApp.swift`). Added `FenixKanban/Extensions/Font+CrossPlatform.swift` mirroring the `Color.crossPlatform*` pattern. Each cross-platform helper returns the SwiftUI semantic style on iOS (Dynamic Type and accessibility scaling still work end-to-end) and an explicit `.system(size:)` font on macOS sized to give clear visual differentials:
+
+| Style | iOS (semantic) | macOS (explicit) |
+| --- | --- | --- |
+| `crossPlatformLargeTitle` | `.largeTitle` (34pt) | 32pt bold |
+| `crossPlatformTitle` | `.title` (28pt) | 26pt |
+| `crossPlatformTitle2` | `.title2` (22pt) | 20pt |
+| `crossPlatformTitle3` | `.title3` (20pt) | 18pt |
+| `crossPlatformHeadline` | `.headline` (17pt semibold) | 16pt semibold |
+| `crossPlatformBody` | `.body` (17pt) | 15pt |
+| `crossPlatformCallout` | `.callout` (16pt) | 14pt |
+| `crossPlatformSubheadline` | `.subheadline` (15pt) | 14pt |
+| `crossPlatformFootnote` | `.footnote` (13pt) | 12pt |
+| `crossPlatformCaption` | `.caption` (12pt) | 12pt |
+| `crossPlatformCaption2` | `.caption2` (11pt) | 11pt |
+
+Bulk-renamed every `.font(.semanticStyle)` call site (35 in total across 13 files) to the new `.font(.crossPlatformX)` form via `sed` (regex preserves chained calls like `.font(.crossPlatformSubheadline.weight(.semibold))` in `TipJarView.swift:86`). `.font(.system(size: ...))` calls for outsized icons in `EmptyStateView` (48pt) and `AuthView` (64pt) were intentionally left alone.
+
+**Sidebar bump:** `BoardRowView.swift` now uses `.padding(.vertical, 12)` on macOS vs the previous `8` on iOS, giving sidebar rows a more comfortable hit area to pair with the now-larger row text.
+
+**Tests:** Added `FenixKanbanTests/Extensions/FontCrossPlatformTests.swift` mirroring `ColorCrossPlatformTests.swift` (sanity-check that each accessor resolves to *some* Font; visual sizing verified by hand per platform).
+
+**Verification:**
+
+- macOS build: `xcodebuild ... -destination 'platform=macOS' ... build` → `** BUILD SUCCEEDED **`
+- iOS Simulator build: `xcodebuild ... -destination 'generic/platform=iOS Simulator' ... build` → `** BUILD SUCCEEDED **`
+- Test suite: `xcodebuild test ...` crashes at app launch with a pre-existing CloudKit-in-simulator entitlement issue ("In order to use CloudKit, your process must have a com.apple.developer.icloud-services entitlement"). Verified to reproduce on `HEAD` without these changes (`git stash` + same command → same crash), so this is a pre-existing infrastructure issue unrelated to fonts. Worth a separate fix (signing config or a sim-friendly persistence path), tracked here for visibility.
+- Visual confirmation pending — relaunch the macOS app and confirm sidebar text, card titles, column headers, and badge captions all read at distinct sizes.
+
+**If sizes still need dialing:** edit `Font+CrossPlatform.swift` — every macOS size is in one file, easy to tune.

@@ -31,7 +31,7 @@ struct SyncStatusIndicator: View {
     var body: some View {
         Image(systemName: iconName)
             .foregroundStyle(iconColor)
-            .font(.subheadline)
+            .font(.crossPlatformSubheadline)
     }
 }
 

@@ -18,10 +18,10 @@ struct NotificationSettingsView: View {
                             .foregroundStyle(.orange)
                         VStack(alignment: .leading) {
                             Text("Notifications Disabled")
-                                .font(.subheadline)
+                                .font(.crossPlatformSubheadline)
                                 .fontWeight(.medium)
                             Text("Enable in System Settings to receive reminders")
-                                .font(.caption)
+                                .font(.crossPlatformCaption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()

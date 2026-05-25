@@ -18,7 +18,7 @@ struct CardView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(card.title ?? "Untitled")
-                    .font(.subheadline)
+                    .font(.crossPlatformSubheadline)
                     .fontWeight(.medium)
                     .lineLimit(2)
                     .strikethrough(card.isCompleted)

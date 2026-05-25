@@ -18,9 +18,9 @@ struct DueDateBadge: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(.crossPlatformCaption2)
             Text(date.relativeDisplay)
-                .font(.caption2)
+                .font(.crossPlatformCaption2)
         }
         .foregroundStyle(color)
     }

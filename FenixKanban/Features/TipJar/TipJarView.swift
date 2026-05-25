@@ -11,9 +11,9 @@ struct TipJarView: View {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("FenixKanban is made with love by an independent developer.")
-                        .font(.subheadline)
+                        .font(.crossPlatformSubheadline)
                     Text("If you're enjoying the app, a tip goes a long way toward keeping it alive and improving it.")
-                        .font(.subheadline)
+                        .font(.crossPlatformSubheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
@@ -74,7 +74,7 @@ private struct TipRow: View {
                     Text(product.displayName)
                         .foregroundStyle(.primary)
                     Text(product.description)
-                        .font(.caption)
+                        .font(.crossPlatformCaption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -83,7 +83,7 @@ private struct TipRow: View {
                         .controlSize(.small)
                 } else {
                     Text(product.displayPrice)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.crossPlatformSubheadline.weight(.semibold))
                         .foregroundStyle(.tint)
                 }
             }
