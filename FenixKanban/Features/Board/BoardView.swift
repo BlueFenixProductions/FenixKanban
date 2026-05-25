@@ -183,6 +183,9 @@ struct BoardView: View {
                         },
                         onToggleGolden: { card in
                             viewModel.toggleGolden(for: card)
+                        },
+                        onToggleGoldenByID: { uuid in
+                            viewModel.toggleGolden(cardID: uuid)
                         }
                     )
                     .frame(width: 280)
@@ -245,6 +248,9 @@ struct BoardView: View {
                         },
                         onToggleGolden: { card in
                             viewModel.toggleGolden(for: card)
+                        },
+                        onToggleGoldenByID: { uuid in
+                            viewModel.toggleGolden(cardID: uuid)
                         }
                     )
                     .tag(index)

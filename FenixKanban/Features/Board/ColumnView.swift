@@ -12,6 +12,7 @@ struct ColumnView: View {
     let onMoveCardUp: (Card) -> Void
     let onMoveCardDown: (Card) -> Void
     let onToggleGolden: (Card) -> Void
+    let onToggleGoldenByID: (UUID) -> Void
 
     private var columnColor: Color? {
         guard let hex = column.colorHex else { return nil }
@@ -42,6 +43,11 @@ struct ColumnView: View {
                     .clipShape(Capsule())
 
                 Spacer()
+
+                GoldZoneChip(onDropCardID: { uuidString in
+                    guard let uuid = UUID(uuidString: uuidString) else { return }
+                    onToggleGoldenByID(uuid)
+                })
 
                 Menu {
                     Button {

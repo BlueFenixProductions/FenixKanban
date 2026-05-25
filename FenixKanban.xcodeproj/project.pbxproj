@@ -40,6 +40,7 @@
 		4C558BCB1F1A5E83A77D351E /* BoardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B641E69411C4F09DB4A6E2DD /* BoardListView.swift */; };
 		4D66DB2B5491D5E5DC10E614 /* Date+Relative.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */; };
 		4EE391539AF6711C5060C0E7 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BB675BD426DD316D476C37 /* BoardView.swift */; };
+		5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */; };
 		577A21A946600DF0FCF63140 /* LabelEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9408D41208AD8931538011B8 /* LabelEditorSheet.swift */; };
 		58F792A039D26E85E170C0A6 /* NavigationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9864DD5AE3F9D3B1B6B2348 /* NavigationModel.swift */; };
 		5E7BDD56C001FD9FF4B9C87C /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */; };
@@ -135,6 +136,7 @@
 		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardSheet.swift; sourceTree = "<group>"; };
 		705401ADCC82CB1481075EA4 /* LabelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelPickerView.swift; sourceTree = "<group>"; };
+		72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldZoneChip.swift; sourceTree = "<group>"; };
 		754AA8D2F4FF050550CD5DED /* TipJarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarStore.swift; sourceTree = "<group>"; };
 		78234911E102475108AE9455 /* KeychainHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelperTests.swift; sourceTree = "<group>"; };
 		78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
@@ -294,6 +296,7 @@
 				4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */,
 				628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */,
 				93716A7C6517B84F6ABF882F /* GoldenSwipeModifier.swift */,
+				72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */,
 				27A14F077027BF8262193AEE /* LabelBadge.swift */,
 				D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */,
 			);
@@ -678,6 +681,7 @@
 				098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */,
 				93F967F7144D2103D799FD3C /* FenixKanbanShortcuts.swift in Sources */,
 				DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */,
+				5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */,
 				163A2254C7FDFD375420A26F /* GoldenSwipeModifier.swift in Sources */,
 				0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */,
 				2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */,
