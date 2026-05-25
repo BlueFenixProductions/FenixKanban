@@ -1,5 +1,36 @@
 import Foundation
 
+// MARK: - ImmediateClock
+
+/// A `Clock` that suspends for zero wall-clock time. Conforming to
+/// `Clock<Duration>` lets it substitute for `ContinuousClock` in unit tests so
+/// retry backoff delays don't slow down the test suite.
+struct ImmediateClock: Clock {
+    struct Instant: InstantProtocol {
+        var offset: Duration = .zero
+
+        func advanced(by duration: Duration) -> Self {
+            Instant(offset: offset + duration)
+        }
+
+        func duration(to other: Self) -> Duration {
+            other.offset - offset
+        }
+
+        static func < (lhs: Self, rhs: Self) -> Bool {
+            lhs.offset < rhs.offset
+        }
+    }
+
+    var now: Instant { Instant() }
+    var minimumResolution: Duration { .nanoseconds(1) }
+
+    func sleep(until deadline: Instant, tolerance: Duration?) async throws {
+        // No-op — return immediately so tests don't wait for real backoff delays.
+    }
+}
+
+
 /// In-process URL protocol that intercepts URLSession requests. Tests register
 /// a handler closure that returns either a `(Data, HTTPURLResponse)` or throws.
 ///

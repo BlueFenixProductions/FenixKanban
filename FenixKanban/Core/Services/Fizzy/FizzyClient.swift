@@ -11,6 +11,7 @@ final class FizzyClient: Sendable {
     private let accessToken: String
     private let accountSlug: String
     private let urlSession: URLSession
+    private let clock: any Clock<Duration> & Sendable
 
     private static let decoder: JSONDecoder = {
         let d = JSONDecoder()
@@ -28,12 +29,14 @@ final class FizzyClient: Sendable {
         baseURL: URL,
         accessToken: String,
         accountSlug: String,
-        urlSession: URLSession = .shared
+        urlSession: URLSession = .shared,
+        clock: any Clock<Duration> & Sendable = ContinuousClock()
     ) {
         self.baseURL = baseURL
         self.accessToken = accessToken
         self.accountSlug = accountSlug
         self.urlSession = urlSession
+        self.clock = clock
     }
 
     /// GET a JSON resource. Returns the decoded body — ETag handling lands in Task 6.
@@ -61,10 +64,7 @@ final class FizzyClient: Sendable {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
         }
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw FizzyError.unexpectedStatus(0)
-        }
+        let (data, http) = try await performWithRetry(request)
 
         switch http.statusCode {
         case 200:
@@ -95,10 +95,7 @@ final class FizzyClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try Self.encoder.encode(body)
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw FizzyError.unexpectedStatus(0)
-        }
+        let (data, http) = try await performWithRetry(request)
 
         switch http.statusCode {
         case 201:
@@ -127,10 +124,7 @@ final class FizzyClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try Self.encoder.encode(body)
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw FizzyError.unexpectedStatus(0)
-        }
+        let (data, http) = try await performWithRetry(request)
 
         switch http.statusCode {
         case 200:
@@ -149,10 +143,7 @@ final class FizzyClient: Sendable {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw FizzyError.unexpectedStatus(0)
-        }
+        let (data, http) = try await performWithRetry(request)
 
         switch http.statusCode {
         case 204:
@@ -172,14 +163,42 @@ final class FizzyClient: Sendable {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw FizzyError.unexpectedStatus(0)
-        }
+        let (data, http) = try await performWithRetry(request)
         guard http.statusCode == 200 else {
             throw FizzyError(httpStatus: http.statusCode, body: data)
         }
         return try Self.decoder.decode(T.self, from: data)
+    }
+
+    // MARK: - Retry
+
+    /// Performs the request with up to 3 retries on transient failures (URLError
+    /// or 5xx). 4xx propagates immediately. Backoff: 1s, 2s, 4s (via the
+    /// injected `Clock`, so tests can pass `ImmediateClock()` for instant runs).
+    private func performWithRetry(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let delays: [Duration] = [.seconds(1), .seconds(2), .seconds(4)]
+
+        for attempt in 0...delays.count {
+            do {
+                let (data, response) = try await urlSession.data(for: request)
+                guard let http = response as? HTTPURLResponse else {
+                    throw FizzyError.unexpectedStatus(0)
+                }
+                if (500...599).contains(http.statusCode), attempt < delays.count {
+                    try await clock.sleep(for: delays[attempt])
+                    continue
+                }
+                return (data, http)
+            } catch let error as URLError {
+                if attempt < delays.count {
+                    try await clock.sleep(for: delays[attempt])
+                    continue
+                }
+                throw FizzyError.network(error)
+            }
+        }
+        // Unreachable.
+        throw FizzyError.unexpectedStatus(0)
     }
 
     // MARK: - URL construction

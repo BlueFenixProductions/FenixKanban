@@ -405,3 +405,91 @@ struct FizzyClientErrorTests {
         }
     }
 }
+
+@Suite("FizzyClient — retry", .serialized)
+struct FizzyClientRetryTests {
+
+    init() { MockURLProtocol.reset() }
+
+    private func makeClient(clock: any Clock<Duration> & Sendable = ImmediateClock()) -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: session,
+            clock: clock
+        )
+    }
+
+    @Test("transient network error retries up to 3 times then succeeds")
+    func transientThenSucceeds() async throws {
+        var attempt = 0
+        MockURLProtocol.handler = { req in
+            attempt += 1
+            if attempt < 3 {
+                throw URLError(.networkConnectionLost)
+            }
+            return ("[]".data(using: .utf8)!, .ok(for: req))
+        }
+
+        let client = makeClient()
+        _ = try await client.get("/boards", as: [FizzyBoard].self)
+        #expect(attempt == 3)
+    }
+
+    @Test("transient network error gives up after 3 retries and surfaces .network")
+    func transientGivesUp() async throws {
+        var attempt = 0
+        MockURLProtocol.handler = { req in
+            attempt += 1
+            throw URLError(.networkConnectionLost)
+        }
+
+        let client = makeClient()
+        do {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+            Issue.record("expected throw")
+        } catch let error as FizzyError {
+            #expect(attempt == 4)  // initial + 3 retries
+            if case .network = error {
+                // ok
+            } else {
+                Issue.record("expected .network, got \(error)")
+            }
+        }
+    }
+
+    @Test("4xx is not retried")
+    func clientErrorNotRetried() async throws {
+        var attempt = 0
+        MockURLProtocol.handler = { req in
+            attempt += 1
+            return (Data(), .response(for: req, status: 404))
+        }
+
+        let client = makeClient()
+        await #expect(throws: FizzyError.notFound) {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+        }
+        #expect(attempt == 1)
+    }
+
+    @Test("5xx IS retried")
+    func serverErrorRetried() async throws {
+        var attempt = 0
+        MockURLProtocol.handler = { req in
+            attempt += 1
+            if attempt < 3 {
+                return (Data(), .response(for: req, status: 503))
+            }
+            return ("[]".data(using: .utf8)!, .ok(for: req))
+        }
+
+        let client = makeClient()
+        _ = try await client.get("/boards", as: [FizzyBoard].self)
+        #expect(attempt == 3)
+    }
+}
