@@ -11,6 +11,8 @@ struct ColumnView: View {
     let onDeleteColumn: () -> Void
     let onMoveCardUp: (Card) -> Void
     let onMoveCardDown: (Card) -> Void
+    let onToggleGolden: (Card) -> Void
+    let onToggleGoldenByID: (UUID) -> Void
 
     private var columnColor: Color? {
         guard let hex = column.colorHex else { return nil }
@@ -28,19 +30,24 @@ struct ColumnView: View {
                 }
 
                 Text(column.name ?? "Untitled")
-                    .font(.subheadline)
+                    .font(.crossPlatformSubheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(columnColor ?? .secondary)
 
                 Text("\(cards.count)")
-                    .font(.caption2)
+                    .font(.crossPlatformCaption2)
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(.quaternarySystemFill))
+                    .background(Color.crossPlatformQuaternarySystemFill)
                     .clipShape(Capsule())
 
                 Spacer()
+
+                GoldZoneChip(onDropCardID: { uuidString in
+                    guard let uuid = UUID(uuidString: uuidString) else { return }
+                    onToggleGoldenByID(uuid)
+                })
 
                 Menu {
                     Button {
@@ -55,7 +62,7 @@ struct ColumnView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.subheadline)
+                        .font(.crossPlatformSubheadline)
                         .foregroundStyle(.secondary)
                         .frame(width: 32, height: 32)
                         .contentShape(Rectangle())
@@ -64,65 +71,88 @@ struct ColumnView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
 
-            // Cards list
+            // Cards list. The GlassEffectContainer batches adjacent glass
+            // shapes (each CardView + the "Add Card" pill) so they render
+            // efficiently and shape-morph between each other per Apple's
+            // Liquid Glass guidance.
             ScrollView {
-                LazyVStack(spacing: 6) {
-                    ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
-                        CardView(card: card, columnColor: columnColor)
-                            .draggable(card.id?.uuidString ?? "") {
-                                CardView(card: card, columnColor: columnColor)
-                                    .frame(width: 250)
-                                    .opacity(0.8)
-                            }
-                            .onTapGesture {
-                                onSelectCard(card)
-                            }
-                            .contextMenu {
-                                Button {
-                                    onMoveCardUp(card)
-                                } label: {
-                                    SwiftUI.Label("Move Up", systemImage: "arrow.up")
+                GlassEffectContainer(spacing: 6) {
+                    LazyVStack(spacing: 6) {
+                        ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
+                            CardView(card: card, columnColor: columnColor, onToggleGolden: onToggleGolden)
+                                .draggable(card.id?.uuidString ?? "") {
+                                    CardView(card: card, columnColor: columnColor, onToggleGolden: onToggleGolden)
+                                        .frame(width: 250)
+                                        .opacity(0.8)
                                 }
-                                .disabled(index == 0)
-
-                                Button {
-                                    onMoveCardDown(card)
-                                } label: {
-                                    SwiftUI.Label("Move Down", systemImage: "arrow.down")
+                                .onTapGesture {
+                                    onSelectCard(card)
                                 }
-                                .disabled(index == cards.count - 1)
+                                .contextMenu {
+                                    Button {
+                                        onToggleGolden(card)
+                                    } label: {
+                                        SwiftUI.Label(
+                                            card.isGolden ? "Remove Golden Ticket" : "Mark as Golden",
+                                            systemImage: card.isGolden ? "ticket.slash" : "ticket"
+                                        )
+                                    }
+                                    // Visible menu text uses title case (UI convention);
+                                    // explicit a11y label matches the toolbar + swipe surfaces
+                                    // so VoiceOver hears the same phrasing everywhere.
+                                    .accessibilityLabel(
+                                        card.isGolden
+                                            ? "Remove golden ticket"
+                                            : "Mark as golden ticket"
+                                    )
 
-                                Divider()
+                                    Divider()
 
-                                Button(role: .destructive) {
-                                    onDeleteCard(card)
-                                } label: {
-                                    SwiftUI.Label("Delete", systemImage: "trash")
+                                    Button {
+                                        onMoveCardUp(card)
+                                    } label: {
+                                        SwiftUI.Label("Move Up", systemImage: "arrow.up")
+                                    }
+                                    .disabled(index == 0)
+
+                                    Button {
+                                        onMoveCardDown(card)
+                                    } label: {
+                                        SwiftUI.Label("Move Down", systemImage: "arrow.down")
+                                    }
+                                    .disabled(index == cards.count - 1)
+
+                                    Divider()
+
+                                    Button(role: .destructive) {
+                                        onDeleteCard(card)
+                                    } label: {
+                                        SwiftUI.Label("Delete", systemImage: "trash")
+                                    }
                                 }
-                            }
-                    }
-
-                    // Placeholder card acting as the "Add Card" button
-                    Button(action: onAddCard) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.subheadline)
-                            Text("Add Card")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            Spacer()
                         }
-                        .foregroundStyle(columnColor ?? .secondary)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 12)
-                        .frame(maxWidth: .infinity)
-                        .background(Color(.quaternarySystemFill))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        // Placeholder card acting as the "Add Card" button
+                        Button(action: onAddCard) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.crossPlatformSubheadline)
+                                Text("Add Card")
+                                    .font(.crossPlatformSubheadline)
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                            .foregroundStyle(columnColor ?? .secondary)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity)
+                            .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 8)
                 }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
             }
             .dropDestination(for: String.self) { items, location in
                 guard let uuidString = items.first,
@@ -132,7 +162,7 @@ struct ColumnView: View {
                 return true
             }
         }
-        .background(Color(.secondarySystemBackground))
+        .background(Color.crossPlatformSecondarySystemBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 

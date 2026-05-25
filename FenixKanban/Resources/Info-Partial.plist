@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        Partial Info.plist merged into Xcode's auto-generated Info.plist
+        (GENERATE_INFOPLIST_FILE=YES). Used for keys that don't have
+        INFOPLIST_KEY_* build-setting equivalents recognized by Xcode's
+        auto-merge.
+
+        - UIBackgroundModes: iOS needs to wake the app for silent CloudKit
+          pushes. Ignored on macOS.
+        - UISupportedInterfaceOrientations~ipad: "Designed for iPad" apps
+          running on Apple Silicon Mac require all four iPad orientations
+          to be declared (or UIRequiresFullScreen=YES, which kills iPad
+          multitasking). Without this, Mac fails launch with "All interface
+          orientations must be supported unless the app requires full
+          screen."
+        - UISupportedInterfaceOrientations: iPhone supports portrait and
+          both landscapes (skip upside-down — modern iPhones don't use it).
+    -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+</dict>
+</plist>

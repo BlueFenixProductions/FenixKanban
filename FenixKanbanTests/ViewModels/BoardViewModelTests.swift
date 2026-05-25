@@ -1,72 +1,65 @@
-import XCTest
+import Testing
 import CoreData
 @testable import FenixKanban
 
-final class BoardViewModelTests: XCTestCase {
-    var persistence: PersistenceController!
-    var boardRepo: BoardRepository!
-    var board: Board!
-    var viewModel: BoardViewModel!
+@Suite("Board ViewModel", .serialized)
+@MainActor
+struct BoardViewModelTests {
+    let persistence: PersistenceController
+    let boardRepo: BoardRepository
+    let board: Board
+    let viewModel: BoardViewModel
 
-    override func setUp() {
-        super.setUp()
+    init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         boardRepo = BoardRepository(context: persistence.viewContext)
         board = boardRepo.createBoard(name: "Test Board")
         viewModel = BoardViewModel(board: board, context: persistence.viewContext)
     }
 
-    override func tearDown() {
-        viewModel = nil
-        board = nil
-        boardRepo = nil
-        persistence = nil
-        super.tearDown()
-    }
-
-    func testAddColumn() {
+    @Test func addColumn() {
         viewModel.addColumn(name: "To Do")
-        XCTAssertEqual(viewModel.columns.count, 1)
-        XCTAssertEqual(viewModel.columns[0].name, "To Do")
+        #expect(viewModel.columns.count == 1)
+        #expect(viewModel.columns[0].name == "To Do")
     }
 
-    func testDeleteColumn() {
+    @Test func deleteColumn() {
         viewModel.addColumn(name: "To Do")
         viewModel.deleteColumn(viewModel.columns[0])
-        XCTAssertEqual(viewModel.columns.count, 0)
+        #expect(viewModel.columns.count == 0)
     }
 
-    func testRenameColumn() {
+    @Test func renameColumn() {
         viewModel.addColumn(name: "Original")
         viewModel.updateColumn(viewModel.columns[0], name: "Renamed")
-        XCTAssertEqual(viewModel.columns[0].name, "Renamed")
+        #expect(viewModel.columns[0].name == "Renamed")
     }
 
-    func testAddColumnWithColor() {
+    @Test func addColumnWithColor() {
         viewModel.addColumn(name: "Dev", colorHex: "#0F3460")
-        XCTAssertEqual(viewModel.columns[0].colorHex, "#0F3460")
+        #expect(viewModel.columns[0].colorHex == "#0F3460")
     }
 
-    func testUpdateColumnColor() {
+    @Test func updateColumnColor() {
         viewModel.addColumn(name: "Col")
         viewModel.updateColumn(viewModel.columns[0], colorHex: "#E94560")
-        XCTAssertEqual(viewModel.columns[0].colorHex, "#E94560")
+        #expect(viewModel.columns[0].colorHex == "#E94560")
     }
 
-    func testAddCard() {
+    @Test func addCard() {
         viewModel.addColumn(name: "To Do")
         let column = viewModel.columns[0]
         viewModel.addCard(to: column, title: "Test Card")
-        XCTAssertEqual(column.sortedCards.count, 1)
-        XCTAssertEqual(column.sortedCards[0].title, "Test Card")
+        #expect(column.sortedCards.count == 1)
+        #expect(column.sortedCards[0].title == "Test Card")
     }
 
-    func testDeleteCard() {
+    @Test func deleteCard() {
         viewModel.addColumn(name: "To Do")
         let column = viewModel.columns[0]
         viewModel.addCard(to: column, title: "Card")
         let card = column.sortedCards[0]
         viewModel.deleteCard(card)
-        XCTAssertEqual(column.sortedCards.count, 0)
+        #expect(column.sortedCards.count == 0)
     }
 }

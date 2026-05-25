@@ -3,24 +3,42 @@ import SwiftUI
 struct CardView: View {
     @ObservedObject var card: Card
     var columnColor: Color? = nil
+    var onToggleGolden: (Card) -> Void = { _ in }
 
-    private var backgroundFill: Color {
-        if let columnColor {
-            // Blend the column color with the dark card background for a subtle tint
-            return columnColor.opacity(0.18)
+    private var glassTint: Color {
+        // Golden priority takes precedence over the column-color tint.
+        // The faded gold mirrors the column-color tint pattern so the
+        // card text remains readable in both light and dark mode against
+        // the Liquid Glass material — solid gold suppressed dark-mode
+        // .primary text.
+        if card.isGolden {
+            return Color.goldenTicket.opacity(0.18)
         }
-        return Color(.tertiarySystemBackground)
+        // Subtle column-color tint on the Liquid Glass material. Falls back
+        // to clear so non-tinted cards get the plain system glass appearance.
+        return columnColor?.opacity(0.18) ?? .clear
     }
 
     private var borderColor: Color {
-        columnColor?.opacity(0.55) ?? Color.clear
+        // Golden cards get a gold rim regardless of column. Otherwise the
+        // border tracks the column color.
+        if card.isGolden {
+            return Color.goldenTicket.opacity(0.55)
+        }
+        return columnColor?.opacity(0.55) ?? Color.clear
+    }
+
+    private var borderLineWidth: CGFloat {
+        // Show the highlighted stroke whenever there's something to outline
+        // (column color OR golden state).
+        (card.isGolden || columnColor != nil) ? 1.5 : 0
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(card.title ?? "Untitled")
-                    .font(.subheadline)
+                    .font(.crossPlatformSubheadline)
                     .fontWeight(.medium)
                     .lineLimit(2)
                     .strikethrough(card.isCompleted)
@@ -40,16 +58,22 @@ struct CardView: View {
             }
         }
         .padding(12)
-        .background(
-            ZStack {
-                Color(.tertiarySystemBackground)
-                backgroundFill
-            }
-        )
+        .glassEffect(.regular.tint(glassTint), in: .rect(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(borderColor, lineWidth: columnColor == nil ? 0 : 1.5)
+                .strokeBorder(borderColor, lineWidth: borderLineWidth)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(alignment: .topLeading) {
+            if card.isGolden {
+                Image(systemName: "ticket.fill")
+                    .imageScale(.medium)
+                    .foregroundStyle(Color.goldenTicketIcon)
+                    .padding(8)
+                    .accessibilityLabel("Golden ticket priority")
+            }
+        }
+        .goldenSwipe(isGolden: card.isGolden) {
+            onToggleGolden(card)
+        }
     }
 }

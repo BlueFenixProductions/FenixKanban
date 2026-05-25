@@ -11,21 +11,25 @@ struct BoardRowView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(board.name ?? "Untitled")
-                    .font(.headline)
+                    .font(.crossPlatformHeadline)
                     .lineLimit(1)
 
                 Text("\(board.columnCount) columns \u{00B7} \(board.totalCardCount) cards")
-                    .font(.caption)
+                    .font(.crossPlatformCaption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption)
+                .font(.crossPlatformCaption)
                 .foregroundStyle(.tertiary)
         }
+        #if os(macOS)
+        .padding(.vertical, 12)
+        #else
         .padding(.vertical, 8)
+        #endif
         .contentShape(Rectangle())
     }
 }

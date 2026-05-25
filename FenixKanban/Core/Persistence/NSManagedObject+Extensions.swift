@@ -16,9 +16,14 @@ extension Board {
 }
 
 extension Column {
+    /// Cards sorted with golden first, then by sortOrder. Golden cards
+    /// always visually outrank non-golden ones regardless of sortOrder.
     var sortedCards: [Card] {
         let set = cards as? Set<Card> ?? []
-        return set.sorted { $0.sortOrder < $1.sortOrder }
+        return set.sorted { lhs, rhs in
+            if lhs.isGolden != rhs.isGolden { return lhs.isGolden && !rhs.isGolden }
+            return lhs.sortOrder < rhs.sortOrder
+        }
     }
 
     var cardCount: Int {

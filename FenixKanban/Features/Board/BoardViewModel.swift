@@ -12,6 +12,7 @@ final class BoardViewModel: ObservableObject {
     private let cardRepository: CardRepository
     private let context: NSManagedObjectContext
     private var debounceTask: Task<Void, Never>?
+    private var observerToken: NSObjectProtocol?
 
     init(board: Board, context: NSManagedObjectContext) {
         self.board = board
@@ -20,6 +21,13 @@ final class BoardViewModel: ObservableObject {
         self.cardRepository = CardRepository(context: context)
         refreshColumns()
         observeChanges()
+    }
+    
+    deinit {
+        debounceTask?.cancel()
+        if let token = observerToken {
+            NotificationCenter.default.removeObserver(token)
+        }
     }
 
     func refreshColumns() {
@@ -97,8 +105,27 @@ final class BoardViewModel: ObservableObject {
         refreshColumns()
     }
 
+    // MARK: - Golden Ticket
+
+    func toggleGolden(for card: Card) {
+        card.isGolden.toggle()
+        card.modifiedAt = Date()
+        card.column?.modifiedAt = Date()
+        card.column?.board?.modifiedAt = Date()
+        try? context.save()
+        refreshColumns()
+    }
+
+    func toggleGolden(cardID: UUID) {
+        let request = Card.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", cardID as CVarArg)
+        request.fetchLimit = 1
+        guard let card = try? context.fetch(request).first else { return }
+        toggleGolden(for: card)
+    }
+
     private func observeChanges() {
-        NotificationCenter.default.addObserver(
+        observerToken = NotificationCenter.default.addObserver(
             forName: .NSManagedObjectContextDidSave,
             object: nil,
             queue: .main

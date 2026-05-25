@@ -41,9 +41,11 @@ struct BoardListView: View {
         }
         .navigationTitle("Boards")
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 EditButton()
             }
+            #endif
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     presentNewBoardSheet()
@@ -128,7 +130,6 @@ struct BoardListView: View {
                 NavigationLink(value: board.objectID) {
                     BoardRowView(board: board)
                 }
-                .listRowBackground(Color(.secondarySystemBackground))
                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                     Button {
                         presentEditBoardSheet(for: board)
@@ -198,7 +199,9 @@ struct BoardEditorSheet: View {
                 }
             }
             .navigationTitle(isEditing ? "Edit Board" : "New Board")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

@@ -1,3 +1,4 @@
+import AppIntents
 import CoreData
 import StoreKit
 import SwiftUI
@@ -7,15 +8,26 @@ struct FenixKanbanApp: App {
     @StateObject private var persistence = PersistenceController.shared
     @StateObject private var authService = AuthenticationService()
     @StateObject private var syncMonitor: SyncMonitor
+    @State private var navigator = NavigationModel()
 
     init() {
         let monitor = SyncMonitor(container: PersistenceController.shared.container)
         _syncMonitor = StateObject(wrappedValue: monitor)
+
+        // Register App Intent dependencies synchronously so cold-launch
+        // from Siri / Shortcuts resolves before any perform() runs.
+        // `add(dependency:)` takes an @autoclosure, so the NavigationModel
+        // is materialized to a local first — otherwise the autoclosure
+        // captures mutating `self` to read `_navigator`.
+        let viewContext = PersistenceController.shared.container.viewContext
+        let navigatorValue = _navigator.wrappedValue
+        AppDependencyManager.shared.add(dependency: viewContext)
+        AppDependencyManager.shared.add(dependency: navigatorValue)
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(navigator: navigator)
                 .environment(\.managedObjectContext, persistence.viewContext)
                 .environmentObject(authService)
                 .environmentObject(syncMonitor)
@@ -35,10 +47,10 @@ struct FenixKanbanApp: App {
 }
 
 struct ContentView: View {
+    @Bindable var navigator: NavigationModel
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var syncMonitor: SyncMonitor
     @Environment(\.managedObjectContext) private var context
-    @State private var selectedBoardID: NSManagedObjectID?
     @State private var showSettings = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @AppStorage("hasSkippedAuth") private var hasSkippedAuth = false
@@ -49,7 +61,7 @@ struct ContentView: View {
                 AuthView(viewModel: AuthViewModel(authService: authService))
             } else {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    BoardListView(context: context, selection: $selectedBoardID)
+                    BoardListView(context: context, selection: $navigator.selectedBoardID)
                         .toolbar {
                             ToolbarItem(placement: .automatic) {
                                 HStack(spacing: 12) {
@@ -61,7 +73,7 @@ struct ContentView: View {
                             }
                         }
                 } detail: {
-                    if let boardID = selectedBoardID,
+                    if let boardID = navigator.selectedBoardID,
                        let board = try? context.existingObject(with: boardID) as? Board {
                         BoardView(board: board, context: context)
                             .adaptiveLayout()
@@ -79,6 +91,15 @@ struct ContentView: View {
                     }
                 }
                 .navigationSplitViewStyle(.balanced)
+                .sheet(isPresented: Binding(
+                    get: { navigator.selectedCardID != nil },
+                    set: { if !$0 { navigator.selectedCardID = nil } }
+                )) {
+                    if let cardID = navigator.selectedCardID,
+                       let card = try? context.existingObject(with: cardID) as? Card {
+                        CardDetailView(card: card, context: context)
+                    }
+                }
             }
         }
         .sheet(isPresented: $showSettings) {

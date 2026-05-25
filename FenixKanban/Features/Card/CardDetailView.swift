@@ -14,7 +14,7 @@ struct CardDetailView: View {
             Form {
                 Section {
                     TextField("Title", text: $viewModel.title)
-                        .font(.headline)
+                        .font(.crossPlatformHeadline)
 
                     TextField("Description", text: $viewModel.cardDescription, axis: .vertical)
                         .lineLimit(3...8)
@@ -45,7 +45,7 @@ struct CardDetailView: View {
                                 Text(viewModel.card.column?.name ?? "None")
                                     .foregroundStyle(.secondary)
                                 Image(systemName: "chevron.up.chevron.down")
-                                    .font(.caption2)
+                                    .font(.crossPlatformCaption2)
                                     .foregroundStyle(.tertiary)
                             }
                         }
@@ -65,7 +65,7 @@ struct CardDetailView: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
-                                    .font(.caption)
+                                    .font(.crossPlatformCaption)
                             }
                         } else {
                             Button("Select") { viewModel.showLabelPicker = true }
@@ -85,7 +85,7 @@ struct CardDetailView: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
-                                    .font(.caption)
+                                    .font(.crossPlatformCaption)
                             }
                         } else {
                             Button("Set") { viewModel.showDatePicker = true }
@@ -98,8 +98,33 @@ struct CardDetailView: View {
                 }
             }
             .navigationTitle("Card Detail")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        viewModel.toggleGolden()
+                    } label: {
+                        Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
+                    }
+                    .tint(viewModel.card.isGolden ? Color.goldenTicketIcon : .primary)
+                    .accessibilityLabel(viewModel.card.isGolden ? "Remove golden ticket" : "Mark as golden ticket")
+                    .accessibilityHint(viewModel.card.isGolden ? "Removes golden ticket priority from this card." : "Promotes this card to the top of the column.")
+                }
+                #else
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        viewModel.toggleGolden()
+                    } label: {
+                        Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
+                    }
+                    .tint(viewModel.card.isGolden ? Color.goldenTicketIcon : .primary)
+                    .accessibilityLabel(viewModel.card.isGolden ? "Remove golden ticket" : "Mark as golden ticket")
+                    .accessibilityHint(viewModel.card.isGolden ? "Removes golden ticket priority from this card." : "Promotes this card to the top of the column.")
+                }
+                #endif
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         viewModel.save()
@@ -135,7 +160,9 @@ struct CardDetailView: View {
             .datePickerStyle(.graphical)
             .padding()
             .navigationTitle("Due Date")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {

@@ -1,9 +1,11 @@
-import XCTest
+import Testing
 @testable import FenixKanban
 
-final class FenixKanbanTests: XCTestCase {
-    func testPlaceholder() throws {
-        // Placeholder test — replaced by repository tests in later tasks
-        XCTAssertTrue(true)
+@Suite("FenixKanban Smoke Tests")
+struct FenixKanbanTests {
+    @Test func placeholder() {
+        // Placeholder test — real coverage lives in Repositories/, Services/,
+        // ViewModels/, and Extensions/ alongside the code under test.
+        #expect(true)
     }
 }

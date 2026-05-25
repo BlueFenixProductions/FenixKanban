@@ -22,7 +22,9 @@ struct BoardView: View {
     var body: some View {
         boardContent
             .navigationTitle(viewModel.board.name ?? "Board")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar(content: boardToolbar)
             .sheet(isPresented: $showColumnSheet) {
                 NewColumnSheet(
@@ -178,6 +180,12 @@ struct BoardView: View {
                         },
                         onMoveCardDown: { card in
                             viewModel.moveCardDown(card)
+                        },
+                        onToggleGolden: { card in
+                            viewModel.toggleGolden(for: card)
+                        },
+                        onToggleGoldenByID: { uuid in
+                            viewModel.toggleGolden(cardID: uuid)
                         }
                     )
                     .frame(width: 280)
@@ -196,11 +204,11 @@ struct BoardView: View {
             if viewModel.columns.count > 1 {
                 HStack {
                     Text(viewModel.columns[viewModel.selectedColumnIndex].name ?? "")
-                        .font(.subheadline)
+                        .font(.crossPlatformSubheadline)
                         .fontWeight(.semibold)
                     Spacer()
                     Text("\(viewModel.selectedColumnIndex + 1) of \(viewModel.columns.count)")
-                        .font(.caption)
+                        .font(.crossPlatformCaption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal)
@@ -237,12 +245,20 @@ struct BoardView: View {
                         },
                         onMoveCardDown: { card in
                             viewModel.moveCardDown(card)
+                        },
+                        onToggleGolden: { card in
+                            viewModel.toggleGolden(for: card)
+                        },
+                        onToggleGoldenByID: { uuid in
+                            viewModel.toggleGolden(cardID: uuid)
                         }
                     )
                     .tag(index)
                 }
             }
+            #if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .never))
+            #endif
         }
     }
 }

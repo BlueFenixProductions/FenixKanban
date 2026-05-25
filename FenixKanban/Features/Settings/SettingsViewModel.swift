@@ -28,8 +28,8 @@ final class SettingsViewModel: ObservableObject {
         for entity in entities {
             let request = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
-            try? context.execute(deleteRequest)
+            _ = try? context.execute(deleteRequest)
         }
-        try? context.save()
+        _ = try? context.save()
     }
 }

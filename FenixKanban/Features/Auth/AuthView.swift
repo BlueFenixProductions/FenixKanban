@@ -14,11 +14,11 @@ struct AuthView: View {
                     .foregroundStyle(Color.accentColor)
 
                 Text("FenixKanban")
-                    .font(.largeTitle)
+                    .font(.crossPlatformLargeTitle)
                     .fontWeight(.bold)
 
                 Text("Organize your work, your way")
-                    .font(.subheadline)
+                    .font(.crossPlatformSubheadline)
                     .foregroundStyle(.secondary)
             }
 
@@ -36,18 +36,18 @@ struct AuthView: View {
 
                 if let error = viewModel.errorMessage {
                     Text(error)
-                        .font(.caption)
+                        .font(.crossPlatformCaption)
                         .foregroundStyle(.red)
                 }
 
                 Button("Continue without signing in") {
                     viewModel.skip()
                 }
-                .font(.subheadline)
+                .font(.crossPlatformSubheadline)
                 .foregroundStyle(.secondary)
 
                 Text("Sign in to sync across devices")
-                    .font(.caption2)
+                    .font(.crossPlatformCaption2)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 40)
@@ -56,7 +56,6 @@ struct AuthView: View {
                 .frame(height: 60)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
     }
 }
 

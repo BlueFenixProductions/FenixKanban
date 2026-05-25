@@ -78,17 +78,34 @@ final class AuthenticationService: ObservableObject, AuthenticationServiceProtoc
 // MARK: - Keychain Helper
 
 enum KeychainHelper {
-    static func save(key: String, value: String) {
-        let data = value.data(using: .utf8)!
+    /// Saves a string value to the keychain
+    /// - Parameters:
+    ///   - key: The key to store the value under
+    ///   - value: The string value to store
+    /// - Returns: True if the save was successful, false otherwise
+    @discardableResult
+    static func save(key: String, value: String) -> Bool {
+        guard let data = value.data(using: .utf8) else {
+            return false
+        }
+        
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
             kSecValueData as String: data
         ]
+        
+        // Delete any existing item first
         SecItemDelete(query as CFDictionary)
-        SecItemAdd(query as CFDictionary, nil)
+        
+        // Add the new item
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
     }
 
+    /// Loads a string value from the keychain
+    /// - Parameter key: The key to retrieve the value for
+    /// - Returns: The stored string value, or nil if not found or if an error occurred
     static func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -96,17 +113,31 @@ enum KeychainHelper {
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
+        
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let string = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        
+        return string
     }
 
-    static func delete(key: String) {
+    /// Deletes a value from the keychain
+    /// - Parameter key: The key to delete
+    /// - Returns: True if the deletion was successful or if the item didn't exist, false on error
+    @discardableResult
+    static func delete(key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key
         ]
-        SecItemDelete(query as CFDictionary)
+        
+        let status = SecItemDelete(query as CFDictionary)
+        // errSecItemNotFound is also considered success (item didn't exist)
+        return status == errSecSuccess || status == errSecItemNotFound
     }
 }

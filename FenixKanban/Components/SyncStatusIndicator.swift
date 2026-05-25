@@ -17,14 +17,21 @@ struct SyncStatusIndicator: View {
         case .idle, .succeeded:    return .green
         case .syncing:             return .blue
         case .failed:              return .orange
-        case .noAccount, .disabled: return Color(.secondaryLabel)
+        case .noAccount, .disabled:
+            #if os(iOS)
+            return Color(uiColor: .secondaryLabel)
+            #elseif os(macOS)
+            return Color(nsColor: .secondaryLabelColor)
+            #else
+            return Color.secondary
+            #endif
         }
     }
 
     var body: some View {
         Image(systemName: iconName)
             .foregroundStyle(iconColor)
-            .font(.subheadline)
+            .font(.crossPlatformSubheadline)
     }
 }
 

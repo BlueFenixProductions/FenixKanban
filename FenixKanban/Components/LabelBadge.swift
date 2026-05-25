@@ -6,7 +6,7 @@ struct LabelBadge: View {
 
     var body: some View {
         Text(name)
-            .font(.caption2)
+            .font(.crossPlatformCaption2)
             .fontWeight(.medium)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)

@@ -59,4 +59,13 @@ final class CardDetailViewModel: ObservableObject {
         selectedLabel = label
         save()
     }
+
+    func toggleGolden() {
+        card.isGolden.toggle()
+        card.modifiedAt = Date()
+        card.column?.modifiedAt = Date()
+        card.column?.board?.modifiedAt = Date()
+        try? card.managedObjectContext?.save()
+        objectWillChange.send()
+    }
 }
