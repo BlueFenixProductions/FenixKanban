@@ -97,6 +97,14 @@ struct ColumnView: View {
                                             systemImage: card.isGolden ? "ticket.slash" : "ticket"
                                         )
                                     }
+                                    // Visible menu text uses title case (UI convention);
+                                    // explicit a11y label matches the toolbar + swipe surfaces
+                                    // so VoiceOver hears the same phrasing everywhere.
+                                    .accessibilityLabel(
+                                        card.isGolden
+                                            ? "Remove golden ticket"
+                                            : "Mark as golden ticket"
+                                    )
 
                                     Divider()
 
