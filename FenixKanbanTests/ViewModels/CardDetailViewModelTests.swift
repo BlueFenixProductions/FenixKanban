@@ -69,4 +69,18 @@ struct CardDetailViewModelTests {
         #expect(viewModel.selectedLabel == nil)
         #expect(card.label == nil)
     }
+
+    @Test("toggleGolden flips isGolden and updates modifiedAt")
+    func toggleGoldenFlips() async throws {
+        #expect(card.isGolden == false)
+        let before = card.modifiedAt
+        try? await Task.sleep(nanoseconds: 2_000_000)
+
+        viewModel.toggleGolden()
+        #expect(card.isGolden == true)
+        #expect((card.modifiedAt ?? .distantPast) > (before ?? .distantPast))
+
+        viewModel.toggleGolden()
+        #expect(card.isGolden == false)
+    }
 }
