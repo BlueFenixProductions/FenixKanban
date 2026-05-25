@@ -54,6 +54,8 @@ struct SettingsView: View {
                     }
                     #if os(iOS)
                     .pickerStyle(.segmented)
+                    #elseif os(macOS)
+                    .labelsHidden()
                     #endif
                 }
 
