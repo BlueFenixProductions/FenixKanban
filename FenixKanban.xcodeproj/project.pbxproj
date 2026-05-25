@@ -87,6 +87,7 @@
 		D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C24E1E16D4DABFE2B4EDD2 /* FontCrossPlatformTests.swift */; };
 		DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */; };
 		DC765919BB731CC54C2A813D /* SyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7572B48C962A3EB824956E /* SyncMonitor.swift */; };
+		DCA918D48BE6C991C0F9B1A1 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */; };
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
@@ -117,6 +118,7 @@
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
 		1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 2.xcdatamodel"; sourceTree = "<group>"; };
 		1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepository.swift; sourceTree = "<group>"; };
+		1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
 		1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceModeTests.swift; sourceTree = "<group>"; };
 		2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
 		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
@@ -348,8 +350,17 @@
 				D79316609471032E866D44DB /* Plugins */,
 				2234D747A95BEE4D21580ED2 /* Repositories */,
 				96DDEE00F91795695589CA9B /* Services */,
+				5E4B634E22267E69941C8216 /* Settings */,
 			);
 			path = Core;
+			sourceTree = "<group>";
+		};
+		5E4B634E22267E69941C8216 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		62FA3FB1C6FA436B16FA6EDB /* Persistence */ = {
@@ -670,6 +681,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DCA918D48BE6C991C0F9B1A1 /* AppearanceMode.swift in Sources */,
 				431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */,
 				FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */,
 				F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */,
