@@ -546,3 +546,42 @@ Bulk-renamed every `.font(.semanticStyle)` call site (35 in total across 13 file
 - CFBundleDisplayName auto-merge still works (PlistBuddy returns `FenixKanban`).
 
 **TDD note:** Build-config change, not Swift behavior. Verified via post-build plist inspection on both platforms.
+
+---
+
+## 🪟 May 25, 2026 — App Intents MVP (follow-up #4, Spotlight cancelled)
+
+App Intents adoption per
+[`docs/superpowers/specs/2026-05-25-app-intents-mvp-design.md`](docs/superpowers/specs/2026-05-25-app-intents-mvp-design.md)
+and executed via
+[`docs/superpowers/plans/2026-05-25-app-intents-mvp.md`](docs/superpowers/plans/2026-05-25-app-intents-mvp.md).
+
+**Core Spotlight integration was explicitly cancelled by user before implementation.**
+
+**New code:**
+
+- `FenixKanban/Core/Navigation/NavigationModel.swift` (commit `648d6bd`): `@Observable @MainActor` model with `selectedBoardID` / `selectedCardID`. `openBoard(uuid:in:)` / `openCard(uuid:in:)` look up managed objects by UUID and set the corresponding `objectID`; return `false` (without mutating) on miss so intents can throw a meaningful error.
+- `FenixKanban/Features/Intents/BoardEntity.swift` + `BoardQuery.swift` (commit `ee4b0b9`): `AppEntity` representation of `Board` and its `EntityQuery` (fetches from `PersistenceController.shared.container.viewContext` by default; test-only init accepts an injected context).
+- `FenixKanban/Features/Intents/CardEntity.swift` + `CardQuery.swift` (commit `b7791b7`): same pattern for `Card`.
+- `FenixKanban/Features/Intents/OpenBoardIntent.swift` (commit `d3d79b2`): `AppIntent` with `openAppWhenRun = true`. `@Parameter(title: "Board") var board: BoardEntity`. `@Dependency`-injects `NavigationModel` and `NSManagedObjectContext`. Uses optional-override DI pattern (`navigatorOverride` / `contextOverride`) + `_injectDependencies(navigator:context:)` seam for tests, since the `@Dependency` projected-value setter isn't a stable surface.
+- `FenixKanban/Features/Intents/OpenCardIntent.swift` (commit `f0a8ce3`): parallel for cards.
+- `FenixKanban/Features/Intents/FenixKanbanShortcuts.swift` (commit `193b0f9`): `AppShortcutsProvider` declaring both intents with natural-language phrases ("Open / Show / Go to ${board} in ${applicationName}" and similar for card).
+
+**Modified code:**
+
+- `FenixKanban/FenixKanbanApp.swift` (commit `f677ae8`): added `@State navigator = NavigationModel()`; registered `viewContext` as an `IntentDependency` in `init()` (synchronous for cold-launch); registered `navigator` in `.onAppear` (it's `@MainActor`). `ContentView`'s local `@State selectedBoardID` was replaced with a `@Bindable navigator: NavigationModel`. Added a new sheet watching `navigator.selectedCardID` so intents can open cards.
+
+**Tests:** 14 new tests across 5 new suites — `NavigationModelTests` (5), `BoardEntityTests` (5), `CardEntityTests` (5), `OpenBoardIntentTests` (2), `OpenCardIntentTests` (2). All `@MainActor` and `@Suite(.serialized)`. Total project test count: **108 tests in 20 suites passed** at final regression.
+
+**TDD compliance:** All five new suites were written **red → green → refactor**. The red phase was confirmed via build error before each implementation (e.g., `Cannot find 'NavigationModel' in scope`).
+
+**Manual verification:** Inspected the compiled `Metadata.appintents/extract.actionsdata` in the macOS .app bundle. JSON contents confirm `OpenBoardIntent`, `OpenCardIntent`, `BoardEntity`, `CardEntity`, `BoardQuery`, `CardQuery`, and `FenixKanbanShortcuts` are all registered with the expected titles, descriptions, and phrase templates. This is the authoritative artifact iOS / macOS reads to surface actions in Shortcuts, Siri, and Apple Intelligence.
+
+**Deferred follow-ups (Standard tier):**
+
+- `CreateCardIntent`, `CompleteCardIntent` (write intents)
+- `FindCardIntent` (semantic query)
+- `NSUserActivity` donations from `BoardView` and `CardView`
+- Core Spotlight indexing (the cancellation from this round can be reversed cheaply — the `AppEntity` scaffold makes it ~1 new file)
+- `Label` as `AppEntity` (Full tier)
+- Focus Filters (Full tier)
