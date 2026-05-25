@@ -360,3 +360,39 @@ macOS build still succeeds with `CODE_SIGNING_ALLOWED=NO`.
 **Outstanding TipJar/Authentication DI refactors from sections 5 and 6 above
 are still valid — Swift Testing didn't remove the need to inject mocks for
 StoreKit or `ASAuthorizationAppleIDProvider`.**
+
+---
+
+## 📚 May 25, 2026 — Apple Technology Overviews Research
+
+Distilled every page under Apple's
+[Technology Overviews](https://developer.apple.com/documentation/technologyoverviews) (the index
+plus 7 section indexes and all 25 leaf overviews, including the marquee *Adopting Liquid Glass*
+guide) into a single reference at [`docs/apple-technology-overviews.md`](docs/apple-technology-overviews.md).
+
+The file is intended as a long-lived in-repo reference for iOS 26 / macOS 26 adoption work. Read
+it before architecting any new UI surface or platform integration in FenixKanban. Key takeaways
+relevant to current code:
+
+- **Liquid Glass is automatic** when the app rebuilds against iOS 26 / macOS 26 SDKs. Strip
+  custom backgrounds from tab bars, toolbars, sidebars, sheets, and popovers — they actively
+  break the scroll-edge effect.
+- **Never hand-roll glass / blur effects.** Wrap any genuinely-custom glass view in a
+  `GlassEffectContainer` so the system can batch-render and shape-morph.
+- **Section headers auto-title-case** in iOS 26; ALL-CAPS text won't render that way. Audit
+  every `Section(content:header:)` string in the app.
+- **Toolbar items** hide entire `ToolbarItem`s, never just inner content. A blank toolbar slot
+  is the #1 visual symptom of an un-audited app.
+- **App icons** must be rebuilt in Icon Composer with layered semi-transparent shapes — the
+  system supplies shadows, blurs, and refraction. Our existing `AppIcon.appiconset` is the
+  legacy asset; it works but doesn't unlock the dynamic appearance variants.
+- **Adopt App Intents (`AppEntity` / `AppIntent`) and Core Spotlight indexing** as the
+  universal vocabulary — this single adoption surfaces FenixKanban's boards and cards to
+  Siri, Shortcuts, Spotlight, Focus Filters, Apple Intelligence, and Visual Intelligence
+  without per-surface code. Not currently adopted; high-leverage future work.
+- **Accessibility:** every screen must be re-tested under reduce-transparency, reduce-motion,
+  AND the alternate Liquid Glass appearance. Standard components adapt; our custom
+  `Color.crossPlatform*` extensions and any custom backgrounds do not.
+
+This research is recorded into global Claude memory as well so future sessions can apply these
+rules without re-reading the source docs.
