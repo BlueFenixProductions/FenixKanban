@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
+   LastUpgradeVersion = "2650"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -17,6 +17,20 @@
                BlueprintIdentifier = "29B0805C04158CE223599CD4"
                BuildableName = "FenixKanban.app"
                BlueprintName = "FenixKanban"
+               ReferencedContainer = "container:FenixKanban.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "62212B85E018F8DAAD57EB30"
+               BuildableName = "FenixKanbanTests.xctest"
+               BlueprintName = "FenixKanbanTests"
                ReferencedContainer = "container:FenixKanban.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -38,22 +52,13 @@
       </MacroExpansion>
       <Testables>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "62212B85E018F8DAAD57EB30"
                BuildableName = "FenixKanbanTests.xctest"
                BlueprintName = "FenixKanbanTests"
-               ReferencedContainer = "container:FenixKanban.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7631F8D5B7A5777C0D6934B8"
-               BuildableName = "FenixKanbanUITests.xctest"
-               BlueprintName = "FenixKanbanUITests"
                ReferencedContainer = "container:FenixKanban.xcodeproj">
             </BuildableReference>
          </TestableReference>

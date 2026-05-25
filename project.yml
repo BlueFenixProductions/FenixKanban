@@ -73,3 +73,26 @@ targets:
         Release:
           "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/Contents/MacOS/FenixKanban"
           "BUNDLE_LOADER[sdk=macosx*]": "$(TEST_HOST)"
+
+# XcodeGen owns the shared FenixKanban scheme so `make generate` no longer
+# drops the tracked file. `scripts/add-ui-test-target.rb` overlays
+# FenixKanbanUITests on top — that target is dynamically materialized and
+# is not part of project.yml.
+schemes:
+  FenixKanban:
+    build:
+      targets:
+        FenixKanban: all
+        FenixKanbanTests: [test]
+    test:
+      config: Debug
+      targets:
+        - FenixKanbanTests
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
