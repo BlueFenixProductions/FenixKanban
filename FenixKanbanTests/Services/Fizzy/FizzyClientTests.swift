@@ -234,3 +234,66 @@ struct FizzyClientPostTests {
 }
 
 private final class FixtureLocatorPost {}
+
+@Suite("FizzyClient — PUT", .serialized)
+struct FizzyClientPutTests {
+
+    init() { MockURLProtocol.reset() }
+
+    private func makeClient() -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: session
+        )
+    }
+
+    private func loadFixture(_ name: String) throws -> Data {
+        let bundle = Bundle(for: FixtureLocatorPut.self)
+        if let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "Fixtures/fizzy") {
+            return try Data(contentsOf: url)
+        }
+        if let url = bundle.url(forResource: name, withExtension: "json") {
+            return try Data(contentsOf: url)
+        }
+        // Fallback: resolve via #file path (works when resources aren't bundled)
+        let testFile = #file
+        let testURL = URL(fileURLWithPath: testFile)
+        let testBundleDir = testURL.deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let fixturePath = testBundleDir
+            .appendingPathComponent("Fixtures")
+            .appendingPathComponent("fizzy")
+            .appendingPathComponent("\(name).json")
+        guard FileManager.default.fileExists(atPath: fixturePath.path) else {
+            Issue.record("Could not locate fixture \(name).json")
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return try Data(contentsOf: fixturePath)
+    }
+
+    @Test("PUT sends JSON body, returns updated resource")
+    func putReturnsUpdated() async throws {
+        let cardData = try loadFixture("card_single")
+
+        MockURLProtocol.handler = { req in
+            #expect(req.httpMethod == "PUT")
+            #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/1")
+            #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
+            return (cardData, .ok(for: req))
+        }
+
+        let client = makeClient()
+        let payload = FizzyCardWritePayload(card: FizzyCardWrite(title: "Updated", description: nil, status: nil, tagIds: nil))
+        let updated: FizzyCard = try await client.put("/cards/1", body: payload, as: FizzyCard.self)
+
+        #expect(updated.id == "03f5vaeq985jlvwv3arl4srq2")
+        #expect(MockURLProtocol.requests.count == 1)
+    }
+}
+
+private final class FixtureLocatorPut {}

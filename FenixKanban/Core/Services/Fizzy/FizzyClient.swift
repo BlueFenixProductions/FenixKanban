@@ -114,6 +114,34 @@ final class FizzyClient: Sendable {
         }
     }
 
+    /// PUT a JSON body. Returns the updated resource (200 + body, not 204).
+    func put<Body: Encodable & Sendable, T: Decodable & Sendable>(
+        _ path: String,
+        body: Body,
+        as: T.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url(for: path))
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try Self.encoder.encode(body)
+
+        let (data, response) = try await urlSession.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw FizzyError.unexpectedStatus(0)
+        }
+
+        switch http.statusCode {
+        case 200:
+            return try Self.decoder.decode(T.self, from: data)
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
     /// Internal: GET an absolute URL (skipping the slug interpolation) and
     /// decode the body. Used by `post` to follow `Location`.
     private func followLocation<T: Decodable & Sendable>(_ url: URL, as: T.Type) async throws -> T {
