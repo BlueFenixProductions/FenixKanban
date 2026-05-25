@@ -11,7 +11,6 @@
 		0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0435462C469D8222A55798D /* CardEntity.swift */; };
 		098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */; };
 		12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */; };
-		163A2254C7FDFD375420A26F /* GoldenSwipeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93716A7C6517B84F6ABF882F /* GoldenSwipeModifier.swift */; };
 		17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10A143D4EF691E4A0436C89 /* NotificationService.swift */; };
 		1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */; };
 		1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */; };
@@ -158,7 +157,6 @@
 		8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModel.swift; sourceTree = "<group>"; };
 		91F0817152C485773F9923C6 /* TipJarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarView.swift; sourceTree = "<group>"; };
 		9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Column+CoreDataClass.swift"; sourceTree = "<group>"; };
-		93716A7C6517B84F6ABF882F /* GoldenSwipeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenSwipeModifier.swift; sourceTree = "<group>"; };
 		9408D41208AD8931538011B8 /* LabelEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelEditorSheet.swift; sourceTree = "<group>"; };
 		961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntentTests.swift; sourceTree = "<group>"; };
 		9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindGoldenCardsIntentTests.swift; sourceTree = "<group>"; };
@@ -307,7 +305,6 @@
 			children = (
 				4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */,
 				628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */,
-				93716A7C6517B84F6ABF882F /* GoldenSwipeModifier.swift */,
 				72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */,
 				27A14F077027BF8262193AEE /* LabelBadge.swift */,
 				D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */,
@@ -695,7 +692,6 @@
 				6D71EC62F098049DA2784D72 /* FindGoldenCardsIntent.swift in Sources */,
 				DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */,
 				5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */,
-				163A2254C7FDFD375420A26F /* GoldenSwipeModifier.swift in Sources */,
 				0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */,
 				2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */,
 				577A21A946600DF0FCF63140 /* LabelEditorSheet.swift in Sources */,

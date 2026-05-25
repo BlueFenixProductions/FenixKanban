@@ -3,7 +3,6 @@ import SwiftUI
 struct CardView: View {
     @ObservedObject var card: Card
     var columnColor: Color? = nil
-    var onToggleGolden: (Card) -> Void = { _ in }
 
     private var glassTint: Color {
         // Golden priority takes precedence over the column-color tint.
@@ -72,8 +71,10 @@ struct CardView: View {
                     .accessibilityLabel("Golden ticket priority")
             }
         }
-        .goldenSwipe(isGolden: card.isGolden) {
-            onToggleGolden(card)
-        }
+        // Make the entire rounded-card area the drag target. Without an
+        // explicit shape, .draggable only picks up touches on rendered
+        // pixels (text, badge) and ignores the empty padding/glass area.
+        .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 8))
+        .contentShape(Rectangle())
     }
 }
