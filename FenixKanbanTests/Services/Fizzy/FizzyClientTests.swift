@@ -65,3 +65,66 @@ struct FizzyClientAuthTests {
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/myth-busters")
     }
 }
+
+@Suite("FizzyClient — ETag", .serialized)
+struct FizzyClientETagTests {
+
+    init() { MockURLProtocol.reset() }
+
+    private func makeClient() -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: session
+        )
+    }
+
+    @Test("getWithETag: nil etag → no If-None-Match header sent")
+    func noEtagNoHeader() async throws {
+        MockURLProtocol.handler = { req in
+            let body = "[]".data(using: .utf8)!
+            return (body, .ok(for: req, headers: ["ETag": "\"v1\""]))
+        }
+
+        let client = makeClient()
+        let response: FizzyResponse<[FizzyBoard]> = try await client.getWithETag("/boards", etag: nil, as: [FizzyBoard].self)
+
+        let req = try #require(MockURLProtocol.requests.first)
+        #expect(req.value(forHTTPHeaderField: "If-None-Match") == nil)
+        #expect(response.etag == "\"v1\"")
+        #expect(response.body != nil)
+    }
+
+    @Test("getWithETag: 200 returns body and new etag")
+    func twoHundredReturnsBodyAndEtag() async throws {
+        MockURLProtocol.handler = { req in
+            let body = "[]".data(using: .utf8)!
+            return (body, .ok(for: req, headers: ["ETag": "\"v2\""]))
+        }
+
+        let client = makeClient()
+        let response: FizzyResponse<[FizzyBoard]> = try await client.getWithETag("/boards", etag: "\"v1\"", as: [FizzyBoard].self)
+
+        let req = try #require(MockURLProtocol.requests.first)
+        #expect(req.value(forHTTPHeaderField: "If-None-Match") == "\"v1\"")
+        #expect(response.body != nil)
+        #expect(response.etag == "\"v2\"")
+    }
+
+    @Test("getWithETag: 304 returns nil body and preserves etag")
+    func threeOhFourReturnsNilBody() async throws {
+        MockURLProtocol.handler = { req in
+            return (Data(), .notModified(for: req, etag: "\"v1\""))
+        }
+
+        let client = makeClient()
+        let response: FizzyResponse<[FizzyBoard]> = try await client.getWithETag("/boards", etag: "\"v1\"", as: [FizzyBoard].self)
+
+        #expect(response.body == nil)
+        #expect(response.etag == "\"v1\"")
+    }
+}
