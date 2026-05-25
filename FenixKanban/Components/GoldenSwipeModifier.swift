@@ -34,6 +34,9 @@ struct GoldenSwipeModifier: ViewModifier {
             }
             .opacity(isRevealed ? 1 : 0)
             .accessibilityHidden(!isRevealed)
+            // Match the wording used by the toolbar button + context menu
+            // so the same action reads identically across all three surfaces.
+            .accessibilityLabel(isGolden ? "Remove golden ticket" : "Mark as golden ticket")
 
             content
                 .offset(x: dragOffset)
@@ -49,12 +52,16 @@ struct GoldenSwipeModifier: ViewModifier {
                             dragOffset = min(0, value.translation.width)
                         }
                         .onEnded { _ in
+                            // Inline both branches in a single animation context
+                            // so the spring parameters are owned in one place.
+                            // Calling close() here would nest a second animation.
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 if dragOffset < revealThreshold {
                                     dragOffset = -buttonWidth
                                     isRevealed = true
                                 } else {
-                                    close()
+                                    dragOffset = 0
+                                    isRevealed = false
                                 }
                             }
                         }
