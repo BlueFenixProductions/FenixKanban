@@ -1,49 +1,45 @@
-import XCTest
+import Testing
 import CoreData
+import Foundation
 @testable import FenixKanban
 
-final class BoardListViewModelTests: XCTestCase {
-    var persistence: PersistenceController!
-    var viewModel: BoardListViewModel!
+@Suite("BoardList ViewModel", .serialized)
+@MainActor
+struct BoardListViewModelTests {
+    let persistence: PersistenceController
+    let viewModel: BoardListViewModel
 
-    override func setUp() {
-        super.setUp()
+    init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         viewModel = BoardListViewModel(context: persistence.viewContext)
     }
 
-    override func tearDown() {
-        viewModel = nil
-        persistence = nil
-        super.tearDown()
+    @Test func initiallyEmpty() {
+        #expect(viewModel.boards.isEmpty)
     }
 
-    func testInitiallyEmpty() {
-        XCTAssertTrue(viewModel.boards.isEmpty)
-    }
-
-    func testCreateBoard() {
+    @Test func createBoard() {
         viewModel.createBoard(name: "Test", colorHex: "#FF0000")
-        XCTAssertEqual(viewModel.boards.count, 1)
-        XCTAssertEqual(viewModel.boards[0].name, "Test")
+        #expect(viewModel.boards.count == 1)
+        #expect(viewModel.boards[0].name == "Test")
     }
 
-    func testDeleteBoard() {
+    @Test func deleteBoard() {
         viewModel.createBoard(name: "ToDelete", colorHex: nil)
-        XCTAssertEqual(viewModel.boards.count, 1)
+        #expect(viewModel.boards.count == 1)
 
         viewModel.deleteBoard(viewModel.boards[0])
-        XCTAssertEqual(viewModel.boards.count, 0)
+        #expect(viewModel.boards.count == 0)
     }
 
-    func testDeleteBoardsAtOffsets() {
+    @Test func deleteBoardsAtOffsets() {
         viewModel.createBoard(name: "A", colorHex: nil)
         viewModel.createBoard(name: "B", colorHex: nil)
         viewModel.createBoard(name: "C", colorHex: nil)
 
         viewModel.deleteBoards(at: IndexSet(integer: 1))
-        XCTAssertEqual(viewModel.boards.count, 2)
-        XCTAssertEqual(viewModel.boards[0].name, "A")
-        XCTAssertEqual(viewModel.boards[1].name, "C")
+        #expect(viewModel.boards.count == 2)
+        #expect(viewModel.boards[0].name == "A")
+        #expect(viewModel.boards[1].name == "C")
     }
 }

@@ -1,118 +1,119 @@
-import XCTest
+import Testing
 import CoreData
+import Foundation
 @testable import FenixKanban
 
-final class BoardRepositoryTests: XCTestCase {
-    var persistence: PersistenceController!
-    var repository: BoardRepository!
+// .serialized because each test instantiates its own PersistenceController
+// (in-memory NSPersistentContainer). Running them in parallel causes
+// multiple NSManagedObjectModel instances to be live simultaneously, which
+// trips Core Data's "Multiple NSEntityDescriptions claim..." warning and
+// can crash entity lookups.
+@Suite("Board Repository", .serialized)
+@MainActor
+struct BoardRepositoryTests {
+    let persistence: PersistenceController
+    let repository: BoardRepository
 
-    override func setUp() {
-        super.setUp()
+    init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         repository = BoardRepository(context: persistence.viewContext)
     }
 
-    override func tearDown() {
-        repository = nil
-        persistence = nil
-        super.tearDown()
-    }
-
-    func testCreateBoard() {
+    @Test func createBoard() {
         let board = repository.createBoard(name: "Test Board", colorHex: "#FF0000")
 
-        XCTAssertNotNil(board.id)
-        XCTAssertEqual(board.name, "Test Board")
-        XCTAssertEqual(board.colorHex, "#FF0000")
-        XCTAssertNotNil(board.createdAt)
-        XCTAssertNotNil(board.modifiedAt)
+        #expect(board.id != nil)
+        #expect(board.name == "Test Board")
+        #expect(board.colorHex == "#FF0000")
+        #expect(board.createdAt != nil)
+        #expect(board.modifiedAt != nil)
     }
 
-    func testFetchAllBoards() {
+    @Test func fetchAllBoards() {
         _ = repository.createBoard(name: "Board A")
         _ = repository.createBoard(name: "Board B")
 
         let boards = repository.fetchAllBoards()
-        XCTAssertEqual(boards.count, 2)
-        XCTAssertEqual(boards[0].name, "Board A")
-        XCTAssertEqual(boards[1].name, "Board B")
+        #expect(boards.count == 2)
+        #expect(boards[0].name == "Board A")
+        #expect(boards[1].name == "Board B")
     }
 
-    func testBoardSortOrder() {
+    @Test func boardSortOrder() {
         let a = repository.createBoard(name: "A")
         let b = repository.createBoard(name: "B")
         let c = repository.createBoard(name: "C")
 
-        XCTAssertTrue(a.sortOrder < b.sortOrder)
-        XCTAssertTrue(b.sortOrder < c.sortOrder)
+        #expect(a.sortOrder < b.sortOrder)
+        #expect(b.sortOrder < c.sortOrder)
     }
 
-    func testUpdateBoard() {
+    @Test func updateBoard() {
         let board = repository.createBoard(name: "Original")
         let originalModified = board.modifiedAt
 
         Thread.sleep(forTimeInterval: 0.01)
         repository.updateBoard(board, name: "Updated", colorHex: "#00FF00")
 
-        XCTAssertEqual(board.name, "Updated")
-        XCTAssertEqual(board.colorHex, "#00FF00")
-        XCTAssertTrue(board.modifiedAt! > originalModified!)
+        #expect(board.name == "Updated")
+        #expect(board.colorHex == "#00FF00")
+        #expect((board.modifiedAt ?? .distantPast) > (originalModified ?? .distantPast))
     }
 
-    func testDeleteBoard() {
+    @Test func deleteBoard() {
         let board = repository.createBoard(name: "ToDelete")
-        XCTAssertEqual(repository.fetchAllBoards().count, 1)
+        #expect(repository.fetchAllBoards().count == 1)
 
         repository.deleteBoard(board)
-        XCTAssertEqual(repository.fetchAllBoards().count, 0)
+        #expect(repository.fetchAllBoards().count == 0)
     }
 
-    func testDeleteBoardCascadesColumns() {
+    @Test func deleteBoardCascadesColumns() {
         let board = repository.createBoard(name: "Board")
         _ = repository.createColumn(in: board, name: "Column")
 
         let columnFetch = Column.fetchRequest()
-        XCTAssertEqual((try? persistence.viewContext.fetch(columnFetch))?.count, 1)
+        #expect((try? persistence.viewContext.fetch(columnFetch))?.count == 1)
 
         repository.deleteBoard(board)
-        XCTAssertEqual((try? persistence.viewContext.fetch(columnFetch))?.count, 0)
+        #expect((try? persistence.viewContext.fetch(columnFetch))?.count == 0)
     }
 
-    func testCreateColumn() {
+    @Test func createColumn() {
         let board = repository.createBoard(name: "Board")
         let column = repository.createColumn(in: board, name: "To Do")
 
-        XCTAssertNotNil(column.id)
-        XCTAssertEqual(column.name, "To Do")
-        XCTAssertEqual(column.board, board)
-        XCTAssertEqual(board.sortedColumns.count, 1)
+        #expect(column.id != nil)
+        #expect(column.name == "To Do")
+        #expect(column.board == board)
+        #expect(board.sortedColumns.count == 1)
     }
 
-    func testColumnSortOrder() {
+    @Test func columnSortOrder() {
         let board = repository.createBoard(name: "Board")
         let col1 = repository.createColumn(in: board, name: "First")
         let col2 = repository.createColumn(in: board, name: "Second")
 
-        XCTAssertTrue(col1.sortOrder < col2.sortOrder)
+        #expect(col1.sortOrder < col2.sortOrder)
     }
 
-    func testUpdateColumn() {
+    @Test func updateColumn() {
         let board = repository.createBoard(name: "Board")
         let column = repository.createColumn(in: board, name: "Original")
 
         repository.updateColumn(column, name: "Renamed")
-        XCTAssertEqual(column.name, "Renamed")
+        #expect(column.name == "Renamed")
     }
 
-    func testDeleteColumn() {
+    @Test func deleteColumn() {
         let board = repository.createBoard(name: "Board")
         let column = repository.createColumn(in: board, name: "Col")
 
         repository.deleteColumn(column)
-        XCTAssertEqual(board.sortedColumns.count, 0)
+        #expect(board.sortedColumns.count == 0)
     }
 
-    func testReorderBoard() {
+    @Test func reorderBoard() {
         let a = repository.createBoard(name: "A")
         let b = repository.createBoard(name: "B")
         let c = repository.createBoard(name: "C")
@@ -120,6 +121,6 @@ final class BoardRepositoryTests: XCTestCase {
         repository.reorderBoard(c, to: 0, in: [a, b, c])
 
         let boards = repository.fetchAllBoards()
-        XCTAssertEqual(boards[0].name, "C")
+        #expect(boards[0].name == "C")
     }
 }

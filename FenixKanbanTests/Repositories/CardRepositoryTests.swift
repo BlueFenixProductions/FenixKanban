@@ -1,16 +1,18 @@
-import XCTest
+import Testing
 import CoreData
+import Foundation
 @testable import FenixKanban
 
-final class CardRepositoryTests: XCTestCase {
-    var persistence: PersistenceController!
-    var boardRepo: BoardRepository!
-    var cardRepo: CardRepository!
-    var board: Board!
-    var column: Column!
+@Suite("Card Repository", .serialized)
+@MainActor
+struct CardRepositoryTests {
+    let persistence: PersistenceController
+    let boardRepo: BoardRepository
+    let cardRepo: CardRepository
+    let board: Board
+    let column: Column
 
-    override func setUp() {
-        super.setUp()
+    init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         boardRepo = BoardRepository(context: persistence.viewContext)
         cardRepo = CardRepository(context: persistence.viewContext)
@@ -18,35 +20,26 @@ final class CardRepositoryTests: XCTestCase {
         column = boardRepo.createColumn(in: board, name: "To Do")
     }
 
-    override func tearDown() {
-        board = nil
-        column = nil
-        cardRepo = nil
-        boardRepo = nil
-        persistence = nil
-        super.tearDown()
-    }
-
-    func testCreateCard() {
+    @Test func createCard() {
         let card = cardRepo.createCard(in: column, title: "Test Card")
 
-        XCTAssertNotNil(card.id)
-        XCTAssertEqual(card.title, "Test Card")
-        XCTAssertEqual(card.column, column)
-        XCTAssertFalse(card.isCompleted)
+        #expect(card.id != nil)
+        #expect(card.title == "Test Card")
+        #expect(card.column == column)
+        #expect(card.isCompleted == false)
     }
 
-    func testFetchCardsInColumn() {
+    @Test func fetchCardsInColumn() {
         _ = cardRepo.createCard(in: column, title: "Card A")
         _ = cardRepo.createCard(in: column, title: "Card B")
 
         let cards = cardRepo.fetchCards(in: column)
-        XCTAssertEqual(cards.count, 2)
-        XCTAssertEqual(cards[0].title, "Card A")
-        XCTAssertEqual(cards[1].title, "Card B")
+        #expect(cards.count == 2)
+        #expect(cards[0].title == "Card A")
+        #expect(cards[1].title == "Card B")
     }
 
-    func testUpdateCard() {
+    @Test func updateCard() {
         let card = cardRepo.createCard(in: column, title: "Original")
         let label = Label(context: persistence.viewContext)
         label.id = UUID()
@@ -57,33 +50,33 @@ final class CardRepositoryTests: XCTestCase {
 
         cardRepo.updateCard(card, title: "Updated", description: "A description", dueDate: Date(), isCompleted: true, label: label)
 
-        XCTAssertEqual(card.title, "Updated")
-        XCTAssertEqual(card.cardDescription, "A description")
-        XCTAssertNotNil(card.dueDate)
-        XCTAssertTrue(card.isCompleted)
-        XCTAssertEqual(card.label, label)
+        #expect(card.title == "Updated")
+        #expect(card.cardDescription == "A description")
+        #expect(card.dueDate != nil)
+        #expect(card.isCompleted == true)
+        #expect(card.label == label)
     }
 
-    func testDeleteCard() {
+    @Test func deleteCard() {
         let card = cardRepo.createCard(in: column, title: "ToDelete")
-        XCTAssertEqual(column.sortedCards.count, 1)
+        #expect(column.sortedCards.count == 1)
 
         cardRepo.deleteCard(card)
-        XCTAssertEqual(column.sortedCards.count, 0)
+        #expect(column.sortedCards.count == 0)
     }
 
-    func testMoveCardBetweenColumns() {
+    @Test func moveCardBetweenColumns() {
         let column2 = boardRepo.createColumn(in: board, name: "Done")
         let card = cardRepo.createCard(in: column, title: "Moving Card")
 
         cardRepo.moveCard(card, to: column2, at: 0)
 
-        XCTAssertEqual(card.column, column2)
-        XCTAssertEqual(column.sortedCards.count, 0)
-        XCTAssertEqual(column2.sortedCards.count, 1)
+        #expect(card.column == column2)
+        #expect(column.sortedCards.count == 0)
+        #expect(column2.sortedCards.count == 1)
     }
 
-    func testReorderCard() {
+    @Test func reorderCard() {
         let a = cardRepo.createCard(in: column, title: "A")
         let b = cardRepo.createCard(in: column, title: "B")
         let c = cardRepo.createCard(in: column, title: "C")
@@ -91,36 +84,36 @@ final class CardRepositoryTests: XCTestCase {
         cardRepo.reorderCard(c, to: 0, in: [a, b, c])
 
         let cards = column.sortedCards
-        XCTAssertEqual(cards[0].title, "C")
+        #expect(cards[0].title == "C")
     }
 
-    func testFetchCardsWithDueDate() {
+    @Test func fetchCardsWithDueDate() {
         let card1 = cardRepo.createCard(in: column, title: "Due Card")
         cardRepo.updateCard(card1, dueDate: Date().addingTimeInterval(86400))
 
         let card2 = cardRepo.createCard(in: column, title: "No Due Date")
-        _ = card2 // no due date set
+        _ = card2
 
         let dueCards = cardRepo.fetchCardsWithDueDate()
-        XCTAssertEqual(dueCards.count, 1)
-        XCTAssertEqual(dueCards[0].title, "Due Card")
+        #expect(dueCards.count == 1)
+        #expect(dueCards[0].title == "Due Card")
     }
 
-    func testCardSortOrder() {
+    @Test func cardSortOrder() {
         let a = cardRepo.createCard(in: column, title: "A")
         let b = cardRepo.createCard(in: column, title: "B")
 
-        XCTAssertTrue(a.sortOrder < b.sortOrder)
+        #expect(a.sortOrder < b.sortOrder)
     }
 
-    func testDeleteColumnCascadesCards() {
+    @Test func deleteColumnCascadesCards() {
         _ = cardRepo.createCard(in: column, title: "Card")
 
         let cardFetch = Card.fetchRequest()
-        XCTAssertEqual((try? persistence.viewContext.fetch(cardFetch))?.count, 1)
+        #expect((try? persistence.viewContext.fetch(cardFetch))?.count == 1)
 
         boardRepo.deleteColumn(column)
-        XCTAssertEqual((try? persistence.viewContext.fetch(cardFetch))?.count, 0)
+        #expect((try? persistence.viewContext.fetch(cardFetch))?.count == 0)
     }
 
     // MARK: - Parent Board modifiedAt Propagation
@@ -129,33 +122,33 @@ final class CardRepositoryTests: XCTestCase {
     // on the Board's own attribute changes, so stale card counts
     // remained on the home page until app restart.
 
-    func testCreateCardBumpsBoardModifiedAt() {
+    @Test func createCardBumpsBoardModifiedAt() {
         let originalModified = board.modifiedAt ?? Date.distantPast
         Thread.sleep(forTimeInterval: 0.01)
         _ = cardRepo.createCard(in: column, title: "Card")
-        XCTAssertGreaterThan(board.modifiedAt ?? Date.distantPast, originalModified)
+        #expect((board.modifiedAt ?? Date.distantPast) > originalModified)
     }
 
-    func testDeleteCardBumpsBoardModifiedAt() {
+    @Test func deleteCardBumpsBoardModifiedAt() {
         let card = cardRepo.createCard(in: column, title: "Card")
         let beforeDelete = board.modifiedAt ?? Date.distantPast
         Thread.sleep(forTimeInterval: 0.01)
         cardRepo.deleteCard(card)
-        XCTAssertGreaterThan(board.modifiedAt ?? Date.distantPast, beforeDelete)
+        #expect((board.modifiedAt ?? Date.distantPast) > beforeDelete)
     }
 
-    func testMoveCardBumpsBoardModifiedAt() {
+    @Test func moveCardBumpsBoardModifiedAt() {
         let column2 = boardRepo.createColumn(in: board, name: "Done")
         let card = cardRepo.createCard(in: column, title: "Card")
         let beforeMove = board.modifiedAt ?? Date.distantPast
         Thread.sleep(forTimeInterval: 0.01)
         cardRepo.moveCard(card, to: column2, at: 0)
-        XCTAssertGreaterThan(board.modifiedAt ?? Date.distantPast, beforeMove)
+        #expect((board.modifiedAt ?? Date.distantPast) > beforeMove)
     }
 
     // MARK: - Move Up / Down
 
-    func testMoveCardUp() {
+    @Test func moveCardUp() {
         _ = cardRepo.createCard(in: column, title: "A")
         let b = cardRepo.createCard(in: column, title: "B")
         _ = cardRepo.createCard(in: column, title: "C")
@@ -163,10 +156,10 @@ final class CardRepositoryTests: XCTestCase {
         cardRepo.moveCardUp(b)
 
         let titles = column.sortedCards.map { $0.title ?? "" }
-        XCTAssertEqual(titles, ["B", "A", "C"])
+        #expect(titles == ["B", "A", "C"])
     }
 
-    func testMoveCardDown() {
+    @Test func moveCardDown() {
         _ = cardRepo.createCard(in: column, title: "A")
         let b = cardRepo.createCard(in: column, title: "B")
         _ = cardRepo.createCard(in: column, title: "C")
@@ -174,26 +167,26 @@ final class CardRepositoryTests: XCTestCase {
         cardRepo.moveCardDown(b)
 
         let titles = column.sortedCards.map { $0.title ?? "" }
-        XCTAssertEqual(titles, ["A", "C", "B"])
+        #expect(titles == ["A", "C", "B"])
     }
 
-    func testMoveCardUpAtTopIsNoOp() {
+    @Test func moveCardUpAtTopIsNoOp() {
         let a = cardRepo.createCard(in: column, title: "A")
         _ = cardRepo.createCard(in: column, title: "B")
 
         cardRepo.moveCardUp(a)
 
         let titles = column.sortedCards.map { $0.title ?? "" }
-        XCTAssertEqual(titles, ["A", "B"])
+        #expect(titles == ["A", "B"])
     }
 
-    func testMoveCardDownAtBottomIsNoOp() {
+    @Test func moveCardDownAtBottomIsNoOp() {
         _ = cardRepo.createCard(in: column, title: "A")
         let b = cardRepo.createCard(in: column, title: "B")
 
         cardRepo.moveCardDown(b)
 
         let titles = column.sortedCards.map { $0.title ?? "" }
-        XCTAssertEqual(titles, ["A", "B"])
+        #expect(titles == ["A", "B"])
     }
 }

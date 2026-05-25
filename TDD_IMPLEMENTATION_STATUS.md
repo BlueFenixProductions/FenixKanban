@@ -299,5 +299,64 @@ All completed work has followed the Red → Green → Refactor workflow:
 
 ---
 
-**Report Generated:** May 25, 2026  
+**Report Generated:** May 25, 2026
 **Next Review:** After completing force unwrap audit and notification tests
+
+---
+
+## 🆕 May 25, 2026 — Swift Testing Migration + Test Recovery
+
+After a cleanup commit accidentally dropped the agent-created Tests*Tests.swift
+files (they were misplaced inside `FenixKanban/Features/*/` and broke the
+build by using `@testable import FenixKanban` from inside the main target),
+the same surface area was restored as proper, passing tests in the test target.
+
+**What changed:**
+- Every test in `FenixKanbanTests/` migrated from XCTest to **Swift Testing**
+  (`import Testing`, `@Suite`, `@Test`, `#expect`).
+- Replacement tests added at the canonical location for each removed file:
+  - `FenixKanbanTests/Services/AuthenticationServiceTests.swift` (5 tests)
+  - `FenixKanbanTests/Services/KeychainHelperTests.swift` (8 tests)
+  - `FenixKanbanTests/Services/TipJarStoreTests.swift` (3 tests)
+  - `FenixKanbanTests/ViewModels/BoardViewModelLifecycleTests.swift` (4 tests
+    — initialization, combined name+color update, selection adjustment, dealloc)
+  - `FenixKanbanTests/Extensions/ColorCrossPlatformTests.swift` (4 tests)
+- Suites that share global state (`AuthenticationServiceTests` writes to the
+  hardcoded keychain key; `NotificationServiceTests` writes to `UserDefaults`;
+  every CoreData suite owns a `PersistenceController`) are marked
+  `@Suite(.serialized)` so Swift Testing's default parallel runner doesn't
+  race them.
+- **`PersistenceController` now loads its `NSManagedObjectModel` once and
+  reuses it** across every container instance. Without this fix, each test's
+  fresh `PersistenceController(inMemory:)` instantiated a duplicate model,
+  and Core Data's `+[Entity entity]` couldn't disambiguate between them —
+  fetches would silently return empty even after inserts succeeded.
+- Deployment targets confirmed at **iOS 26.0** and **macOS 26.0** (raised from
+  the stale 17.0/14.0 values in `project.yml`).
+
+**Result:** `xcodebuild test` produces **78 tests in 14 suites passed**.
+macOS build still succeeds with `CODE_SIGNING_ALLOWED=NO`.
+
+**Updated coverage:**
+
+| Component | Test Coverage | Status |
+|-----------|--------------|--------|
+| Color Extensions | 100% | ✅ Complete (Swift Testing) |
+| KeychainHelper | 90% | ✅ Complete (Swift Testing) |
+| BoardViewModel (incl. lifecycle) | 90% | ✅ Complete (Swift Testing) |
+| BoardListViewModel | 80% | ✅ Complete (Swift Testing) |
+| CardDetailViewModel | 80% | ✅ Complete (Swift Testing) |
+| AuthenticationService | 60% | ✅ Improved (Swift Testing) |
+| TipJarStore | 30% | ⚠️ Partial — still blocked on StoreKit DI |
+| NotificationService | 30% | ⚠️ Basic + persistence (Swift Testing) |
+| BoardRepository | 90% | ✅ Complete (Swift Testing) |
+| CardRepository | 90% | ✅ Complete (Swift Testing) |
+| LabelRepository | 90% | ✅ Complete (Swift Testing) |
+| SyncMonitor | 40% | ⚠️ Basic equality/enum (Swift Testing) |
+| Views | 0% | ❌ Not Started |
+
+**Test count:** 78 (was ~25 in the original report).
+
+**Outstanding TipJar/Authentication DI refactors from sections 5 and 6 above
+are still valid — Swift Testing didn't remove the need to inject mocks for
+StoreKit or `ASAuthorizationAppleIDProvider`.**

@@ -1,27 +1,28 @@
-import XCTest
+import Testing
 import CoreData
 @testable import FenixKanban
 
-final class SyncMonitorTests: XCTestCase {
-    func testNonCloudKitContainerSetsDisabled() {
+@Suite("Sync Monitor", .serialized)
+struct SyncMonitorTests {
+    @Test @MainActor func nonCloudKitContainerSetsDisabled() {
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let monitor = SyncMonitor(container: persistence.container)
-        XCTAssertEqual(monitor.status, .disabled)
+        #expect(monitor.status == .disabled)
     }
 
-    func testInitialStatusIsIdle() {
+    @Test func initialStatusIsIdle() {
         // With a non-CloudKit container, status is disabled.
         // Separately verify the enum default value works correctly.
         let status: SyncStatus = .idle
-        XCTAssertEqual(status, .idle)
-        XCTAssertNotEqual(status, .syncing)
+        #expect(status == .idle)
+        #expect(status != .syncing)
     }
 
-    func testSyncStatusEquality() {
-        XCTAssertEqual(SyncStatus.idle, SyncStatus.idle)
-        XCTAssertEqual(SyncStatus.syncing, SyncStatus.syncing)
-        XCTAssertEqual(SyncStatus.failed("err"), SyncStatus.failed("err"))
-        XCTAssertNotEqual(SyncStatus.failed("a"), SyncStatus.failed("b"))
-        XCTAssertNotEqual(SyncStatus.idle, SyncStatus.disabled)
+    @Test func syncStatusEquality() {
+        #expect(SyncStatus.idle == SyncStatus.idle)
+        #expect(SyncStatus.syncing == SyncStatus.syncing)
+        #expect(SyncStatus.failed("err") == SyncStatus.failed("err"))
+        #expect(SyncStatus.failed("a") != SyncStatus.failed("b"))
+        #expect(SyncStatus.idle != SyncStatus.disabled)
     }
 }

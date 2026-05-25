@@ -1,35 +1,34 @@
-import XCTest
+import Testing
+import Foundation
 @testable import FenixKanban
 
-final class NotificationServiceTests: XCTestCase {
-    var service: NotificationService!
+// .serialized because every test mutates UserDefaults under the same keys
+// the NotificationService reads from. Parallel execution would race.
+@Suite("Notification Service", .serialized)
+@MainActor
+final class NotificationServiceTests {
+    let service: NotificationService
 
-    override func setUp() {
-        super.setUp()
+    init() {
         service = NotificationService()
     }
 
-    override func tearDown() {
-        service = nil
-        super.tearDown()
-    }
-
-    func testDefaultPreferences() {
+    @Test func defaultPreferences() {
         // register(defaults:) ensures these values are set on a clean install
-        XCTAssertTrue(service.dayBeforeEnabled)
-        XCTAssertTrue(service.dayOfEnabled)
-        XCTAssertFalse(service.overdueEnabled)
-        XCTAssertTrue(service.digestEnabled)
-        XCTAssertEqual(service.digestHour, 8)
-        XCTAssertEqual(service.digestMinute, 0)
+        #expect(service.dayBeforeEnabled == true)
+        #expect(service.dayOfEnabled == true)
+        #expect(service.overdueEnabled == false)
+        #expect(service.digestEnabled == true)
+        #expect(service.digestHour == 8)
+        #expect(service.digestMinute == 0)
     }
 
-    func testPreferencePersistence() {
+    @Test func preferencePersistence() {
         service.dayBeforeEnabled = false
-        XCTAssertEqual(UserDefaults.standard.bool(forKey: "dueDateReminderDayBefore"), false)
+        #expect(UserDefaults.standard.bool(forKey: "dueDateReminderDayBefore") == false)
 
         service.digestHour = 10
-        XCTAssertEqual(UserDefaults.standard.integer(forKey: "dailyDigestHour"), 10)
+        #expect(UserDefaults.standard.integer(forKey: "dailyDigestHour") == 10)
 
         // Restore defaults so other tests are not affected
         service.dayBeforeEnabled = true

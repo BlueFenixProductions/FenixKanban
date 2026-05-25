@@ -57,11 +57,25 @@ final class PersistenceController: ObservableObject {
         container.viewContext
     }
 
+    // Loaded once and reused across every container instance. Without this,
+    // creating multiple PersistenceControllers (e.g. in unit tests) loads
+    // duplicate NSManagedObjectModels with the same entity names, which
+    // makes +[Entity entity] ambiguous and routes fetches and inserts to
+    // different stacks.
+    private static let sharedModel: NSManagedObjectModel = {
+        let bundle = Bundle(for: SharedModelLoader.self)
+        guard let url = bundle.url(forResource: "FenixKanban", withExtension: "momd"),
+              let model = NSManagedObjectModel(contentsOf: url) else {
+            fatalError("Failed to locate FenixKanban.momd in the app bundle")
+        }
+        return model
+    }()
+
     init(inMemory: Bool = false, useCloudKit: Bool = true) {
         if useCloudKit && !inMemory {
-            container = NSPersistentCloudKitContainer(name: "FenixKanban")
+            container = NSPersistentCloudKitContainer(name: "FenixKanban", managedObjectModel: Self.sharedModel)
         } else {
-            container = NSPersistentContainer(name: "FenixKanban")
+            container = NSPersistentContainer(name: "FenixKanban", managedObjectModel: Self.sharedModel)
         }
 
         if inMemory {
@@ -105,3 +119,9 @@ final class PersistenceController: ObservableObject {
         }
     }
 }
+
+// Lightweight NSObject anchor so Bundle(for:) can find the bundle that
+// contains FenixKanban.momd. The PersistenceController itself is a plain
+// Swift class — making it NSObject just to call Bundle(for:) would be
+// heavier than introducing this tiny helper.
+private final class SharedModelLoader: NSObject {}
