@@ -38,7 +38,9 @@ struct LabelPickerView: View {
             }
             .listStyle(.plain)
             .navigationTitle("Select Label")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
