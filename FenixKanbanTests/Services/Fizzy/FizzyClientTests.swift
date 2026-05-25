@@ -128,3 +128,95 @@ struct FizzyClientETagTests {
         #expect(response.etag == "\"v1\"")
     }
 }
+
+@Suite("FizzyClient — POST", .serialized)
+struct FizzyClientPostTests {
+
+    init() { MockURLProtocol.reset() }
+
+    private func makeClient() -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: session
+        )
+    }
+
+    private func loadFixture(_ name: String) throws -> Data {
+        let bundle = Bundle(for: FixtureLocatorPost.self)
+        if let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "Fixtures/fizzy") {
+            return try Data(contentsOf: url)
+        }
+        if let url = bundle.url(forResource: name, withExtension: "json") {
+            return try Data(contentsOf: url)
+        }
+        // Fallback: resolve via #file path (works when resources aren't bundled)
+        let testFile = #file
+        let testURL = URL(fileURLWithPath: testFile)
+        let testBundleDir = testURL.deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let fixturePath = testBundleDir
+            .appendingPathComponent("Fixtures")
+            .appendingPathComponent("fizzy")
+            .appendingPathComponent("\(name).json")
+        guard FileManager.default.fileExists(atPath: fixturePath.path) else {
+            Issue.record("Could not locate fixture \(name).json")
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return try Data(contentsOf: fixturePath)
+    }
+
+    @Test("POST sends JSON body, follows Location header to GET the new resource")
+    func postFollowsLocation() async throws {
+        let cardData = try loadFixture("card_single")
+
+        MockURLProtocol.handler = { req in
+            switch req.httpMethod {
+            case "POST":
+                #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/cards")
+                #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
+                let response = HTTPURLResponse(
+                    url: req.url!,
+                    statusCode: 201,
+                    httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/1"]
+                )!
+                return (Data(), response)
+            case "GET":
+                #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/1")
+                return (cardData, .ok(for: req))
+            default:
+                Issue.record("unexpected method: \(req.httpMethod ?? "nil")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let client = makeClient()
+        let payload = FizzyCardWritePayload(card: FizzyCardWrite(title: "First card", description: "Hello, World!", status: nil, tagIds: nil))
+        let created: FizzyCard = try await client.post("/boards/B1/cards", body: payload, as: FizzyCard.self)
+
+        #expect(created.title == "First card")
+        #expect(MockURLProtocol.requests.count == 2)
+    }
+
+    @Test("POST surfaces 422 with parsed validation errors")
+    func postValidationError() async throws {
+        MockURLProtocol.handler = { req in
+            let body = #"{"errors":{"title":["can't be blank"]}}"#.data(using: .utf8)!
+            return (body, .response(for: req, status: 422))
+        }
+
+        let client = makeClient()
+        let payload = FizzyCardWritePayload(card: FizzyCardWrite(title: "", description: nil, status: nil, tagIds: nil))
+
+        await #expect(throws: FizzyError.validation(["title: can't be blank"])) {
+            let _: FizzyCard = try await client.post("/boards/B1/cards", body: payload, as: FizzyCard.self)
+        }
+    }
+}
+
+private final class FixtureLocatorPost {}
