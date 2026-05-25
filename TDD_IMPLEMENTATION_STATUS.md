@@ -417,8 +417,34 @@ and executed via
 
 **Out-of-scope follow-ups still tracked:**
 
-1. Moderate-scope sweep — wrap custom content surfaces (card tints, column "Add Card" pill) in `.glassEffect(.regular, in: ...)` / `GlassEffectContainer` for native Liquid Glass on content.
-2. Full-scope sweep — add increased-contrast variants for every custom color; walk every screen under reduce-transparency, reduce-motion, and the alternate Liquid Glass appearance.
-3. App icon rebuild in Icon Composer with layered semi-transparent shapes (design task).
+1. ✅ ~~Moderate-scope sweep~~ — DONE (see next section).
+2. ⚠️ Full-scope sweep — partial (a11y walkthrough doc + simulator commands written; manual visual verification under reduce-transparency / reduce-motion / alternate appearance still required).
+3. ⚠️ App icon rebuild in Icon Composer — setup README written at `docs/icon-composer-setup.md`; the actual `.icon` document authorship remains user work (Icon Composer is GUI-only).
 4. App Intents + Core Spotlight adoption — high-leverage hook into Siri / Shortcuts / Apple Intelligence / Visual Intelligence.
-5. CLAUDE.md "Common Patterns" section still lists the `#if os(iOS) ... #elseif os(macOS) ... background(...)` pattern as `// ✅ Good`. That guidance is now superseded by the Liquid Glass adoption direction; update on a future docs pass.
+5. ✅ ~~CLAUDE.md "Common Patterns" section~~ — DONE (`CLAUDE.md` at repo root now shows the correct progression of `.background` usage for Liquid Glass).
+
+---
+
+## 🪟 May 25, 2026 — Liquid Glass Moderate Adoption (follow-ups #1, #2 partial, #3 partial, #5)
+
+Follow-on work to the minimal sweep, captured in commit `cb19636`.
+
+**Code changes (#1, moderate sweep):**
+
+- `CardView.swift`: replaced the manual `.background(ZStack { tertiarySystemBackground; backgroundFill })` + `.clipShape(...)` with `.glassEffect(.regular.tint(glassTint), in: .rect(cornerRadius: 8))`. The column-color tint is now expressed as a Glass tint rather than a layered fill, so the system handles the material properly. Kept the existing `.overlay` stroke border for the column-color rim.
+- `ColumnView.swift`: wrapped the cards `LazyVStack` in `GlassEffectContainer(spacing: 6)` so adjacent glass surfaces (every `CardView` + the "Add Card" pill) batch-render and shape-morph between each other per Apple's guidance. The "Add Card" pill itself now uses `.glassEffect(.regular, in: .rect(cornerRadius: 8))` instead of `.background(Color.crossPlatformQuaternarySystemFill).clipShape(...)`.
+- Builds verified on iOS 26 simulator and macOS; **78 tests in 14 suites still pass**.
+
+**Doc / scaffold changes (#2 partial, #3 partial, #5):**
+
+- `CLAUDE.md` (now at repo root): the "Color handling (cross-platform)" example was previously labeled `// ✅ Good` for the `#if os(iOS) .background(Color(uiColor:...))` pattern. Updated to show the correct progression — no `.background` at all for full-bleed views (✅ best), `Color.crossPlatform*` helpers for content surfaces that legitimately need a tint (✅ acceptable), with the old pattern explicitly marked ❌.
+- `docs/accessibility-walkthrough.md` (new): step-by-step procedure for validating every custom UI surface under Reduce Transparency, Reduce Motion, and the alternate Liquid Glass appearance — on both iOS Simulator and macOS. Includes a custom-surface inventory and remediation guidance. The walkthrough itself is intentionally manual; simulator-setup commands are scripted.
+- `docs/icon-composer-setup.md` (new): precise step-by-step for rebuilding `AppIcon` in Icon Composer (layered semi-transparent shapes; light / dark / clear / tinted variants). Includes the `project.yml` / xcodegen wiring after the `.icon` document is authored, plus verification steps on iOS and macOS. Documents why this can't be automated (Icon Composer is GUI-only as of Xcode 16).
+
+**Repo hygiene:** `CLAUDE.md`, `CODE_REVIEW.md`, `DELIVERABLES.md` moved from `FenixKanban/Features/Auth/` to the **repo root** alongside `README.md` and `TDD_IMPLEMENTATION_STATUS.md`. This is their canonical location — when they lived under the source tree, xcodegen treated them as app resources, which was wrong.
+
+**Remaining work:**
+
+- **#2 full-scope a11y walkthrough:** run the manual visual verification on iOS 26 + macOS 26 per `docs/accessibility-walkthrough.md`. Record verdict + date in that file's status table.
+- **#3 App icon rebuild:** author the `AppIcon.icon` Icon Composer document per `docs/icon-composer-setup.md`. Requires the Icon Composer GUI.
+- **#4 App Intents + Core Spotlight:** see next section once scoped.
