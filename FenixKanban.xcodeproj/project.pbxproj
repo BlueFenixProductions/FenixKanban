@@ -23,6 +23,7 @@
 		36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */; };
 		3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */; };
 		41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */; };
+		41FB1CBD9C9C0051431EFFE7 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = FABCA245F11BC88FC3B11A90 /* AppIcon.icns */; };
 		4262C459E4BA6E8674A9214F /* BoardViewModelLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A61AF1066F57E5404E2BF366 /* BoardViewModelLifecycleTests.swift */; };
 		431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2D11BAE72815F0D7F274CD /* AuthView.swift */; };
 		443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */; };
@@ -43,16 +44,13 @@
 		7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */; };
 		7E2A5B97A7C05FC5C74DAA07 /* LabelManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
-		83406D832FC45274006FB9CE /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 83406D822FC45273006FB9CE /* AppIcon.icns */; };
 		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
 		865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */; };
 		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
 		9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88157336039C94037EF998 /* CardDetailViewModel.swift */; };
 		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
 		A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */; };
-		A1E21D62FDEDEC5C04428AB2 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = D7117E34B3867E830BAF9501 /* CLAUDE.md */; };
 		A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B36134843F5683038443D750 /* TipJarProducts.storekit */; };
-		ABCBF7B2D509E7F9A0ADB7BA /* DELIVERABLES.md in Resources */ = {isa = PBXBuildFile; fileRef = 2B8D0A7DF639D1A4F955C714 /* DELIVERABLES.md */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
 		B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1964FFB87532CE5ED41070 /* BoardRowView.swift */; };
 		B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E468616D12A084C045616D44 /* FenixKanbanTests.swift */; };
@@ -69,7 +67,6 @@
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
-		E8CA9D7D971533E769940BCF /* CODE_REVIEW.md in Resources */ = {isa = PBXBuildFile; fileRef = 353C77B1BF289210FCBF1A44 /* CODE_REVIEW.md */; };
 		EB89C1364903EF0A7B4F90E5 /* TipJarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AA8D2F4FF050550CD5DED /* TipJarStore.swift */; };
 		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
 		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
@@ -98,12 +95,10 @@
 		2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
 		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
 		27A14F077027BF8262193AEE /* LabelBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelBadge.swift; sourceTree = "<group>"; };
-		2B8D0A7DF639D1A4F955C714 /* DELIVERABLES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DELIVERABLES.md; sourceTree = "<group>"; };
 		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
-		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
-		353C77B1BF289210FCBF1A44 /* CODE_REVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CODE_REVIEW.md; sourceTree = "<group>"; };
-		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
 		4352F68CBFA8610EEC9EE57A /* AuthenticationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServiceTests.swift; sourceTree = "<group>"; };
 		4655A9176AC7C9288D8920FE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -119,7 +114,6 @@
 		78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryTests.swift; sourceTree = "<group>"; };
 		8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewColumnSheet.swift; sourceTree = "<group>"; };
-		83406D822FC45273006FB9CE /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanApp.swift; sourceTree = "<group>"; };
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -138,7 +132,7 @@
 		A61AF1066F57E5404E2BF366 /* BoardViewModelLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelLifecycleTests.swift; sourceTree = "<group>"; };
 		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
 		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
-		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = TipJarProducts.storekit; sourceTree = "<group>"; };
+		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; path = TipJarProducts.storekit; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
@@ -148,7 +142,6 @@
 		D05B5FFB9A7288FA077C6870 /* ColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnView.swift; sourceTree = "<group>"; };
 		D10A143D4EF691E4A0436C89 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
-		D7117E34B3867E830BAF9501 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelTests.swift; sourceTree = "<group>"; };
 		DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorCrossPlatformTests.swift; sourceTree = "<group>"; };
 		DE7572B48C962A3EB824956E /* SyncMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMonitor.swift; sourceTree = "<group>"; };
@@ -161,6 +154,7 @@
 		E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModel.swift; sourceTree = "<group>"; };
 		F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		FABCA245F11BC88FC3B11A90 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		FAE77B96655930ABFC5A54DA /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -190,7 +184,7 @@
 		15D58E3741D33B3C8B6C1B1D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				83406D822FC45273006FB9CE /* AppIcon.icns */,
+				FABCA245F11BC88FC3B11A90 /* AppIcon.icns */,
 				C9D9F931CC1F616741916216 /* Assets.xcassets */,
 				8F3DBD8353B993911279540C /* FenixKanban.entitlements */,
 			);
@@ -392,9 +386,6 @@
 			children = (
 				0E2D11BAE72815F0D7F274CD /* AuthView.swift */,
 				F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */,
-				D7117E34B3867E830BAF9501 /* CLAUDE.md */,
-				353C77B1BF289210FCBF1A44 /* CODE_REVIEW.md */,
-				2B8D0A7DF639D1A4F955C714 /* DELIVERABLES.md */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -509,10 +500,11 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					29B0805C04158CE223599CD4 = {
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 					62212B85E018F8DAAD57EB30 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -542,12 +534,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41FB1CBD9C9C0051431EFFE7 /* AppIcon.icns in Resources */,
 				6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */,
-				A1E21D62FDEDEC5C04428AB2 /* CLAUDE.md in Resources */,
-				E8CA9D7D971533E769940BCF /* CODE_REVIEW.md in Resources */,
-				ABCBF7B2D509E7F9A0ADB7BA /* DELIVERABLES.md in Resources */,
 				A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */,
-				83406D832FC45274006FB9CE /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -648,7 +637,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = FenixKanban/Resources/FenixKanban.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = QU2C2R55C4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = FenixKanban;
@@ -842,7 +830,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = FenixKanban/Resources/FenixKanban.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = QU2C2R55C4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = FenixKanban;

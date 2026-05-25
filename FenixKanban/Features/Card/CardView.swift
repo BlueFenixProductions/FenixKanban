@@ -4,12 +4,10 @@ struct CardView: View {
     @ObservedObject var card: Card
     var columnColor: Color? = nil
 
-    private var backgroundFill: Color {
-        if let columnColor {
-            // Blend the column color with the dark card background for a subtle tint
-            return columnColor.opacity(0.18)
-        }
-        return Color.crossPlatformTertiarySystemBackground
+    private var glassTint: Color {
+        // Subtle column-color tint on the Liquid Glass material. Falls back
+        // to clear so non-tinted cards get the plain system glass appearance.
+        columnColor?.opacity(0.18) ?? .clear
     }
 
     private var borderColor: Color {
@@ -40,16 +38,10 @@ struct CardView: View {
             }
         }
         .padding(12)
-        .background(
-            ZStack {
-                Color.crossPlatformTertiarySystemBackground
-                backgroundFill
-            }
-        )
+        .glassEffect(.regular.tint(glassTint), in: .rect(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(borderColor, lineWidth: columnColor == nil ? 0 : 1.5)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

@@ -64,65 +64,69 @@ struct ColumnView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
 
-            // Cards list
+            // Cards list. The GlassEffectContainer batches adjacent glass
+            // shapes (each CardView + the "Add Card" pill) so they render
+            // efficiently and shape-morph between each other per Apple's
+            // Liquid Glass guidance.
             ScrollView {
-                LazyVStack(spacing: 6) {
-                    ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
-                        CardView(card: card, columnColor: columnColor)
-                            .draggable(card.id?.uuidString ?? "") {
-                                CardView(card: card, columnColor: columnColor)
-                                    .frame(width: 250)
-                                    .opacity(0.8)
-                            }
-                            .onTapGesture {
-                                onSelectCard(card)
-                            }
-                            .contextMenu {
-                                Button {
-                                    onMoveCardUp(card)
-                                } label: {
-                                    SwiftUI.Label("Move Up", systemImage: "arrow.up")
+                GlassEffectContainer(spacing: 6) {
+                    LazyVStack(spacing: 6) {
+                        ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
+                            CardView(card: card, columnColor: columnColor)
+                                .draggable(card.id?.uuidString ?? "") {
+                                    CardView(card: card, columnColor: columnColor)
+                                        .frame(width: 250)
+                                        .opacity(0.8)
                                 }
-                                .disabled(index == 0)
-
-                                Button {
-                                    onMoveCardDown(card)
-                                } label: {
-                                    SwiftUI.Label("Move Down", systemImage: "arrow.down")
+                                .onTapGesture {
+                                    onSelectCard(card)
                                 }
-                                .disabled(index == cards.count - 1)
+                                .contextMenu {
+                                    Button {
+                                        onMoveCardUp(card)
+                                    } label: {
+                                        SwiftUI.Label("Move Up", systemImage: "arrow.up")
+                                    }
+                                    .disabled(index == 0)
 
-                                Divider()
+                                    Button {
+                                        onMoveCardDown(card)
+                                    } label: {
+                                        SwiftUI.Label("Move Down", systemImage: "arrow.down")
+                                    }
+                                    .disabled(index == cards.count - 1)
 
-                                Button(role: .destructive) {
-                                    onDeleteCard(card)
-                                } label: {
-                                    SwiftUI.Label("Delete", systemImage: "trash")
+                                    Divider()
+
+                                    Button(role: .destructive) {
+                                        onDeleteCard(card)
+                                    } label: {
+                                        SwiftUI.Label("Delete", systemImage: "trash")
+                                    }
                                 }
-                            }
-                    }
-
-                    // Placeholder card acting as the "Add Card" button
-                    Button(action: onAddCard) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.subheadline)
-                            Text("Add Card")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            Spacer()
                         }
-                        .foregroundStyle(columnColor ?? .secondary)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 12)
-                        .frame(maxWidth: .infinity)
-                        .background(Color.crossPlatformQuaternarySystemFill)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        // Placeholder card acting as the "Add Card" button
+                        Button(action: onAddCard) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.subheadline)
+                                Text("Add Card")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                            .foregroundStyle(columnColor ?? .secondary)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity)
+                            .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 8)
                 }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
             }
             .dropDestination(for: String.self) { items, location in
                 guard let uuidString = items.first,
