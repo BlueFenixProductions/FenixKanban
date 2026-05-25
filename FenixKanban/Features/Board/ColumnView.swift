@@ -37,7 +37,7 @@ struct ColumnView: View {
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(.quaternarySystemFill))
+                    .background(Color.crossPlatformQuaternarySystemFill)
                     .clipShape(Capsule())
 
                 Spacer()
@@ -116,7 +116,7 @@ struct ColumnView: View {
                         .padding(.vertical, 12)
                         .padding(.horizontal, 12)
                         .frame(maxWidth: .infinity)
-                        .background(Color(.quaternarySystemFill))
+                        .background(Color.crossPlatformQuaternarySystemFill)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     .buttonStyle(.plain)
@@ -132,7 +132,7 @@ struct ColumnView: View {
                 return true
             }
         }
-        .background(Color(.secondarySystemBackground))
+        .background(Color.crossPlatformSecondarySystemBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 

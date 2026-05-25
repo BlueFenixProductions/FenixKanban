@@ -12,6 +12,7 @@ final class BoardViewModel: ObservableObject {
     private let cardRepository: CardRepository
     private let context: NSManagedObjectContext
     private var debounceTask: Task<Void, Never>?
+    private var observerToken: NSObjectProtocol?
 
     init(board: Board, context: NSManagedObjectContext) {
         self.board = board
@@ -20,6 +21,13 @@ final class BoardViewModel: ObservableObject {
         self.cardRepository = CardRepository(context: context)
         refreshColumns()
         observeChanges()
+    }
+    
+    deinit {
+        debounceTask?.cancel()
+        if let token = observerToken {
+            NotificationCenter.default.removeObserver(token)
+        }
     }
 
     func refreshColumns() {
@@ -98,7 +106,7 @@ final class BoardViewModel: ObservableObject {
     }
 
     private func observeChanges() {
-        NotificationCenter.default.addObserver(
+        observerToken = NotificationCenter.default.addObserver(
             forName: .NSManagedObjectContextDidSave,
             object: nil,
             queue: .main

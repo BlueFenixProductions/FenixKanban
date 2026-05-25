@@ -9,7 +9,7 @@ struct CardView: View {
             // Blend the column color with the dark card background for a subtle tint
             return columnColor.opacity(0.18)
         }
-        return Color(.tertiarySystemBackground)
+        return Color.crossPlatformTertiarySystemBackground
     }
 
     private var borderColor: Color {
@@ -42,7 +42,7 @@ struct CardView: View {
         .padding(12)
         .background(
             ZStack {
-                Color(.tertiarySystemBackground)
+                Color.crossPlatformTertiarySystemBackground
                 backgroundFill
             }
         )
