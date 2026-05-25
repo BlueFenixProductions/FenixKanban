@@ -22,9 +22,7 @@ struct BoardView: View {
     var body: some View {
         boardContent
             .navigationTitle(viewModel.board.name ?? "Board")
-            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
             .toolbar(content: boardToolbar)
             .sheet(isPresented: $showColumnSheet) {
                 NewColumnSheet(
@@ -244,9 +242,7 @@ struct BoardView: View {
                     .tag(index)
                 }
             }
-            #if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .never))
-            #endif
         }
     }
 }

@@ -9,7 +9,7 @@
 
 PROJECT       = FenixKanban.xcodeproj
 SCHEME        = FenixKanban
-SIMULATOR    ?= iPhone 17
+SIMULATOR    ?= iPhone 16
 BUNDLE_ID     = com.bluefenixproductions.FenixKanban
 APP_NAME      = FenixKanban.app
 DERIVED_DATA  = $(HOME)/Library/Developer/Xcode/DerivedData

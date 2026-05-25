@@ -19,8 +19,6 @@
 		3234809B8B3230567DA0DF54 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */; };
 		32BA63F4742BBE3D1371E561 /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
 		32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05B5FFB9A7288FA077C6870 /* ColumnView.swift */; };
-		36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */; };
-		3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */; };
 		41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */; };
 		431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2D11BAE72815F0D7F274CD /* AuthView.swift */; };
 		443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */; };
@@ -40,6 +38,16 @@
 		7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */; };
 		7E2A5B97A7C05FC5C74DAA07 /* LabelManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
+		83E44C0A2FC42BC500B7ABEB /* DELIVERABLES.md in Resources */ = {isa = PBXBuildFile; fileRef = 83E44C092FC42BC500B7ABEB /* DELIVERABLES.md */; };
+		83E44C0C2FC42BE200B7ABEB /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 83E44C0B2FC42BE200B7ABEB /* CLAUDE.md */; };
+		83E44C0E2FC42C8A00B7ABEB /* CODE_REVIEW.md in Resources */ = {isa = PBXBuildFile; fileRef = 83E44C0D2FC42C8A00B7ABEB /* CODE_REVIEW.md */; };
+		83E44C102FC42C9300B7ABEB /* TestsColorCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E44C0F2FC42C9300B7ABEB /* TestsColorCrossPlatformTests.swift */; };
+		83E44C122FC42C9A00B7ABEB /* ExtensionsColor+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E44C112FC42C9A00B7ABEB /* ExtensionsColor+CrossPlatform.swift */; };
+		83E44C142FC42CC000B7ABEB /* TestsKeychainHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E44C132FC42CC000B7ABEB /* TestsKeychainHelperTests.swift */; };
+		83E44C162FC42CDD00B7ABEB /* TestsTipJarStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E44C152FC42CDD00B7ABEB /* TestsTipJarStoreTests.swift */; };
+		83E44C182FC42CEC00B7ABEB /* TestsAuthenticationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E44C172FC42CEC00B7ABEB /* TestsAuthenticationServiceTests.swift */; };
+		83E44C1A2FC42D0E00B7ABEB /* TestsBoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E44C192FC42D0E00B7ABEB /* TestsBoardViewModelTests.swift */; };
+		83E44C1C2FC42D4300B7ABEB /* TDD_IMPLEMENTATION_STATUS.md in Resources */ = {isa = PBXBuildFile; fileRef = 83E44C1B2FC42D4300B7ABEB /* TDD_IMPLEMENTATION_STATUS.md */; };
 		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
 		865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */; };
 		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
@@ -91,10 +99,9 @@
 		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
 		27A14F077027BF8262193AEE /* LabelBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelBadge.swift; sourceTree = "<group>"; };
 		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
-		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
-		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
+		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4655A9176AC7C9288D8920FE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DueDateBadge.swift; sourceTree = "<group>"; };
 		5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Board+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -106,6 +113,16 @@
 		78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryTests.swift; sourceTree = "<group>"; };
 		8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewColumnSheet.swift; sourceTree = "<group>"; };
+		83E44C092FC42BC500B7ABEB /* DELIVERABLES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DELIVERABLES.md; sourceTree = "<group>"; };
+		83E44C0B2FC42BE200B7ABEB /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		83E44C0D2FC42C8A00B7ABEB /* CODE_REVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CODE_REVIEW.md; sourceTree = "<group>"; };
+		83E44C0F2FC42C9300B7ABEB /* TestsColorCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsColorCrossPlatformTests.swift; sourceTree = "<group>"; };
+		83E44C112FC42C9A00B7ABEB /* ExtensionsColor+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExtensionsColor+CrossPlatform.swift"; sourceTree = "<group>"; };
+		83E44C132FC42CC000B7ABEB /* TestsKeychainHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsKeychainHelperTests.swift; sourceTree = "<group>"; };
+		83E44C152FC42CDD00B7ABEB /* TestsTipJarStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsTipJarStoreTests.swift; sourceTree = "<group>"; };
+		83E44C172FC42CEC00B7ABEB /* TestsAuthenticationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsAuthenticationServiceTests.swift; sourceTree = "<group>"; };
+		83E44C192FC42D0E00B7ABEB /* TestsBoardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsBoardViewModelTests.swift; sourceTree = "<group>"; };
+		83E44C1B2FC42D4300B7ABEB /* TDD_IMPLEMENTATION_STATUS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TDD_IMPLEMENTATION_STATUS.md; sourceTree = "<group>"; };
 		85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanApp.swift; sourceTree = "<group>"; };
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -123,7 +140,7 @@
 		A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementView.swift; sourceTree = "<group>"; };
 		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
 		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
-		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; path = TipJarProducts.storekit; sourceTree = "<group>"; };
+		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = TipJarProducts.storekit; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
@@ -134,7 +151,6 @@
 		D10A143D4EF691E4A0436C89 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
 		DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelTests.swift; sourceTree = "<group>"; };
-		DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorCrossPlatformTests.swift; sourceTree = "<group>"; };
 		DE7572B48C962A3EB824956E /* SyncMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMonitor.swift; sourceTree = "<group>"; };
 		E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
@@ -197,6 +213,9 @@
 				8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */,
 				D05B5FFB9A7288FA077C6870 /* ColumnView.swift */,
 				8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */,
+				83E44C132FC42CC000B7ABEB /* TestsKeychainHelperTests.swift */,
+				83E44C192FC42D0E00B7ABEB /* TestsBoardViewModelTests.swift */,
+				83E44C1B2FC42D4300B7ABEB /* TDD_IMPLEMENTATION_STATUS.md */,
 			);
 			path = Board;
 			sourceTree = "<group>";
@@ -270,14 +289,6 @@
 				EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */,
 			);
 			path = Persistence;
-			sourceTree = "<group>";
-		};
-		665F4780CBBF754531D47F1D /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */,
-			);
-			path = Extensions;
 			sourceTree = "<group>";
 		};
 		6E714786600BB05DB13519D7 /* Config */ = {
@@ -362,6 +373,8 @@
 				E7628BACE24DA03CDF86556D /* AuthenticationService.swift */,
 				D10A143D4EF691E4A0436C89 /* NotificationService.swift */,
 				DE7572B48C962A3EB824956E /* SyncMonitor.swift */,
+				83E44C152FC42CDD00B7ABEB /* TestsTipJarStoreTests.swift */,
+				83E44C172FC42CEC00B7ABEB /* TestsAuthenticationServiceTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -371,6 +384,11 @@
 			children = (
 				0E2D11BAE72815F0D7F274CD /* AuthView.swift */,
 				F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */,
+				83E44C092FC42BC500B7ABEB /* DELIVERABLES.md */,
+				83E44C0B2FC42BE200B7ABEB /* CLAUDE.md */,
+				83E44C0D2FC42C8A00B7ABEB /* CODE_REVIEW.md */,
+				83E44C0F2FC42C9300B7ABEB /* TestsColorCrossPlatformTests.swift */,
+				83E44C112FC42C9A00B7ABEB /* ExtensionsColor+CrossPlatform.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -416,7 +434,6 @@
 		F18E30A529E95B92AD48B5D9 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */,
 				FAE77B96655930ABFC5A54DA /* Color+Hex.swift */,
 				8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */,
 				E5AF375736749B5845C69519 /* View+AdaptiveLayout.swift */,
@@ -428,7 +445,6 @@
 			isa = PBXGroup;
 			children = (
 				E468616D12A084C045616D44 /* FenixKanbanTests.swift */,
-				665F4780CBBF754531D47F1D /* Extensions */,
 				CEB25DA70C666F89336E18F6 /* Repositories */,
 				74EE9E89E5F457BABDDF039C /* Services */,
 				7F68A8D5B1BEE2A3B176B872 /* ViewModels */,
@@ -482,14 +498,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					29B0805C04158CE223599CD4 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
 						ProvisioningStyle = Automatic;
 					};
 					62212B85E018F8DAAD57EB30 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -519,8 +534,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83E44C0E2FC42C8A00B7ABEB /* CODE_REVIEW.md in Resources */,
 				6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */,
+				83E44C0A2FC42BC500B7ABEB /* DELIVERABLES.md in Resources */,
+				83E44C0C2FC42BE200B7ABEB /* CLAUDE.md in Resources */,
 				A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */,
+				83E44C1C2FC42D4300B7ABEB /* TDD_IMPLEMENTATION_STATUS.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,6 +553,8 @@
 				431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */,
 				FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */,
 				F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */,
+				83E44C162FC42CDD00B7ABEB /* TestsTipJarStoreTests.swift in Sources */,
+				83E44C182FC42CEC00B7ABEB /* TestsAuthenticationServiceTests.swift in Sources */,
 				443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */,
 				4C558BCB1F1A5E83A77D351E /* BoardListView.swift in Sources */,
 				C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */,
@@ -542,12 +563,13 @@
 				77C47FCFD6828F64E05B55C9 /* BoardSyncProvider.swift in Sources */,
 				4EE391539AF6711C5060C0E7 /* BoardView.swift in Sources */,
 				C7DC1F515DF0710E60B122EE /* BoardViewModel.swift in Sources */,
+				83E44C1A2FC42D0E00B7ABEB /* TestsBoardViewModelTests.swift in Sources */,
+				83E44C122FC42C9A00B7ABEB /* ExtensionsColor+CrossPlatform.swift in Sources */,
 				63D0C71A1CC4E212A545376F /* Card+CoreDataClass.swift in Sources */,
 				3006918E8F888BD08EEDD237 /* CardDetailView.swift in Sources */,
 				9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */,
 				69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */,
 				2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */,
-				36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */,
 				49E731B3D3082D79E09013C6 /* Color+Hex.swift in Sources */,
 				C4AA7AF76E843E21FD235E1C /* Column+CoreDataClass.swift in Sources */,
 				32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */,
@@ -559,9 +581,11 @@
 				0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */,
 				2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */,
 				577A21A946600DF0FCF63140 /* LabelEditorSheet.swift in Sources */,
+				83E44C102FC42C9300B7ABEB /* TestsColorCrossPlatformTests.swift in Sources */,
 				7E2A5B97A7C05FC5C74DAA07 /* LabelManagementView.swift in Sources */,
 				87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */,
 				DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */,
+				83E44C142FC42CC000B7ABEB /* TestsKeychainHelperTests.swift in Sources */,
 				81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */,
 				D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */,
 				E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */,
@@ -592,7 +616,6 @@
 				1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */,
 				85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
-				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
@@ -617,6 +640,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = FenixKanban/Resources/FenixKanban.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = QU2C2R55C4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = FenixKanban;
@@ -638,6 +662,7 @@
 			baseConfigurationReference = 99D93FD1E573B49C12DC2C27 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -673,6 +698,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -682,17 +708,15 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -701,6 +725,7 @@
 			baseConfigurationReference = 99D93FD1E573B49C12DC2C27 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -736,6 +761,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -751,18 +777,16 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -770,7 +794,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				"BUNDLE_LOADER[sdk=macosx*]" = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -781,7 +804,6 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/FenixKanban";
-				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/Contents/MacOS/FenixKanban";
 			};
 			name = Debug;
 		};
@@ -789,7 +811,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				"BUNDLE_LOADER[sdk=macosx*]" = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -800,7 +821,6 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/FenixKanban";
-				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/Contents/MacOS/FenixKanban";
 			};
 			name = Release;
 		};
@@ -810,6 +830,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = FenixKanban/Resources/FenixKanban.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = QU2C2R55C4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = FenixKanban;

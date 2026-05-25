@@ -56,11 +56,7 @@ struct AuthView: View {
                 .frame(height: 60)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        #if os(iOS)
-        .background(Color(uiColor: .systemBackground))
-        #elseif os(macOS)
-        .background(Color(nsColor: .windowBackgroundColor))
-        #endif
+        .background(Color(.systemBackground))
     }
 }
 

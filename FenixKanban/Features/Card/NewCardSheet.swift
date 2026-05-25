@@ -13,9 +13,7 @@ struct NewCardSheet: View {
                 }
             }
             .navigationTitle("New Card")
-            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

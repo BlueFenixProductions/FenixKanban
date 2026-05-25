@@ -49,9 +49,7 @@ struct LabelEditorSheet: View {
                 }
             }
             .navigationTitle(label == nil ? "New Label" : "Edit Label")
-            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
