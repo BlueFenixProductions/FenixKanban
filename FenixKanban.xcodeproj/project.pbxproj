@@ -60,6 +60,7 @@
 		7E2A5B97A7C05FC5C74DAA07 /* LabelManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
 		83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */; };
+		857344412226E98D29897FCA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
 		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
 		865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */; };
 		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
@@ -95,6 +96,7 @@
 		DCA918D48BE6C991C0F9B1A1 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */; };
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
+		DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
 		EB89C1364903EF0A7B4F90E5 /* TipJarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AA8D2F4FF050550CD5DED /* TipJarStore.swift */; };
 		EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */; };
@@ -185,8 +187,10 @@
 		B4F592F755DD0739220B0604 /* CardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardQuery.swift; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
+		B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
 		BD784E3CA7CE3F415BADE4CE /* settings.local.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = settings.local.json; sourceTree = "<group>"; };
+		C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyResponse.swift; sourceTree = "<group>"; };
 		C8266DABF5BF6B426312B202 /* FenixKanbanShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanShortcuts.swift; sourceTree = "<group>"; };
 		C88DE2CFAB1D67DA8824B424 /* BoardSyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSyncProvider.swift; sourceTree = "<group>"; };
 		C9D9F931CC1F616741916216 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -529,6 +533,7 @@
 			children = (
 				E22CB144486430B2801DB56B /* FizzyDTOTests.swift */,
 				90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */,
+				B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */,
 			);
 			path = Fizzy;
 			sourceTree = "<group>";
@@ -628,6 +633,7 @@
 			children = (
 				8A25B0D029F52671883DC255 /* FizzyDTOs.swift */,
 				FABA181CFB55168EB577EAA1 /* FizzyError.swift */,
+				C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */,
 			);
 			path = Fizzy;
 			sourceTree = "<group>";
@@ -763,6 +769,7 @@
 				6D71EC62F098049DA2784D72 /* FindGoldenCardsIntent.swift in Sources */,
 				2F13B71B01BE8EB33100F976 /* FizzyDTOs.swift in Sources */,
 				C071193A6B7A63C7AC32817D /* FizzyError.swift in Sources */,
+				857344412226E98D29897FCA /* FizzyResponse.swift in Sources */,
 				DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */,
 				5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */,
 				0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */,
@@ -821,6 +828,7 @@
 				D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */,
 				BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
+				DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */,
 				43CF64EA2977EEE9323333DB /* NavigationModelTests.swift in Sources */,
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
 				3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */,
