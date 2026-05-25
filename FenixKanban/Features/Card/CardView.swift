@@ -5,6 +5,11 @@ struct CardView: View {
     var columnColor: Color? = nil
     var onToggleGolden: (Card) -> Void = { _ in }
 
+    // Read the ambient color scheme so we can preserve it for non-golden
+    // cards and only override on golden ones (where white-on-gold reads
+    // poorly in dark mode).
+    @Environment(\.colorScheme) private var ambientColorScheme
+
     private var glassTint: Color {
         // Golden priority takes precedence over the column-color tint —
         // the column association is still readable via the stroke rim.
@@ -43,6 +48,12 @@ struct CardView: View {
                 DueDateBadge(date: dueDate)
             }
         }
+        // Force light-mode foreground colors on golden cards so .primary /
+        // .secondary text resolves to dark ink that's readable on gold,
+        // regardless of the app's dark mode. Applied to the content only —
+        // the .glassEffect below still uses the ambient scheme so the gold
+        // tint material renders as expected.
+        .environment(\.colorScheme, card.isGolden ? .light : ambientColorScheme)
         .padding(12)
         .glassEffect(.regular.tint(glassTint), in: .rect(cornerRadius: 8))
         .overlay(
