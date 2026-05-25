@@ -3,6 +3,7 @@ import SwiftUI
 struct CardView: View {
     @ObservedObject var card: Card
     var columnColor: Color? = nil
+    var onToggleGolden: (Card) -> Void = { _ in }
 
     private var glassTint: Color {
         // Golden priority takes precedence over the column-color tint —

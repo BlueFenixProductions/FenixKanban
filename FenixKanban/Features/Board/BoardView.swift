@@ -180,6 +180,9 @@ struct BoardView: View {
                         },
                         onMoveCardDown: { card in
                             viewModel.moveCardDown(card)
+                        },
+                        onToggleGolden: { card in
+                            viewModel.toggleGolden(for: card)
                         }
                     )
                     .frame(width: 280)
@@ -239,6 +242,9 @@ struct BoardView: View {
                         },
                         onMoveCardDown: { card in
                             viewModel.moveCardDown(card)
+                        },
+                        onToggleGolden: { card in
+                            viewModel.toggleGolden(for: card)
                         }
                     )
                     .tag(index)

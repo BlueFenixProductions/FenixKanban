@@ -11,6 +11,7 @@ struct ColumnView: View {
     let onDeleteColumn: () -> Void
     let onMoveCardUp: (Card) -> Void
     let onMoveCardDown: (Card) -> Void
+    let onToggleGolden: (Card) -> Void
 
     private var columnColor: Color? {
         guard let hex = column.colorHex else { return nil }
@@ -82,6 +83,17 @@ struct ColumnView: View {
                                     onSelectCard(card)
                                 }
                                 .contextMenu {
+                                    Button {
+                                        onToggleGolden(card)
+                                    } label: {
+                                        SwiftUI.Label(
+                                            card.isGolden ? "Remove Golden Ticket" : "Mark as Golden",
+                                            systemImage: card.isGolden ? "ticket.slash" : "ticket"
+                                        )
+                                    }
+
+                                    Divider()
+
                                     Button {
                                         onMoveCardUp(card)
                                     } label: {
