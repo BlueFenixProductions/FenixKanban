@@ -93,22 +93,30 @@ jobs:
           xcrun simctl boot 'iPhone 17' || true
           xcrun simctl list devices booted
 
+      - name: Build for testing (iOS simulator)
+        # One incremental compile + sign step that both the unit
+        # and UI test invocations reuse via test-without-building.
+        # Previously each `xcodebuild test` rebuilt independently,
+        # which doubled the build cost on every PR.
+        #
+        # NOTE: no CODE_SIGNING_ALLOWED=NO. iOS-sim builds need
+        # the default sign-to-run-locally signature to carry the
+        # entitlements file (keychain-access-groups in particular),
+        # otherwise SecItemAdd denies and KeychainHelperTests +
+        # AuthenticationServiceTests fail.
+        run: |
+          xcodebuild build-for-testing \
+            -scheme FenixKanban \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
+
       - name: Unit tests (iOS simulator)
         # 127+ tests in FenixKanbanTests. Cross-platform — they run
         # equivalently against the iOS test host on a sim. (macOS
         # host execution is gated to local dev; runners don't have
         # macOS 26.) Separate result bundle from the UI step so a
         # PR-failure deep-link points at the right suite.
-        #
-        # NOTE: no CODE_SIGNING_ALLOWED=NO here. iOS-sim builds need
-        # the default sign-to-run-locally signature to carry the
-        # entitlements file (keychain-access-groups in particular),
-        # otherwise SecItemAdd denies and KeychainHelperTests +
-        # anything downstream of it (AuthenticationServiceTests)
-        # fails. macOS build above can ditch signing because it
-        # only compile-checks; here we actually execute.
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -scheme FenixKanban \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -only-testing:FenixKanbanTests \
@@ -117,10 +125,9 @@ jobs:
       - name: iOS UI tests
         # Drives the card-drag / tap-to-select surfaces that the
         # unit suite can't reach. The bundle is wired in by the
-        # add-ui-test-target.rb step above. Same signing rationale
-        # as the unit-test step above.
+        # add-ui-test-target.rb step above.
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -scheme FenixKanban \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -only-testing:FenixKanbanUITests \

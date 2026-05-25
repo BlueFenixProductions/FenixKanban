@@ -15,10 +15,38 @@ final class FenixKanbanUITests: XCTestCase {
         super.setUp()
         continueAfterFailure = false
         app = XCUIApplication()
-        // Reset persistent state so the empty-board onboarding flow
-        // always runs and the test is independent of any prior session.
+        // setUp creates the application but doesn't launch — each
+        // test calls launchClean() or launchSeeded() based on whether
+        // it needs to drive the UI seed flow or skip it.
+    }
+
+    /// Launch with -uitest-reset-store only. Lands on the empty
+    /// board list ("New Board" CTA). Use when the test needs to
+    /// exercise the create-board / create-column / create-card UI.
+    private func launchClean() {
         app.launchArguments += ["-uitest-reset-store"]
         app.launch()
+    }
+
+    /// Launch with -uitest-reset-store AND -uitest-seed-board so
+    /// the app starts with Board "Test Board" → Column "Todo" →
+    /// Card "Test Card" pre-created and selected. Skips 20–30s of
+    /// UI seed per test for the drag + tap suites that don't need
+    /// to verify the creation flow.
+    private func launchSeeded() {
+        app.launchArguments += ["-uitest-reset-store", "-uitest-seed-board"]
+        app.launch()
+
+        // NavigationSplitView on iPhone may show the sidebar first
+        // even with a pre-selected boardID, so tap into the row if
+        // we're still on the list. Detection: presence of "Add Card"
+        // means we're already inside BoardView.
+        if !app.buttons["Add Card"].firstMatch.waitForExistence(timeout: 1) {
+            let row = app.staticTexts["Test Board"]
+            if row.waitForExistence(timeout: 2) {
+                row.tap()
+            }
+        }
     }
 
     override func tearDown() {
@@ -100,8 +128,12 @@ final class FenixKanbanUITests: XCTestCase {
 
     /// Smoke: seed flow reaches a state where a card is rendered and
     /// tappable. Anchor for the drag tests below — if this fails the
-    /// onboarding flow is broken, not the drag.
+    /// onboarding flow is broken, not the drag. This is the only
+    /// test that exercises the UI-driven create flow (launches clean,
+    /// not seeded).
     func testSeedingBoardColumnAndCardLandsACardOnScreen() throws {
+        launchClean()
+
         createBoard(named: "Drag Test Board")
         openBoard(named: "Drag Test Board")
         addColumn(named: "Todo")
@@ -117,26 +149,41 @@ final class FenixKanbanUITests: XCTestCase {
     /// "Golden ticket priority"`). Exercises `.draggable` →
     /// GoldZoneChip `.dropDestination` → `toggleGolden` end-to-end.
     func testLongPressDragCardToGoldChipMarksItGolden() throws {
-        createBoard(named: "Gold Drag Board")
-        openBoard(named: "Gold Drag Board")
-        addColumn(named: "Todo")
-        addCard(titled: "Golden Candidate", inColumnNamed: "Todo")
+        launchSeeded()
 
-        let card = app.descendants(matching: .any)["card-Golden Candidate"]
+        let card = app.descendants(matching: .any)["card-Test Card"]
         let goldChip = app.descendants(matching: .any)["gold-chip"].firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 3), "source card missing")
         XCTAssertTrue(goldChip.waitForExistence(timeout: 3), "gold chip missing")
 
-        // 1.2s — longer than the local-dev 0.7s baseline so the
-        // slower GitHub-hosted macOS runner reliably crosses the
-        // SwiftUI .draggable long-press threshold and lifts the
-        // card before context menu / scroll gesture arbitration
-        // kicks in. (CI run 26409795001 showed the context menu
-        // opening at 0.7s on the runner; never observed locally.)
-        card.press(forDuration: 1.2, thenDragTo: goldChip)
+        // Coordinate-level press with explicit velocity + post-drop
+        // hold. XCUIElement.press(forDuration:thenDragTo:) ships an
+        // instantaneous-release synthesized event that the slower
+        // GitHub-hosted runners drop mid-flight — the lift happens
+        // but the drop callback never fires (CI run 26410301217:
+        // press succeeded, no context menu, but no badge either).
+        //
+        // - forDuration 1.2s: > SwiftUI .draggable's ~0.5s long-press
+        //   so lift wins over context-menu arbitration.
+        // - withVelocity .slow: gives the system enough touch
+        //   samples to register the drag intent on slow CI sims.
+        // - thenHoldForDuration 0.8s: keeps the touch down on the
+        //   drop target so dropDestination(isTargeted:) fires + the
+        //   drop callback commits before release.
+        let cardCenter = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let chipCenter = goldChip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        cardCenter.press(
+            forDuration: 1.2,
+            thenDragTo: chipCenter,
+            withVelocity: .slow,
+            thenHoldForDuration: 0.8
+        )
 
         let badge = app.images["Golden ticket priority"]
-        XCTAssertTrue(badge.waitForExistence(timeout: 3),
+        // 6s — drop callback → CoreData save → @FetchRequest update →
+        // CardView re-render → badge composite. Locally <1s; CI is
+        // slower across that whole chain.
+        XCTAssertTrue(badge.waitForExistence(timeout: 6),
                       "golden-ticket badge never appeared — drag-to-chip did not toggle isGolden")
     }
 
@@ -150,18 +197,15 @@ final class FenixKanbanUITests: XCTestCase {
     /// Tap (without hold) still opens card detail — drag rework must
     /// not have eaten the click sequence on tap-only inputs.
     func testTapCardOpensDetail() throws {
-        createBoard(named: "Tap Board")
-        openBoard(named: "Tap Board")
-        addColumn(named: "Todo")
-        addCard(titled: "Tappable", inColumnNamed: "Todo")
+        launchSeeded()
 
-        let card = app.descendants(matching: .any)["card-Tappable"]
+        let card = app.descendants(matching: .any)["card-Test Card"]
         XCTAssertTrue(card.waitForExistence(timeout: 3))
         card.tap()
 
         // Detail view shows the editable title field with the card's
         // current title as initial text — that's a unique marker.
-        let detailTitleField = app.textFields["Tappable"]
+        let detailTitleField = app.textFields["Test Card"]
         XCTAssertTrue(detailTitleField.waitForExistence(timeout: 3),
                       "tap did not push card detail — gesture rework may have eaten the tap")
     }

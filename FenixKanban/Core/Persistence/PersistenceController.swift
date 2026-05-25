@@ -124,6 +124,42 @@ final class PersistenceController: ObservableObject {
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
 
+    /// Inserts a minimal Board → Column → Card graph into the shared
+    /// in-memory store and returns the board's objectID. Used by
+    /// FenixKanbanApp when the `-uitest-seed-board` launch arg is
+    /// present so UI tests skip 20–30s of UI-driven setup per test.
+    /// Production never invokes this — the launch arg is only set
+    /// by FenixKanbanUITests.
+    @discardableResult
+    static func seedUITestBoardColumnAndCard() -> NSManagedObjectID {
+        let context = shared.viewContext
+        let board = Board(context: context)
+        board.id = UUID()
+        board.name = "Test Board"
+        board.createdAt = Date()
+        board.modifiedAt = Date()
+        board.sortOrder = 0
+
+        let column = Column(context: context)
+        column.id = UUID()
+        column.name = "Todo"
+        column.createdAt = Date()
+        column.modifiedAt = Date()
+        column.sortOrder = 0
+        column.board = board
+
+        let card = Card(context: context)
+        card.id = UUID()
+        card.title = "Test Card"
+        card.createdAt = Date()
+        card.modifiedAt = Date()
+        card.sortOrder = 0
+        card.column = column
+
+        try? context.save()
+        return board.objectID
+    }
+
     func newBackgroundContext() -> NSManagedObjectContext {
         let context = container.newBackgroundContext()
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
