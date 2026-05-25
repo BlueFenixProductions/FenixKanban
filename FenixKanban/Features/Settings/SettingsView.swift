@@ -47,7 +47,7 @@ struct SettingsView: View {
                 }
 
                 Section("Appearance") {
-                    Picker("Theme", selection: $appearanceRaw) {
+                    Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearanceMode.allCases) { mode in
                             Text(mode.label).tag(mode.rawValue)
                         }
