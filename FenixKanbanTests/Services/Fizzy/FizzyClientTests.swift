@@ -340,3 +340,68 @@ struct FizzyClientDeleteTests {
         }
     }
 }
+
+@Suite("FizzyClient — HTTP error mapping", .serialized)
+struct FizzyClientErrorTests {
+
+    init() { MockURLProtocol.reset() }
+
+    private func makeClient() -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: session
+        )
+    }
+
+    @Test("401 → .unauthorized")
+    func unauthorized() async throws {
+        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 401)) }
+        let client = makeClient()
+        await #expect(throws: FizzyError.unauthorized) {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+        }
+    }
+
+    @Test("403 → .forbidden")
+    func forbidden() async throws {
+        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 403)) }
+        let client = makeClient()
+        await #expect(throws: FizzyError.forbidden) {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+        }
+    }
+
+    @Test("404 → .notFound")
+    func notFound() async throws {
+        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 404)) }
+        let client = makeClient()
+        await #expect(throws: FizzyError.notFound) {
+            _ = try await client.get("/boards/missing", as: FizzyBoard.self)
+        }
+    }
+
+    @Test("500 → .server(500)")
+    func server() async throws {
+        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 500)) }
+        let client = makeClient()
+        await #expect(throws: FizzyError.server(statusCode: 500)) {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+        }
+    }
+
+    @Test("429 → .rateLimited honors Retry-After")
+    func rateLimited() async throws {
+        MockURLProtocol.handler = { req in
+            (Data(), .response(for: req, status: 429, headers: ["Retry-After": "30"]))
+        }
+        let client = makeClient()
+        await #expect(throws: FizzyError.rateLimited(retryAfter: 30)) {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+        }
+    }
+}
