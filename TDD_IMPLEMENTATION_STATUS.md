@@ -648,34 +648,36 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 
 ---
 
-## 🪢 2026-05-25 — Fizzy Integration Phase 1 Task 1: Test Fixtures + Bundle Wiring
+### Fizzy Integration — Phase 1: Client + DTOs + Error ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
 
-**Status:** ✅ COMPLETE
+**🔴 Red Phase:**
+- Wrote tests for `FizzyError` (status → error mapping; 422 body parse; 429 Retry-After).
+- Wrote DTO decode tests against hand-transcribed fixtures (identity, boards, columns, cards list, single card).
+- Wrote `FizzyClient` tests for auth header, `:account_slug` interpolation (with the `/my/` trailing-slash discriminator), ETag round-trip, POST + Location-follow, PUT, DELETE, per-status error mapping, and transient retry/backoff with injected `Clock`.
+- All ~28 tests verified failing before implementation.
 
-Per `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md` (Spec §7 Testing) and `docs/superpowers/plans/2026-05-25-fizzy-phase-1-client.md`.
+**🟢 Green Phase:**
+- `FenixKanban/Core/Services/Fizzy/FizzyError.swift` — typed errors with 422 body parsing and 429 Retry-After handling.
+- `FenixKanban/Core/Services/Fizzy/FizzyDTOs.swift` — Codable mirrors of Identity/Account/User/Board/Column/Card/Step/CardWrite wire shapes; explicit `CodingKeys` (no `keyDecodingStrategy`) to preserve snake_case on encode round-trip.
+- `FenixKanban/Core/Services/Fizzy/FizzyResponse.swift` — `{ body, etag }` wrapper.
+- `FenixKanban/Core/Services/Fizzy/FizzyClient.swift` — HTTP wrapper: Bearer auth, `:account_slug` path interpolation (`/my/` paths bypass), GET with ETag, POST + Location-follow, PUT, DELETE, exponential-backoff retry on URLError + 5xx (1s/2s/4s), injected `any Clock<Duration> & Sendable` for testability.
+- `FenixKanbanTests/Services/Fizzy/MockURLProtocol.swift` — in-process URL intercept harness with `HTTPURLResponse` convenience inits + minimal `ImmediateClock` for instant test runs.
+- `FenixKanbanTests/Fixtures/fizzy/` — hand-transcribed sample payloads + refresh README.
 
-**Task:** Land hand-transcribed JSON fixtures from `~/Documents/GitHub/fizzy/docs/api/sections/*.md` and wire them into `FenixKanbanTests` bundle at build time via `project.yml` resources block.
+**🔵 Refactor Phase:**
+- `project.yml` `resources:` block packs fixtures into the test bundle; `excludes:` keeps JSON/MD out of compile sources.
+- Retry consolidated into a single `performWithRetry` helper called by every verb; the `HTTPURLResponse` cast that was duplicated in 5 places now lives in one method.
+- `hasPrefix("/my/")` (with trailing slash) replaced an early `hasPrefix("/my")` that would have falsely matched `/myth-busters` and similar.
 
-**Deliverables:**
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-1-client.md`
 
-1. ✅ `FenixKanbanTests/Fixtures/fizzy/identity.json` — `GET /my/identity` response (accounts array)
-2. ✅ `FenixKanbanTests/Fixtures/fizzy/boards.json` — `GET /:account/boards` response (board list)
-3. ✅ `FenixKanbanTests/Fixtures/fizzy/columns.json` — `GET /:account/boards/:board_id/columns` response
-4. ✅ `FenixKanbanTests/Fixtures/fizzy/cards.json` — `GET /:account/cards` response (list, no `column` field per Fizzy docs)
-5. ✅ `FenixKanbanTests/Fixtures/fizzy/card_single.json` — `GET /:account/cards/:number` response (includes `column`, `steps`)
-6. ✅ `FenixKanbanTests/Fixtures/fizzy/README.md` — refresh guidance and field inventory
+**Test Coverage:** ~28 new tests across `FizzyError`, `FizzyDTO`, and 6 `FizzyClient*` suites (auth, ETag, POST, PUT, DELETE, error mapping, retry). Full suite green.
 
-**Modified:**
+**What ships:** A standalone Fizzy HTTP client fully testable against a mock URL protocol, with no app wiring yet. Phases 2-6 layer on auth state, board mapping, CoreData migration, sync engine, UI, and timer/badges.
 
-- ✅ `project.yml` — added `resources: [path: FenixKanbanTests/Fixtures]` and `excludes: [Fixtures/**/*.json, Fixtures/**/*.md]` to `FenixKanbanTests` target
-
-**Verification:**
-
-- ✅ `xcodebuild build-for-testing` → `** TEST BUILD SUCCEEDED **`
-- ✅ All 6 fixture files present with exact transcribed content
-- ✅ `make generate` succeeded; shared scheme preserved
-- ✅ `git commit` landed commit `e2d5889`: "test(fizzy): Fizzy API JSON fixtures + test-bundle wiring"
-
-**TDD note:** This is a fixture-only task (test infrastructure, not behavior). No Swift code logic to red-green-refactor; verification is build success and file presence. Task does not assume any HttpClient or DTO decoding yet — those are Phase 1 Task 2+.
-
-**Next:** Phase 1 Task 2 will write MockURLProtocol tests using these fixtures to verify DTO decode. Phase 1 Task 3+ will build the Fizzy client and error type.
+**Deferred (acknowledged):**
+- Header duplication (Authorization + Accept set in 5 verbs) — fine for now, candidate for a small `addAuthHeaders` extraction in a future task.
+- 429 Retry-After driving the internal retry loop (currently caller-handled via `FizzyError.rateLimited`).
