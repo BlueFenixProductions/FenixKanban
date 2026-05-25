@@ -59,9 +59,15 @@ jobs:
         # CODE_SIGNING_ALLOWED=NO below means the team is never used.
         run: cp Config/Development.xcconfig.example Config/Development.xcconfig
 
-      - name: Build for macOS
-        # CODE_SIGNING_ALLOWED=NO — runner has no dev cert and we
-        # don't ship this binary, just run it under xctest.
+      - name: Build for macOS (compile-check only)
+        # macOS-26 build proves the cross-platform code (Color+,
+        # Font+, .crossPlatform* helpers, etc.) still compiles
+        # against the macOS 26 SDK. Tests can't *run* here — the
+        # GitHub-hosted runner host is macOS 15.7 and won't host a
+        # macOS 26.0-deployment-target xctest bundle. Real macOS
+        # test execution stays a local-dev gate; the unit-test
+        # bundle runs against the iOS simulator below (same tests,
+        # different test host — they're cross-platform).
         run: |
           xcodebuild build \
             -scheme FenixKanban \
@@ -71,20 +77,6 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             -quiet
 
-      - name: macOS unit tests
-        # 127+ tests in FenixKanbanTests. Result bundle is uploaded
-        # on failure (see final step) so PR comments can deep-link
-        # to a specific failed assertion + screenshot.
-        run: |
-          xcodebuild test \
-            -scheme FenixKanban \
-            -destination 'platform=macOS,arch=arm64' \
-            -only-testing:FenixKanbanTests \
-            -resultBundlePath build/results/macos-unit.xcresult \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
-
       - name: Boot iOS simulator
         # Pre-booting surfaces simulator-availability problems as a
         # clear early failure instead of an opaque xcodebuild error
@@ -93,6 +85,22 @@ jobs:
         run: |
           xcrun simctl boot 'iPhone 17' || true
           xcrun simctl list devices booted
+
+      - name: Unit tests (iOS simulator)
+        # 127+ tests in FenixKanbanTests. Cross-platform — they run
+        # equivalently against the iOS test host on a sim. (macOS
+        # host execution is gated to local dev; runners don't have
+        # macOS 26.) Separate result bundle from the UI step so a
+        # PR-failure deep-link points at the right suite.
+        run: |
+          xcodebuild test \
+            -scheme FenixKanban \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            -only-testing:FenixKanbanTests \
+            -resultBundlePath build/results/ios-unit.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
 
       - name: iOS UI tests
         # Drives the card-drag / tap-to-select surfaces that the
