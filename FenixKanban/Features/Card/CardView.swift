@@ -5,16 +5,14 @@ struct CardView: View {
     var columnColor: Color? = nil
     var onToggleGolden: (Card) -> Void = { _ in }
 
-    // Read the ambient color scheme so we can preserve it for non-golden
-    // cards and only override on golden ones (where white-on-gold reads
-    // poorly in dark mode).
-    @Environment(\.colorScheme) private var ambientColorScheme
-
     private var glassTint: Color {
-        // Golden priority takes precedence over the column-color tint —
-        // the column association is still readable via the stroke rim.
+        // Golden priority takes precedence over the column-color tint.
+        // The faded gold mirrors the column-color tint pattern so the
+        // card text remains readable in both light and dark mode against
+        // the Liquid Glass material — solid gold suppressed dark-mode
+        // .primary text.
         if card.isGolden {
-            return .goldenTicket
+            return Color.goldenTicket.opacity(0.18)
         }
         // Subtle column-color tint on the Liquid Glass material. Falls back
         // to clear so non-tinted cards get the plain system glass appearance.
@@ -22,7 +20,18 @@ struct CardView: View {
     }
 
     private var borderColor: Color {
-        columnColor?.opacity(0.55) ?? Color.clear
+        // Golden cards get a gold rim regardless of column. Otherwise the
+        // border tracks the column color.
+        if card.isGolden {
+            return Color.goldenTicket.opacity(0.55)
+        }
+        return columnColor?.opacity(0.55) ?? Color.clear
+    }
+
+    private var borderLineWidth: CGFloat {
+        // Show the highlighted stroke whenever there's something to outline
+        // (column color OR golden state).
+        (card.isGolden || columnColor != nil) ? 1.5 : 0
     }
 
     var body: some View {
@@ -48,17 +57,11 @@ struct CardView: View {
                 DueDateBadge(date: dueDate)
             }
         }
-        // Force light-mode foreground colors on golden cards so .primary /
-        // .secondary text resolves to dark ink that's readable on gold,
-        // regardless of the app's dark mode. Applied to the content only —
-        // the .glassEffect below still uses the ambient scheme so the gold
-        // tint material renders as expected.
-        .environment(\.colorScheme, card.isGolden ? .light : ambientColorScheme)
         .padding(12)
         .glassEffect(.regular.tint(glassTint), in: .rect(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(borderColor, lineWidth: columnColor == nil ? 0 : 1.5)
+                .strokeBorder(borderColor, lineWidth: borderLineWidth)
         )
         .overlay(alignment: .topLeading) {
             if card.isGolden {
