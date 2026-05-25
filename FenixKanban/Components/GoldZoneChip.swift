@@ -27,5 +27,6 @@ struct GoldZoneChip: View {
             } isTargeted: { isTargeted = $0 }
             .accessibilityLabel("Drop a card here to mark it golden")
             .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("gold-chip")
     }
 }

@@ -11,6 +11,14 @@ struct FenixKanbanApp: App {
     @State private var navigator = NavigationModel()
 
     init() {
+        // UI-test bypass: skip the auth gate so the board list is
+        // reachable from a fresh launch without needing Sign in with
+        // Apple. Paired with PersistenceController's in-memory store
+        // override on the same launch flag.
+        if ProcessInfo.processInfo.arguments.contains("-uitest-reset-store") {
+            UserDefaults.standard.set(true, forKey: "hasSkippedAuth")
+        }
+
         let monitor = SyncMonitor(container: PersistenceController.shared.container)
         _syncMonitor = StateObject(wrappedValue: monitor)
 

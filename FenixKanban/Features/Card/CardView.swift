@@ -76,5 +76,16 @@ struct CardView: View {
         // pixels (text, badge) and ignores the empty padding/glass area.
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 8))
         .contentShape(Rectangle())
+        // .contain makes CardView a single queryable container in the
+        // a11y tree (children still expose themselves) so the
+        // identifier below survives — without it SwiftUI decomposes
+        // the row into title/badge/etc. and XCUITest can't find the
+        // wrapper to .press(forDuration:thenDragTo:).
+        .accessibilityElement(children: .contain)
+        // Title-first identifier for XCUITest drag/drop lookup —
+        // tests seed cards with known titles, so `card-Card A` is
+        // the queryable handle. UUID is the fallback for the rare
+        // titleless edge (and remains stable per-card if needed).
+        .accessibilityIdentifier("card-\(card.title ?? card.id?.uuidString ?? "untitled")")
     }
 }

@@ -182,6 +182,15 @@ struct ColumnView: View {
                 .animation(.easeOut(duration: 0.15), value: isDropTargeted)
                 .allowsHitTesting(false)
         }
+        // .contain so ColumnView is a single queryable a11y container —
+        // children (cards, header buttons, gold chip) still expose
+        // themselves individually but XCUITest can locate the column
+        // wrapper by identifier for `.press(forDuration:thenDragTo:)`.
+        .accessibilityElement(children: .contain)
+        // Stable identifier for XCUITest drag/drop element lookup.
+        // Uses the column name (test seeds known names) so the test
+        // doesn't depend on Core Data object IDs.
+        .accessibilityIdentifier("column-\(column.name ?? "untitled")")
     }
 
     private func calculateDropIndex(at location: CGPoint, in cards: [Card]) -> Int {

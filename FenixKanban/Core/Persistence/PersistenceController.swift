@@ -2,7 +2,15 @@ import CoreData
 import CloudKit
 
 final class PersistenceController: ObservableObject {
-    static let shared = PersistenceController()
+    /// In UI-test mode the app launches with `-uitest-reset-store` so
+    /// each test starts from a clean, in-memory store with no CloudKit
+    /// round-trips. Production launches behave identically to before.
+    static let shared: PersistenceController = {
+        if ProcessInfo.processInfo.arguments.contains("-uitest-reset-store") {
+            return PersistenceController(inMemory: true, useCloudKit: false)
+        }
+        return PersistenceController()
+    }()
 
     static var preview: PersistenceController = {
         let controller = PersistenceController(inMemory: true)
