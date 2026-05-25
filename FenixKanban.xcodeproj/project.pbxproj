@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
+		0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0435462C469D8222A55798D /* CardEntity.swift */; };
 		098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */; };
 		12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */; };
 		17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10A143D4EF691E4A0436C89 /* NotificationService.swift */; };
 		1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */; };
+		24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */; };
 		27FBE181E269E549EEF69233 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4655A9176AC7C9288D8920FE /* SettingsView.swift */; };
 		280FE176F4F5E3DF15AAB119 /* View+AdaptiveLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5AF375736749B5845C69519 /* View+AdaptiveLayout.swift */; };
 		2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E20A59A4E9DDCD06081E6A7 /* CardView.swift */; };
@@ -40,6 +42,7 @@
 		6821052820164D6848537418 /* BoardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0906AE18DFC56CF8C029EE3E /* BoardRepositoryTests.swift */; };
 		69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CACAAF5DC4AC402C5BBD81E2 /* CardRepository.swift */; };
 		6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9D9F931CC1F616741916216 /* Assets.xcassets */; };
+		6C8C404DB12E296DC35C51F5 /* CardQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F592F755DD0739220B0604 /* CardQuery.swift */; };
 		703038A826EEB17114395035 /* PreviewPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */; };
 		73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E24C6748D661CCE038C4F0 /* TipJarStoreTests.swift */; };
 		75FC5EF6E991CBC99BD5DD9B /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */; };
@@ -68,6 +71,7 @@
 		CB732A1614AF3916C0C2C058 /* NotificationSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */; };
 		CE45552D3BF177D8FFDF02C7 /* TipJarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91F0817152C485773F9923C6 /* TipJarView.swift */; };
 		D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
+		DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */; };
 		DC765919BB731CC54C2A813D /* SyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7572B48C962A3EB824956E /* SyncMonitor.swift */; };
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
@@ -134,6 +138,7 @@
 		99D93FD1E573B49C12DC2C27 /* Development.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
 		9A78B1699150F1C5A72D387C /* LabelRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepository.swift; sourceTree = "<group>"; };
 		9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
+		9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+CrossPlatform.swift"; sourceTree = "<group>"; };
 		9E20A59A4E9DDCD06081E6A7 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		A1E87D54C1B073A40441ED37 /* NavigationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationModelTests.swift; sourceTree = "<group>"; };
 		A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementView.swift; sourceTree = "<group>"; };
@@ -141,6 +146,7 @@
 		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
 		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
 		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; path = TipJarProducts.storekit; sourceTree = "<group>"; };
+		B4F592F755DD0739220B0604 /* CardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardQuery.swift; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
@@ -155,6 +161,7 @@
 		DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorCrossPlatformTests.swift; sourceTree = "<group>"; };
 		DE7572B48C962A3EB824956E /* SyncMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMonitor.swift; sourceTree = "<group>"; };
 		DF5619875D16CD1B3B74E215 /* BoardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardQuery.swift; sourceTree = "<group>"; };
+		E0435462C469D8222A55798D /* CardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntity.swift; sourceTree = "<group>"; };
 		E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
 		E468616D12A084C045616D44 /* FenixKanbanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanTests.swift; sourceTree = "<group>"; };
@@ -162,6 +169,7 @@
 		E7628BACE24DA03CDF86556D /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSManagedObject+Extensions.swift"; sourceTree = "<group>"; };
 		E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModel.swift; sourceTree = "<group>"; };
+		EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntityTests.swift; sourceTree = "<group>"; };
 		F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		FABCA245F11BC88FC3B11A90 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
@@ -185,6 +193,8 @@
 			children = (
 				81F6E147784B7158A6DF4A4D /* BoardEntity.swift */,
 				DF5619875D16CD1B3B74E215 /* BoardQuery.swift */,
+				E0435462C469D8222A55798D /* CardEntity.swift */,
+				B4F592F755DD0739220B0604 /* CardQuery.swift */,
 			);
 			path = Intents;
 			sourceTree = "<group>";
@@ -245,6 +255,7 @@
 			isa = PBXGroup;
 			children = (
 				4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */,
+				EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */,
 			);
 			path = Intents;
 			sourceTree = "<group>";
@@ -479,6 +490,7 @@
 				3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */,
 				FAE77B96655930ABFC5A54DA /* Color+Hex.swift */,
 				8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */,
+				9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */,
 				E5AF375736749B5845C69519 /* View+AdaptiveLayout.swift */,
 			);
 			path = Extensions;
@@ -610,6 +622,8 @@
 				63D0C71A1CC4E212A545376F /* Card+CoreDataClass.swift in Sources */,
 				3006918E8F888BD08EEDD237 /* CardDetailView.swift in Sources */,
 				9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */,
+				0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */,
+				6C8C404DB12E296DC35C51F5 /* CardQuery.swift in Sources */,
 				69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */,
 				2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */,
 				36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */,
@@ -621,6 +635,7 @@
 				9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */,
 				32BA63F4742BBE3D1371E561 /* FenixKanban.xcdatamodeld in Sources */,
 				098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */,
+				DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */,
 				0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */,
 				2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */,
 				577A21A946600DF0FCF63140 /* LabelEditorSheet.swift in Sources */,
@@ -660,6 +675,7 @@
 				4262C459E4BA6E8674A9214F /* BoardViewModelLifecycleTests.swift in Sources */,
 				1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */,
 				85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */,
+				24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
 				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
