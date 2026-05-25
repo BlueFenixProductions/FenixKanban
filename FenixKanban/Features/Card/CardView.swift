@@ -5,6 +5,8 @@ struct CardView: View {
     var columnColor: Color? = nil
 
     private var glassTint: Color {
+        // Golden priority takes precedence over the column-color tint —
+        // the column association is still readable via the stroke rim.
         if card.isGolden {
             return .goldenTicket
         }
@@ -53,7 +55,6 @@ struct CardView: View {
                     .foregroundStyle(Color.goldenTicketIcon)
                     .padding(8)
                     .accessibilityLabel("Golden ticket priority")
-                    .accessibilityAddTraits(.isHeader)
             }
         }
     }
