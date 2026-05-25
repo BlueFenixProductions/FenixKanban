@@ -66,11 +66,13 @@
 		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
 		9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88157336039C94037EF998 /* CardDetailViewModel.swift */; };
 		93F967F7144D2103D799FD3C /* FenixKanbanShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8266DABF5BF6B426312B202 /* FenixKanbanShortcuts.swift */; };
+		957D0C7287B2CAB192BC4E96 /* FizzyClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */; };
 		98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */; };
 		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
 		A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */; };
 		A30A97626FA931BBFCD62BA3 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */; };
 		A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B36134843F5683038443D750 /* TipJarProducts.storekit */; };
+		AC1E3E87B7CD67F0035D7505 /* FizzyClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF14922C6549BC2260540129 /* FizzyClient.swift */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
 		AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22CB144486430B2801DB56B /* FizzyDTOTests.swift */; };
 		B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */; };
@@ -156,6 +158,7 @@
 		78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryTests.swift; sourceTree = "<group>"; };
 		81F6E147784B7158A6DF4A4D /* BoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardEntity.swift; sourceTree = "<group>"; };
+		821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientTests.swift; sourceTree = "<group>"; };
 		8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewColumnSheet.swift; sourceTree = "<group>"; };
 		85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanApp.swift; sourceTree = "<group>"; };
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
@@ -222,6 +225,7 @@
 		FABA181CFB55168EB577EAA1 /* FizzyError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyError.swift; sourceTree = "<group>"; };
 		FABCA245F11BC88FC3B11A90 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		FAE77B96655930ABFC5A54DA /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		FF14922C6549BC2260540129 /* FizzyClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -531,6 +535,7 @@
 		CA2F497DC7C4B6FE99D67D3E /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */,
 				E22CB144486430B2801DB56B /* FizzyDTOTests.swift */,
 				90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */,
 				B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */,
@@ -631,6 +636,7 @@
 		FE0D1F7D7689032BAFB60030 /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				FF14922C6549BC2260540129 /* FizzyClient.swift */,
 				8A25B0D029F52671883DC255 /* FizzyDTOs.swift */,
 				FABA181CFB55168EB577EAA1 /* FizzyError.swift */,
 				C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */,
@@ -767,6 +773,7 @@
 				098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */,
 				93F967F7144D2103D799FD3C /* FenixKanbanShortcuts.swift in Sources */,
 				6D71EC62F098049DA2784D72 /* FindGoldenCardsIntent.swift in Sources */,
+				AC1E3E87B7CD67F0035D7505 /* FizzyClient.swift in Sources */,
 				2F13B71B01BE8EB33100F976 /* FizzyDTOs.swift in Sources */,
 				C071193A6B7A63C7AC32817D /* FizzyError.swift in Sources */,
 				857344412226E98D29897FCA /* FizzyResponse.swift in Sources */,
@@ -823,6 +830,7 @@
 				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,
+				957D0C7287B2CAB192BC4E96 /* FizzyClientTests.swift in Sources */,
 				AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */,
 				BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */,
 				D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */,
