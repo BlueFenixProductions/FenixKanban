@@ -4,6 +4,7 @@ struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var context
+    @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
 
     init(authService: AuthenticationService, persistence: PersistenceController) {
         _viewModel = StateObject(wrappedValue: SettingsViewModel(
@@ -43,6 +44,17 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                }
+
+                Section("Appearance") {
+                    Picker("Theme", selection: $appearanceRaw) {
+                        ForEach(AppearanceMode.allCases) { mode in
+                            Text(mode.label).tag(mode.rawValue)
+                        }
+                    }
+                    #if os(iOS)
+                    .pickerStyle(.segmented)
+                    #endif
                 }
 
                 Section("Notifications") {
