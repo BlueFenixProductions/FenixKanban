@@ -75,11 +75,12 @@ final class FizzyClient: Sendable {
 
     // MARK: - URL construction
 
-    /// Builds the absolute URL for a path. Paths starting with `/my` skip the
+    /// Builds the absolute URL for a path. Paths starting with `/my/` skip the
     /// account-slug prefix (Fizzy convention — `/my/identity` is not scoped).
+    /// The trailing slash avoids false matches like `/myth-busters`.
     private func url(for path: String) -> URL {
         precondition(path.hasPrefix("/"), "FizzyClient paths must begin with `/`")
-        let prefix = path.hasPrefix("/my") ? "" : "/\(accountSlug)"
+        let prefix = path.hasPrefix("/my/") ? "" : "/\(accountSlug)"
         return baseURL.appending(path: "\(prefix)\(path)")
     }
 }

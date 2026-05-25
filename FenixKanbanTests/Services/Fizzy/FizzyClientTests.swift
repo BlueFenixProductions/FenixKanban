@@ -37,7 +37,7 @@ struct FizzyClientAuthTests {
         #expect(req.value(forHTTPHeaderField: "Accept") == "application/json")
     }
 
-    @Test("paths starting with /my are NOT account-scoped (Fizzy convention)")
+    @Test("paths starting with /my/ are NOT account-scoped (Fizzy convention)")
     func myPathsBypassSlug() async throws {
         MockURLProtocol.handler = { req in
             let body = #"{"accounts":[]}"#.data(using: .utf8)!
@@ -49,5 +49,19 @@ struct FizzyClientAuthTests {
 
         let req = try #require(MockURLProtocol.requests.first)
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/my/identity")
+    }
+
+    @Test("paths with /my prefix but no trailing slash DO get scoped")
+    func myPrefixWithoutSlashIsScoped() async throws {
+        MockURLProtocol.handler = { req in
+            let body = "[]".data(using: .utf8)!
+            return (body, .ok(for: req))
+        }
+
+        let client = makeClient()
+        _ = try await client.get("/myth-busters", as: [FizzyBoard].self)
+
+        let req = try #require(MockURLProtocol.requests.first)
+        #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/myth-busters")
     }
 }
