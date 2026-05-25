@@ -14,6 +14,8 @@ struct ColumnView: View {
     let onToggleGolden: (Card) -> Void
     let onToggleGoldenByID: (UUID) -> Void
 
+    @State private var isDropTargeted = false
+
     private var columnColor: Color? {
         guard let hex = column.colorHex else { return nil }
         return Color(hex: hex)
@@ -79,15 +81,22 @@ struct ColumnView: View {
                 GlassEffectContainer(spacing: 6) {
                     LazyVStack(spacing: 6) {
                         ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
-                            CardView(card: card, columnColor: columnColor, onToggleGolden: onToggleGolden)
+                            CardView(card: card, columnColor: columnColor)
                                 .draggable(card.id?.uuidString ?? "") {
-                                    CardView(card: card, columnColor: columnColor, onToggleGolden: onToggleGolden)
+                                    CardView(card: card, columnColor: columnColor)
                                         .frame(width: 250)
-                                        .opacity(0.8)
+                                        .opacity(0.85)
                                 }
-                                .onTapGesture {
-                                    onSelectCard(card)
-                                }
+                                // simultaneousGesture (not .onTapGesture)
+                                // so a quick tap selects the card without
+                                // exclusively claiming the touch sequence
+                                // — .draggable needs that sequence to lift
+                                // the card on click-drag (macOS) or
+                                // long-press-drag (iOS) without waiting
+                                // for tap to time out.
+                                .simultaneousGesture(
+                                    TapGesture().onEnded { onSelectCard(card) }
+                                )
                                 .contextMenu {
                                     Button {
                                         onToggleGolden(card)
@@ -160,10 +169,28 @@ struct ColumnView: View {
                 let dropIndex = calculateDropIndex(at: location, in: cards)
                 onDropCard(uuid, dropIndex)
                 return true
-            }
+            } isTargeted: { isDropTargeted = $0 }
         }
         .background(Color.crossPlatformSecondarySystemBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(
+                    (columnColor ?? .accentColor).opacity(isDropTargeted ? 0.9 : 0),
+                    lineWidth: 2
+                )
+                .animation(.easeOut(duration: 0.15), value: isDropTargeted)
+                .allowsHitTesting(false)
+        }
+        // .contain so ColumnView is a single queryable a11y container —
+        // children (cards, header buttons, gold chip) still expose
+        // themselves individually but XCUITest can locate the column
+        // wrapper by identifier for `.press(forDuration:thenDragTo:)`.
+        .accessibilityElement(children: .contain)
+        // Stable identifier for XCUITest drag/drop element lookup.
+        // Uses the column name (test seeds known names) so the test
+        // doesn't depend on Core Data object IDs.
+        .accessibilityIdentifier("column-\(column.name ?? "untitled")")
     }
 
     private func calculateDropIndex(at location: CGPoint, in cards: [Card]) -> Int {

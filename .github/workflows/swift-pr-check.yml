@@ -1,0 +1,155 @@
+name: Swift PR Check
+
+# PR-gate only — never runs on push to a protected branch. Hotfix
+# bypass is a human-approval process documented in DELIVERABLES.md,
+# not a CI skip.
+on:
+  pull_request:
+    branches: [main, develop]
+
+# A new push to the same PR cancels in-progress runs so we don't
+# burn the macOS-runner minute budget on stale commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift-pr-quality-gate:
+    name: swift-pr-quality-gate
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        # v6 natively targets Node 24; v4 emitted the Node-20-
+        # deprecated warning even with FORCE_JAVASCRIPT_ACTIONS_TO_NODE24.
+        uses: actions/checkout@v6
+
+      - name: Select latest stable Xcode
+        # iOS 26 / macOS 26 SDKs need a matching Xcode. `latest-stable`
+        # picks whatever the runner image has installed and pins the
+        # rest of the run to it via DEVELOPER_DIR.
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show toolchain
+        # Surfaced in logs so PR-failure triage doesn't need a guess
+        # about which Xcode/sim runtime the runner used.
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | grep -i ios || true
+
+      - name: Install xcodeproj gem
+        # Used by add-ui-test-target.rb. macOS runners ship a system
+        # Ruby that can install gems to ~/.gem with --user-install.
+        run: gem install xcodeproj --user-install
+
+      - name: Add UI test target + shared scheme
+        # The UI test bundle is materialized from a script (not
+        # committed in project.pbxproj) so the project file stays
+        # small and humans don't see xcodeproj-gem churn in diffs.
+        # The script is idempotent.
+        run: ruby scripts/add-ui-test-target.rb
+
+      - name: Materialize Development.xcconfig
+        # Config/Development.xcconfig is gitignored (contains a real
+        # DEVELOPMENT_TEAM ID per local dev) but the xcodeproj still
+        # references it as baseConfigurationReference, so the project
+        # won't open without *some* file at that path. The .example
+        # template has a placeholder Team ID which is fine here —
+        # CODE_SIGNING_ALLOWED=NO below means the team is never used.
+        run: cp Config/Development.xcconfig.example Config/Development.xcconfig
+
+      - name: Build for macOS (compile-check only)
+        # macOS-26 build proves the cross-platform code (Color+,
+        # Font+, .crossPlatform* helpers, etc.) still compiles
+        # against the macOS 26 SDK. Tests can't *run* here — the
+        # GitHub-hosted runner host is macOS 15.7 and won't host a
+        # macOS 26.0-deployment-target xctest bundle. Real macOS
+        # test execution stays a local-dev gate; the unit-test
+        # bundle runs against the iOS simulator below (same tests,
+        # different test host — they're cross-platform).
+        run: |
+          xcodebuild build \
+            -scheme FenixKanban \
+            -destination 'platform=macOS,arch=arm64' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -quiet
+
+      - name: Boot iOS simulator
+        # Pre-booting surfaces simulator-availability problems as a
+        # clear early failure instead of an opaque xcodebuild error
+        # deep in the test step. iPhone 17 matches local dev; the
+        # OS picks whatever runtime ships with `latest-stable` Xcode.
+        run: |
+          xcrun simctl boot 'iPhone 17' || true
+          xcrun simctl list devices booted
+
+      - name: Build for testing (iOS simulator)
+        # One incremental compile + sign step that both the unit
+        # and UI test invocations reuse via test-without-building.
+        # Previously each `xcodebuild test` rebuilt independently,
+        # which doubled the build cost on every PR.
+        #
+        # NOTE: no CODE_SIGNING_ALLOWED=NO. iOS-sim builds need
+        # the default sign-to-run-locally signature to carry the
+        # entitlements file (keychain-access-groups in particular),
+        # otherwise SecItemAdd denies and KeychainHelperTests +
+        # AuthenticationServiceTests fail.
+        #
+        # TEST_RUNNER_<NAME>=value build settings are baked into
+        # the xctestrun file generated here and forwarded as env
+        # vars (prefix stripped) into the test runner inside the
+        # simulator. Must be set on build-for-testing, not on the
+        # downstream test-without-building — the xctestrun is
+        # finalized at this step and test-without-building only
+        # reads it.
+        run: |
+          xcodebuild build-for-testing \
+            -scheme FenixKanban \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            TEST_RUNNER_CI=true \
+            TEST_RUNNER_GITHUB_ACTIONS=true
+
+      - name: Unit tests (iOS simulator)
+        # 127+ tests in FenixKanbanTests. Cross-platform — they run
+        # equivalently against the iOS test host on a sim. (macOS
+        # host execution is gated to local dev; runners don't have
+        # macOS 26.) Separate result bundle from the UI step so a
+        # PR-failure deep-link points at the right suite.
+        run: |
+          xcodebuild test-without-building \
+            -scheme FenixKanban \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            -only-testing:FenixKanbanTests \
+            -resultBundlePath build/results/ios-unit.xcresult
+
+      - name: iOS UI tests
+        # Drives the card-drag / tap-to-select surfaces that the
+        # unit suite can't reach. The bundle is wired in by the
+        # add-ui-test-target.rb step above. TEST_RUNNER_ env-
+        # forwarding is set on the build step above (xctestrun
+        # is finalized there).
+        run: |
+          xcodebuild test-without-building \
+            -scheme FenixKanban \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            -only-testing:FenixKanbanUITests \
+            -resultBundlePath build/results/ios-ui.xcresult
+
+      - name: Upload xcresult on failure
+        # xcresult bundles contain screenshots, video recordings,
+        # and a11y-tree dumps from FenixKanbanUITests.tearDown.
+        # Keep them for a week so the author can debug without
+        # re-running CI.
+        if: failure()
+        # v7 natively targets Node 24 — see the checkout bump above.
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcresult-${{ github.run_id }}
+          path: build/results/
+          retention-days: 7
+          if-no-files-found: ignore

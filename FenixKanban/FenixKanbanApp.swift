@@ -11,6 +11,16 @@ struct FenixKanbanApp: App {
     @State private var navigator = NavigationModel()
 
     init() {
+        let launchArgs = ProcessInfo.processInfo.arguments
+
+        // UI-test bypass: skip the auth gate so the board list is
+        // reachable from a fresh launch without needing Sign in with
+        // Apple. Paired with PersistenceController's in-memory store
+        // override on the same launch flag.
+        if launchArgs.contains("-uitest-reset-store") {
+            UserDefaults.standard.set(true, forKey: "hasSkippedAuth")
+        }
+
         let monitor = SyncMonitor(container: PersistenceController.shared.container)
         _syncMonitor = StateObject(wrappedValue: monitor)
 
@@ -21,6 +31,17 @@ struct FenixKanbanApp: App {
         // captures mutating `self` to read `_navigator`.
         let viewContext = PersistenceController.shared.container.viewContext
         let navigatorValue = _navigator.wrappedValue
+
+        // UI-test seed: pre-create Board → Column → Card and select
+        // the board so tests that exercise card-level behavior
+        // (drag, tap) skip 20–30s of UI-driven setup. The seed-flow
+        // test itself doesn't pass this arg — it still drives the
+        // creation UI to assert that surface works.
+        if launchArgs.contains("-uitest-seed-board") {
+            let boardID = PersistenceController.seedUITestBoardColumnAndCard()
+            navigatorValue.selectedBoardID = boardID
+        }
+
         AppDependencyManager.shared.add(dependency: viewContext)
         AppDependencyManager.shared.add(dependency: navigatorValue)
     }
