@@ -681,3 +681,28 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **Deferred (acknowledged):**
 - Header duplication (Authorization + Accept set in 5 verbs) — fine for now, candidate for a small `addAuthHeaders` extraction in a future task.
 - 429 Retry-After driving the internal retry loop (currently caller-handled via `FizzyError.rateLimited`).
+
+### Fizzy Integration — Phase 2: Auth State + Board Mapping ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Wrote `FizzyBoardMappingTests` (4 tests) against a private `UserDefaults(suiteName:)` — default state, setPairing, lastSyncAt round-trip, clear.
+- Wrote `FizzyAuthStateTests` (4 tests) using a unique Keychain `keyPrefix` per test — default state, token+slug round-trip, baseURL override+revert, clear.
+- All tests verified failing before implementation.
+
+**🟢 Green Phase:**
+- `FenixKanban/Core/Services/Fizzy/FizzyBoardMapping.swift` — instance-based wrapper around 3 `UserDefaults` keys (`fizzy.pairing.localBoardID`, `fizzy.pairing.fizzyBoardID`, `fizzy.pairing.lastSyncAt`). `isPaired` predicate, `setPairing`, `setLastSync`, `clear`.
+- `FenixKanban/Core/Services/Fizzy/FizzyAuthState.swift` — instance-based wrapper around 3 Keychain keys (`fizzy.accessToken`, `fizzy.accountSlug`, `fizzy.baseURL`). `isConfigured` predicate, `set*` setters, `clear`, default `baseURL == https://fizzy.bluefenix.net`.
+
+**🔵 Refactor Phase:**
+- Cached `ISO8601DateFormatter` as `private static let` in `FizzyBoardMapping` — sync code reads/writes `lastSyncAt` every poll; formatter instantiation is non-trivial.
+- Both types use injected storage (UserDefaults for mapping, Keychain key prefix for auth) to keep tests fully isolated from production state.
+- No protocol abstractions or static-only APIs — instance + injection is the smallest unit of testability.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-2-state.md`
+
+**Test Coverage:** 8 new tests (4 per type). Full suite still green.
+
+**What ships:** Two small persistence types ready for Phase 3 (CoreData migration) and Phase 4 (sync engine) to consume. No app wiring yet — `FizzySyncProvider.register()` and the `signOut()` orchestration land in Phase 5 once the engine + UI exist.
