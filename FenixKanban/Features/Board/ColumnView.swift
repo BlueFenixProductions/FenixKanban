@@ -73,9 +73,9 @@ struct ColumnView: View {
                 GlassEffectContainer(spacing: 6) {
                     LazyVStack(spacing: 6) {
                         ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
-                            CardView(card: card, columnColor: columnColor)
+                            CardView(card: card, columnColor: columnColor, onToggleGolden: onToggleGolden)
                                 .draggable(card.id?.uuidString ?? "") {
-                                    CardView(card: card, columnColor: columnColor)
+                                    CardView(card: card, columnColor: columnColor, onToggleGolden: onToggleGolden)
                                         .frame(width: 250)
                                         .opacity(0.8)
                                 }
