@@ -217,6 +217,20 @@ struct FizzyClientPostTests {
             let _: FizzyCard = try await client.post("/boards/B1/cards", body: payload, as: FizzyCard.self)
         }
     }
+
+    @Test("POST 201 without a Location header throws unexpectedStatus(201)")
+    func postMissingLocationHeader() async throws {
+        MockURLProtocol.handler = { req in
+            (Data(), .response(for: req, status: 201))
+        }
+
+        let client = makeClient()
+        let payload = FizzyCardWritePayload(card: FizzyCardWrite(title: "x", description: nil, status: nil, tagIds: nil))
+
+        await #expect(throws: FizzyError.unexpectedStatus(201)) {
+            let _: FizzyCard = try await client.post("/boards/B1/cards", body: payload, as: FizzyCard.self)
+        }
+    }
 }
 
 private final class FixtureLocatorPost {}
