@@ -105,6 +105,25 @@ final class BoardViewModel: ObservableObject {
         refreshColumns()
     }
 
+    // MARK: - Golden Ticket
+
+    func toggleGolden(for card: Card) {
+        card.isGolden.toggle()
+        card.modifiedAt = Date()
+        card.column?.modifiedAt = Date()
+        card.column?.board?.modifiedAt = Date()
+        try? context.save()
+        refreshColumns()
+    }
+
+    func toggleGolden(cardID: UUID) {
+        let request = Card.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", cardID as CVarArg)
+        request.fetchLimit = 1
+        guard let card = try? context.fetch(request).first else { return }
+        toggleGolden(for: card)
+    }
+
     private func observeChanges() {
         observerToken = NotificationCenter.default.addObserver(
             forName: .NSManagedObjectContextDidSave,
