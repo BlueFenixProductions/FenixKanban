@@ -621,3 +621,27 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **Outstanding release checklist item (manual, must happen before App Store):**
 
 - [ ] **Before the App Store release that includes this feature:** Open CloudKit Dashboard → Container `iCloud.com.bluefenixproductions.FenixKanban` → Schema → Deploy Schema Changes to Production. Without this step, `isGolden` sync breaks for App Store users until the dashboard step happens. The app stays functional locally; sync resumes silently once promoted.
+
+### Appearance Mode Setting ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Created `FenixKanbanTests/Core/Settings/AppearanceModeTests.swift` with 4 tests covering `colorScheme` mapping, raw-value round-trip, `allCases` ordering, and label strings.
+- Verified failing build (`Cannot find 'AppearanceMode' in scope`).
+
+**🟢 Green Phase:**
+- Created `FenixKanban/Core/Settings/AppearanceMode.swift` — enum with `system`/`light`/`dark` cases; maps to optional `ColorScheme` (`.system → nil` defers to OS).
+- All 4 tests pass.
+
+**🔵 Refactor Phase:**
+- `FenixKanban/FenixKanbanApp.swift`: replaced hard-coded `.preferredColorScheme(.dark)` at the root `WindowGroup` with `@AppStorage("appearanceMode")`-driven binding.
+- `FenixKanban/Features/Settings/SettingsView.swift`: added `Section("Appearance")` with `Picker` (segmented on iOS, default menu on macOS), label "Appearance" per Apple HIG.
+- Default is `.system`; setting persists via `@AppStorage` and updates app-wide immediately.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-appearance-mode-setting-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-appearance-mode-setting.md`
+
+**Test Coverage:** 4/4 new tests; full suite 131/131.
+
+**Follow-up:** Light-mode contrast audit for `goldenTicket`/`goldenTicketIcon` (`FenixKanban/Extensions/Color+CrossPlatform.swift:55-85`) — flagged in spec, not blocking.
