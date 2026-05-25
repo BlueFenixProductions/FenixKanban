@@ -127,9 +127,13 @@ final class FenixKanbanUITests: XCTestCase {
         XCTAssertTrue(card.waitForExistence(timeout: 3), "source card missing")
         XCTAssertTrue(goldChip.waitForExistence(timeout: 3), "gold chip missing")
 
-        // 0.7s exceeds the SwiftUI .draggable system long-press
-        // threshold (~0.5s) so the lift fires before the drag begins.
-        card.press(forDuration: 0.7, thenDragTo: goldChip)
+        // 1.2s — longer than the local-dev 0.7s baseline so the
+        // slower GitHub-hosted macOS runner reliably crosses the
+        // SwiftUI .draggable long-press threshold and lifts the
+        // card before context menu / scroll gesture arbitration
+        // kicks in. (CI run 26409795001 showed the context menu
+        // opening at 0.7s on the runner; never observed locally.)
+        card.press(forDuration: 1.2, thenDragTo: goldChip)
 
         let badge = app.images["Golden ticket priority"]
         XCTAssertTrue(badge.waitForExistence(timeout: 3),

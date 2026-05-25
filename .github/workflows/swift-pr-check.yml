@@ -13,6 +13,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Opt every JS action into Node 24 ahead of GitHub's June 2026
+# default switch. Without this, actions/checkout@v4 and
+# actions/upload-artifact@v4 emit the "Node 20 deprecated" warning
+# on every run.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   swift-pr-quality-gate:
     name: swift-pr-quality-gate
