@@ -14,11 +14,15 @@ struct FenixKanbanApp: App {
         let monitor = SyncMonitor(container: PersistenceController.shared.container)
         _syncMonitor = StateObject(wrappedValue: monitor)
 
-        // Register the Core Data view context for @Dependency injection
-        // in App Intents. Must happen synchronously in init() so cold-launch
+        // Register App Intent dependencies synchronously so cold-launch
         // from Siri / Shortcuts resolves before any perform() runs.
+        // `add(dependency:)` takes an @autoclosure, so the NavigationModel
+        // is materialized to a local first — otherwise the autoclosure
+        // captures mutating `self` to read `_navigator`.
         let viewContext = PersistenceController.shared.container.viewContext
+        let navigatorValue = _navigator.wrappedValue
         AppDependencyManager.shared.add(dependency: viewContext)
+        AppDependencyManager.shared.add(dependency: navigatorValue)
     }
 
     var body: some Scene {
@@ -28,11 +32,6 @@ struct FenixKanbanApp: App {
                 .environmentObject(authService)
                 .environmentObject(syncMonitor)
                 .preferredColorScheme(.dark)
-                .onAppear {
-                    // NavigationModel is @MainActor-isolated so its
-                    // registration is deferred from init() to here.
-                    AppDependencyManager.shared.add(dependency: navigator)
-                }
                 .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
                     NotificationService.shared.refreshAllReminders(context: persistence.viewContext)
                 }
