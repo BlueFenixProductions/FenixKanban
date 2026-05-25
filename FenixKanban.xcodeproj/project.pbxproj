@@ -29,6 +29,7 @@
 		32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05B5FFB9A7288FA077C6870 /* ColumnView.swift */; };
 		36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */; };
 		3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */; };
+		37D4092F6735945F67D6AD4E /* FizzyAuthState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDB1F0B68F0499ABCF92B6D /* FizzyAuthState.swift */; };
 		3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */; };
 		41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */; };
 		41FB1CBD9C9C0051431EFFE7 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = FABCA245F11BC88FC3B11A90 /* AppIcon.icns */; };
@@ -76,6 +77,7 @@
 		A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B36134843F5683038443D750 /* TipJarProducts.storekit */; };
 		AC1E3E87B7CD67F0035D7505 /* FizzyClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF14922C6549BC2260540129 /* FizzyClient.swift */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
+		AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */; };
 		AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22CB144486430B2801DB56B /* FizzyDTOTests.swift */; };
 		B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */; };
 		B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1964FFB87532CE5ED41070 /* BoardRowView.swift */; };
@@ -124,7 +126,9 @@
 /* Begin PBXFileReference section */
 		0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModelTests.swift; sourceTree = "<group>"; };
 		0906AE18DFC56CF8C029EE3E /* BoardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepositoryTests.swift; sourceTree = "<group>"; };
+		0BDB1F0B68F0499ABCF92B6D /* FizzyAuthState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthState.swift; sourceTree = "<group>"; };
 		0E2D11BAE72815F0D7F274CD /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthStateTests.swift; sourceTree = "<group>"; };
 		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
 		1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 2.xcdatamodel"; sourceTree = "<group>"; };
@@ -136,10 +140,10 @@
 		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
 		27A14F077027BF8262193AEE /* LabelBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelBadge.swift; sourceTree = "<group>"; };
 		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
-		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelGoldenTests.swift; sourceTree = "<group>"; };
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
-		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
 		411F394EE3281672E6FE03F0 /* OpenCardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCardIntent.swift; sourceTree = "<group>"; };
 		4352F68CBFA8610EEC9EE57A /* AuthenticationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServiceTests.swift; sourceTree = "<group>"; };
@@ -190,7 +194,7 @@
 		A61AF1066F57E5404E2BF366 /* BoardViewModelLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelLifecycleTests.swift; sourceTree = "<group>"; };
 		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
 		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
-		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; path = TipJarProducts.storekit; sourceTree = "<group>"; };
+		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = TipJarProducts.storekit; sourceTree = "<group>"; };
 		B4F592F755DD0739220B0604 /* CardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardQuery.swift; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
@@ -539,6 +543,7 @@
 		CA2F497DC7C4B6FE99D67D3E /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */,
 				8F61A847D1870E4D02FFCCEA /* FizzyBoardMappingTests.swift */,
 				821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */,
 				E22CB144486430B2801DB56B /* FizzyDTOTests.swift */,
@@ -641,6 +646,7 @@
 		FE0D1F7D7689032BAFB60030 /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				0BDB1F0B68F0499ABCF92B6D /* FizzyAuthState.swift */,
 				236DA19A55EE9EA81DE3FE89 /* FizzyBoardMapping.swift */,
 				FF14922C6549BC2260540129 /* FizzyClient.swift */,
 				8A25B0D029F52671883DC255 /* FizzyDTOs.swift */,
@@ -696,7 +702,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					29B0805C04158CE223599CD4 = {
 						DevelopmentTeam = QU2C2R55C4;
@@ -779,6 +785,7 @@
 				098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */,
 				93F967F7144D2103D799FD3C /* FenixKanbanShortcuts.swift in Sources */,
 				6D71EC62F098049DA2784D72 /* FindGoldenCardsIntent.swift in Sources */,
+				37D4092F6735945F67D6AD4E /* FizzyAuthState.swift in Sources */,
 				4575DF39C8B534793CB3B666 /* FizzyBoardMapping.swift in Sources */,
 				AC1E3E87B7CD67F0035D7505 /* FizzyClient.swift in Sources */,
 				2F13B71B01BE8EB33100F976 /* FizzyDTOs.swift in Sources */,
@@ -837,6 +844,7 @@
 				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,
+				AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */,
 				18A304663770D25F082F2E2C /* FizzyBoardMappingTests.swift in Sources */,
 				957D0C7287B2CAB192BC4E96 /* FizzyClientTests.swift in Sources */,
 				AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */,
@@ -893,6 +901,7 @@
 			baseConfigurationReference = 99D93FD1E573B49C12DC2C27 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -926,8 +935,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = QU2C2R55C4;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -943,6 +954,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -956,6 +968,7 @@
 			baseConfigurationReference = 99D93FD1E573B49C12DC2C27 /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -989,8 +1002,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = QU2C2R55C4;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1013,6 +1028,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
