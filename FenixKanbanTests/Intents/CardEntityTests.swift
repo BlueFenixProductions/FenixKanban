@@ -63,6 +63,28 @@ struct CardEntityTests {
         #expect(titles == ["A", "B"])
     }
 
+    @Test func initFromCardPopulatesIsGolden() throws {
+        let (persistence, _, cardRepo, column) = makeContext()
+        let card = cardRepo.createCard(in: column, title: "Pay rent")
+        card.isGolden = true
+        try persistence.viewContext.save()
+
+        let entity = try CardEntity(from: card)
+
+        #expect(entity.isGolden == true)
+    }
+
+    @Test func displayRepresentationShowsGoldenSubtitle() throws {
+        let (persistence, _, cardRepo, column) = makeContext()
+        let card = cardRepo.createCard(in: column, title: "Pay rent")
+        card.isGolden = true
+        try persistence.viewContext.save()
+
+        let entity = try CardEntity(from: card)
+
+        #expect(String(describing: entity.displayRepresentation).contains("Golden ticket"))
+    }
+
     @Test func suggestedEntitiesReturnsAllCardsSortedByTitle() async throws {
         let (persistence, _, cardRepo, column) = makeContext()
         _ = cardRepo.createCard(in: column, title: "Charlie")
