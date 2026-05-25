@@ -102,6 +102,29 @@ struct CardDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        viewModel.toggleGolden()
+                    } label: {
+                        Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
+                    }
+                    .tint(viewModel.card.isGolden ? Color.goldenTicketIcon : .primary)
+                    .accessibilityLabel(viewModel.card.isGolden ? "Remove golden ticket" : "Mark as golden ticket")
+                    .accessibilityHint("Promotes this card to the top of the column.")
+                }
+                #else
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        viewModel.toggleGolden()
+                    } label: {
+                        Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
+                    }
+                    .tint(viewModel.card.isGolden ? Color.goldenTicketIcon : .primary)
+                    .accessibilityLabel(viewModel.card.isGolden ? "Remove golden ticket" : "Mark as golden ticket")
+                    .accessibilityHint("Promotes this card to the top of the column.")
+                }
+                #endif
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         viewModel.save()
