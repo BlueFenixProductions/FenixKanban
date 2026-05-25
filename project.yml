@@ -60,6 +60,10 @@ targets:
       - path: FenixKanbanTests
         excludes:
           - "**/.DS_Store"
+          - "Fixtures/**/*.json"
+          - "Fixtures/**/*.md"
+    resources:
+      - path: FenixKanbanTests/Fixtures
     dependencies:
       - target: FenixKanban
     settings:

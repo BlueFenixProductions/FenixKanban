@@ -1,0 +1,47 @@
+[
+  {
+    "id": "03f5vaeq985jlvwv3arl4srq2",
+    "number": 1,
+    "title": "First card",
+    "status": "published",
+    "description": "Hello, World!",
+    "description_html": "<div class=\"action-text-content\"><p>Hello, World!</p></div>",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": ["programming"],
+    "golden": false,
+    "last_active_at": "2025-12-05T19:38:48.553Z",
+    "created_at": "2025-12-05T19:38:48.540Z",
+    "url": "https://fizzy.bluefenix.net/897362094/cards/1"
+  },
+  {
+    "id": "03f5vaeq985jlvwv3arl4srq3",
+    "number": 2,
+    "title": "Golden card",
+    "status": "published",
+    "description": "This one is golden",
+    "description_html": null,
+    "image_url": null,
+    "has_attachments": false,
+    "tags": ["urgent", "bug"],
+    "golden": true,
+    "last_active_at": "2025-12-05T20:00:00.000Z",
+    "created_at": "2025-12-05T19:50:00.000Z",
+    "url": "https://fizzy.bluefenix.net/897362094/cards/2"
+  },
+  {
+    "id": "03f5vaeq985jlvwv3arl4srq4",
+    "number": 3,
+    "title": "Card with image",
+    "status": "published",
+    "description": null,
+    "description_html": null,
+    "image_url": "https://fizzy.bluefenix.net/uploads/cards/3.png",
+    "has_attachments": true,
+    "tags": [],
+    "golden": false,
+    "last_active_at": "2025-12-05T19:55:00.000Z",
+    "created_at": "2025-12-05T19:55:00.000Z",
+    "url": "https://fizzy.bluefenix.net/897362094/cards/3"
+  }
+]
