@@ -15,6 +15,11 @@ final class FizzyBoardMapping {
     private static let fizzyBoardKey = "fizzy.pairing.fizzyBoardID"
     private static let lastSyncKey   = "fizzy.pairing.lastSyncAt"
 
+    // Cached: ISO8601DateFormatter is thread-safe and expensive to instantiate;
+    // sync code reads/writes lastSyncAt every poll, so per-call construction
+    // would be wasteful.
+    private static let iso8601Formatter = ISO8601DateFormatter()
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -35,7 +40,7 @@ final class FizzyBoardMapping {
     /// Timestamp of the most recent successful sync, or `nil` if never synced.
     var lastSyncAt: Date? {
         guard let string = defaults.string(forKey: Self.lastSyncKey) else { return nil }
-        return ISO8601DateFormatter().date(from: string)
+        return Self.iso8601Formatter.date(from: string)
     }
 
     /// `true` when both IDs are present — the predicate gating sync.
@@ -51,7 +56,7 @@ final class FizzyBoardMapping {
 
     /// Records a successful sync.
     func setLastSync(_ date: Date) {
-        defaults.set(ISO8601DateFormatter().string(from: date), forKey: Self.lastSyncKey)
+        defaults.set(Self.iso8601Formatter.string(from: date), forKey: Self.lastSyncKey)
     }
 
     /// Removes all three keys.
