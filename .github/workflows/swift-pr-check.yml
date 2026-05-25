@@ -13,13 +13,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Opt every JS action into Node 24 ahead of GitHub's June 2026
-# default switch. Without this, actions/checkout@v4 and
-# actions/upload-artifact@v4 emit the "Node 20 deprecated" warning
-# on every run.
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   swift-pr-quality-gate:
     name: swift-pr-quality-gate
@@ -28,7 +21,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        # v6 natively targets Node 24; v4 emitted the Node-20-
+        # deprecated warning even with FORCE_JAVASCRIPT_ACTIONS_TO_NODE24.
+        uses: actions/checkout@v6
 
       - name: Select latest stable Xcode
         # iOS 26 / macOS 26 SDKs need a matching Xcode. `latest-stable`
@@ -126,12 +121,21 @@ jobs:
         # Drives the card-drag / tap-to-select surfaces that the
         # unit suite can't reach. The bundle is wired in by the
         # add-ui-test-target.rb step above.
+        #
+        # TEST_RUNNER_<NAME>=value build settings are forwarded by
+        # xcodebuild as env vars into the test runner's process
+        # inside the simulator. Shell-level CI / GITHUB_ACTIONS
+        # don't cross that boundary on their own (the iOS sim has
+        # its own env namespace), which is why the drag-test skip
+        # didn't fire on run 26411763840.
         run: |
           xcodebuild test-without-building \
             -scheme FenixKanban \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -only-testing:FenixKanbanUITests \
-            -resultBundlePath build/results/ios-ui.xcresult
+            -resultBundlePath build/results/ios-ui.xcresult \
+            TEST_RUNNER_CI=true \
+            TEST_RUNNER_GITHUB_ACTIONS=true
 
       - name: Upload xcresult on failure
         # xcresult bundles contain screenshots, video recordings,
@@ -139,7 +143,8 @@ jobs:
         # Keep them for a week so the author can debug without
         # re-running CI.
         if: failure()
-        uses: actions/upload-artifact@v4
+        # v7 natively targets Node 24 — see the checkout bump above.
+        uses: actions/upload-artifact@v7
         with:
           name: xcresult-${{ github.run_id }}
           path: build/results/
