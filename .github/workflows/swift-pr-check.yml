@@ -1,0 +1,113 @@
+name: Swift PR Check
+
+# PR-gate only — never runs on push to a protected branch. Hotfix
+# bypass is a human-approval process documented in DELIVERABLES.md,
+# not a CI skip.
+on:
+  pull_request:
+    branches: [main, develop]
+
+# A new push to the same PR cancels in-progress runs so we don't
+# burn the macOS-runner minute budget on stale commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift-pr-quality-gate:
+    name: swift-pr-quality-gate
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        # iOS 26 / macOS 26 SDKs need a matching Xcode. `latest-stable`
+        # picks whatever the runner image has installed and pins the
+        # rest of the run to it via DEVELOPER_DIR.
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show toolchain
+        # Surfaced in logs so PR-failure triage doesn't need a guess
+        # about which Xcode/sim runtime the runner used.
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | grep -i ios || true
+
+      - name: Install xcodeproj gem
+        # Used by add-ui-test-target.rb. macOS runners ship a system
+        # Ruby that can install gems to ~/.gem with --user-install.
+        run: gem install xcodeproj --user-install
+
+      - name: Add UI test target + shared scheme
+        # The UI test bundle is materialized from a script (not
+        # committed in project.pbxproj) so the project file stays
+        # small and humans don't see xcodeproj-gem churn in diffs.
+        # The script is idempotent.
+        run: ruby scripts/add-ui-test-target.rb
+
+      - name: Build for macOS
+        # CODE_SIGNING_ALLOWED=NO — runner has no dev cert and we
+        # don't ship this binary, just run it under xctest.
+        run: |
+          xcodebuild build \
+            -scheme FenixKanban \
+            -destination 'platform=macOS,arch=arm64' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -quiet
+
+      - name: macOS unit tests
+        # 127+ tests in FenixKanbanTests. Result bundle is uploaded
+        # on failure (see final step) so PR comments can deep-link
+        # to a specific failed assertion + screenshot.
+        run: |
+          xcodebuild test \
+            -scheme FenixKanban \
+            -destination 'platform=macOS,arch=arm64' \
+            -only-testing:FenixKanbanTests \
+            -resultBundlePath build/results/macos-unit.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Boot iOS simulator
+        # Pre-booting surfaces simulator-availability problems as a
+        # clear early failure instead of an opaque xcodebuild error
+        # deep in the test step. iPhone 17 matches local dev; the
+        # OS picks whatever runtime ships with `latest-stable` Xcode.
+        run: |
+          xcrun simctl boot 'iPhone 17' || true
+          xcrun simctl list devices booted
+
+      - name: iOS UI tests
+        # Drives the card-drag / tap-to-select surfaces that the
+        # unit suite can't reach. The bundle is wired in by the
+        # add-ui-test-target.rb step above.
+        run: |
+          xcodebuild test \
+            -scheme FenixKanban \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            -only-testing:FenixKanbanUITests \
+            -resultBundlePath build/results/ios-ui.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Upload xcresult on failure
+        # xcresult bundles contain screenshots, video recordings,
+        # and a11y-tree dumps from FenixKanbanUITests.tearDown.
+        # Keep them for a week so the author can debug without
+        # re-running CI.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult-${{ github.run_id }}
+          path: build/results/
+          retention-days: 7
+          if-no-files-found: ignore
