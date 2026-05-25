@@ -11,7 +11,7 @@ final class AuthenticationServiceTests {
     // AuthenticationService stores under a hardcoded internal key. Each test
     // instance wipes it in init/deinit so runs start from a known state.
     // Note: this clears any signed-in user on the simulator/test host.
-    private static let serviceKey = "fenixkanban_apple_user_id"
+    private nonisolated static let serviceKey = "fenixkanban_apple_user_id"
 
     init() {
         KeychainHelper.delete(key: Self.serviceKey)
