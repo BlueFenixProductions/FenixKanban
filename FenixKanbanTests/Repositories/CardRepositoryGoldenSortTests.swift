@@ -32,7 +32,7 @@ struct CardRepositoryGoldenSortTests {
         _ = makeCard(title: "A", sortOrder: 0, isGolden: false)
         _ = makeCard(title: "B", sortOrder: 1000, isGolden: true)
         _ = makeCard(title: "C", sortOrder: 2000, isGolden: false)
-        let fetched = cardRepo.fetchCards(in: column).map { $0.title ?? "" }
+        let fetched = column.sortedCards.map { $0.title ?? "" }
         #expect(fetched == ["B", "A", "C"])
     }
 
@@ -41,7 +41,7 @@ struct CardRepositoryGoldenSortTests {
         _ = makeCard(title: "G1", sortOrder: 10, isGolden: true)
         _ = makeCard(title: "G2", sortOrder: 5, isGolden: true)
         _ = makeCard(title: "N1", sortOrder: 100, isGolden: false)
-        let fetched = cardRepo.fetchCards(in: column).map { $0.title ?? "" }
+        let fetched = column.sortedCards.map { $0.title ?? "" }
         #expect(fetched == ["G2", "G1", "N1"])
     }
 
@@ -50,7 +50,7 @@ struct CardRepositoryGoldenSortTests {
         _ = makeCard(title: "X", sortOrder: 2, isGolden: false)
         _ = makeCard(title: "Y", sortOrder: 1, isGolden: false)
         _ = makeCard(title: "Z", sortOrder: 3, isGolden: false)
-        let fetched = cardRepo.fetchCards(in: column).map { $0.title ?? "" }
+        let fetched = column.sortedCards.map { $0.title ?? "" }
         #expect(fetched == ["Y", "X", "Z"])
     }
 }
