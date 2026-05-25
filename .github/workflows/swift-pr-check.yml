@@ -50,6 +50,15 @@ jobs:
         # The script is idempotent.
         run: ruby scripts/add-ui-test-target.rb
 
+      - name: Materialize Development.xcconfig
+        # Config/Development.xcconfig is gitignored (contains a real
+        # DEVELOPMENT_TEAM ID per local dev) but the xcodeproj still
+        # references it as baseConfigurationReference, so the project
+        # won't open without *some* file at that path. The .example
+        # template has a placeholder Team ID which is fine here —
+        # CODE_SIGNING_ALLOWED=NO below means the team is never used.
+        run: cp Config/Development.xcconfig.example Config/Development.xcconfig
+
       - name: Build for macOS
         # CODE_SIGNING_ALLOWED=NO — runner has no dev cert and we
         # don't ship this binary, just run it under xctest.
