@@ -37,7 +37,15 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanban
-        INFOPLIST_FILE: ""
+        # Partial Info.plist merged with the auto-generated one. Used for
+        # keys without recognized INFOPLIST_KEY_* equivalents — currently
+        # UIBackgroundModes, needed so iOS can wake the app for silent
+        # CloudKit pushes (NSPersistentCloudKitContainer remote-change
+        # notifications). macOS ignores UI* keys. Without this, CloudKit
+        # logs "BUG IN CLIENT OF CLOUDKIT: CloudKit push notifications
+        # require the 'remote-notification' background mode in your info
+        # plist." and background sync degrades to foreground-only.
+        INFOPLIST_FILE: FenixKanban/Resources/Info-Partial.plist
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES

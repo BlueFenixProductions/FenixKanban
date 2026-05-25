@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        Partial Info.plist merged into Xcode's auto-generated Info.plist
+        (GENERATE_INFOPLIST_FILE=YES). Used for keys that don't have
+        INFOPLIST_KEY_* build-setting equivalents recognized by Xcode's
+        auto-merge — currently just UIBackgroundModes, needed so iOS can
+        wake the app for silent CloudKit pushes. The key is ignored on
+        macOS.
+    -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
+</dict>
+</plist>

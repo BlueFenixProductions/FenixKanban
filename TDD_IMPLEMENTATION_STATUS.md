@@ -526,3 +526,23 @@ Bulk-renamed every `.font(.semanticStyle)` call site (35 in total across 13 file
 - Visual confirmation pending — relaunch the macOS app and confirm sidebar text, card titles, column headers, and badge captions all read at distinct sizes.
 
 **If sizes still need dialing:** edit `Font+CrossPlatform.swift` — every macOS size is in one file, easy to tune.
+
+---
+
+## ☁️ May 25, 2026 — Silence CloudKit Remote-Notification Warning
+
+**Symptom:** At launch, NSPersistentCloudKitContainer logs `BUG IN CLIENT OF CLOUDKIT: CloudKit push notifications require the 'remote-notification' background mode in your info plist.` Background CloudKit sync degrades to foreground-only because iOS can't wake the app for silent push.
+
+**Fix:** Added `FenixKanban/Resources/Info-Partial.plist` declaring `UIBackgroundModes = [remote-notification]`. Updated `project.yml`'s `FenixKanban` target to set `INFOPLIST_FILE` to that partial plist while keeping `GENERATE_INFOPLIST_FILE: YES` — Xcode merges the partial with the auto-generated keys (verified by checking that `CFBundleDisplayName` still lands alongside `UIBackgroundModes`).
+
+**Why a partial plist instead of `INFOPLIST_KEY_UIBackgroundModes`:** Tried that first. Xcode 26.5 accepts the build setting but does not include `UIBackgroundModes` in its auto-merge whitelist (verified — pbxproj has the setting, Info.plist comes out without the key). Array-syntax YAML in xcodegen (`INFOPLIST_KEY_UIBackgroundModes: [remote-notification]`) makes pbxproj's value an xcconfig array literal but doesn't fix the merge gap. Partial plist + `INFOPLIST_FILE` is the canonical workaround.
+
+**macOS:** UIBackgroundModes is iOS-only (`UI*` namespace). macOS reads the partial plist but ignores the key. Verified by clean macOS build → `** BUILD SUCCEEDED **`.
+
+**Verification:**
+
+- iOS Simulator clean build: `** BUILD SUCCEEDED **`. `PlistBuddy -c "Print :UIBackgroundModes"` on the built `Info.plist` returns `Array { remote-notification }`.
+- macOS clean build: `** BUILD SUCCEEDED **`.
+- CFBundleDisplayName auto-merge still works (PlistBuddy returns `FenixKanban`).
+
+**TDD note:** Build-config change, not Swift behavior. Verified via post-build plist inspection on both platforms.
