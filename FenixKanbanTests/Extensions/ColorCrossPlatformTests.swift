@@ -25,4 +25,12 @@ struct ColorCrossPlatformTests {
     @Test func quaternarySystemFillResolves() {
         #expect(Color.crossPlatformQuaternarySystemFill != Color.clear)
     }
+
+    @Test func goldenTicketResolves() {
+        #expect(Color.goldenTicket != Color.clear)
+    }
+
+    @Test func goldenTicketIconResolves() {
+        #expect(Color.goldenTicketIcon != Color.clear)
+    }
 }

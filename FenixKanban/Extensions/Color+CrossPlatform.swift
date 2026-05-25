@@ -1,4 +1,9 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 // MARK: - Cross-Platform Color Extensions
 
@@ -44,6 +49,35 @@ extension Color {
         return Color(nsColor: .quaternaryLabelColor).opacity(0.2)
         #else
         return Color(.sRGB, red: 0.3, green: 0.3, blue: 0.3, opacity: 0.2)
+        #endif
+    }
+
+    // MARK: - Golden Ticket Priority
+
+    /// Warm gold used as the .glassEffect tint for cards marked golden.
+    static var goldenTicket: Color {
+        if Self.shouldUseIncreasedContrast {
+            return Color(red: 0.99, green: 0.82, blue: 0.20)  // deeper gold
+        }
+        return Color(red: 0.95, green: 0.78, blue: 0.20)
+    }
+
+    /// Foreground used for the ticket icon overlay and inline gold accents.
+    /// Darker than `.goldenTicket` so it reads on top of the tinted glass.
+    static var goldenTicketIcon: Color {
+        if Self.shouldUseIncreasedContrast {
+            return Color(red: 0.35, green: 0.22, blue: 0.0)
+        }
+        return Color(red: 0.55, green: 0.40, blue: 0.05)
+    }
+
+    private static var shouldUseIncreasedContrast: Bool {
+        #if os(iOS)
+        return UIAccessibility.isDarkerSystemColorsEnabled
+        #elseif os(macOS)
+        return NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+        #else
+        return false
         #endif
     }
 }
