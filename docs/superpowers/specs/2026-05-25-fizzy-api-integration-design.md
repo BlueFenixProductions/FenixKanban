@@ -163,12 +163,15 @@ Cost: edits to different fields of the same card within a single sync interval l
 
 ## First-sync direction
 
-When pairing is established (token present + both board IDs chosen), the user picks one of two modes in `FizzyAuthView` before tapping **Pair and sync**:
+When pairing is established (token present + both board IDs chosen), the user picks one of three modes in `FizzyAuthView` before tapping **Pair and sync**:
 
-1. **Replace local with Fizzy** (default, recommended) — local cards on the paired board are deleted; full pull from Fizzy. Confirmation dialog warns this is destructive.
-2. **Keep local, merge if no conflicts** — push local cards as new (each gets a `fizzyID`), pull remote cards, no merge if both sides have cards with the same title (skipped with a SyncResult.errors entry).
+1. **Push local to Fizzy** (default, recommended for an empty/new Fizzy board) — every local card on the paired board is POSTed to Fizzy as a new card; returned `fizzyID`s are stored. Non-destructive: any pre-existing remote cards are left untouched and become local cards on the same sync. Best for the common case where FenixKanban is where you've been working and Fizzy is fresh.
+2. **Replace local with Fizzy** — local cards on the paired board are deleted; full pull from Fizzy. Confirmation dialog warns this is destructive. Best when Fizzy is authoritative and you want a clean mirror.
+3. **Merge if no conflicts** — push local-only cards as new, pull remote-only cards. If both sides have cards with the same title, skip with a `SyncResult.errors` entry (user must manually resolve). Best when both sides have meaningful data.
 
-Defaulting to #1 avoids messy initial-merge edge cases; #2 is the escape hatch for the user who's set up locally first.
+Defaulting to #1 matches the user's actual situation (fizzy.bluefenix.net starts empty); the other two are escape hatches for less-common starting conditions.
+
+**Non-destructive on Fizzy:** none of the three modes ever DELETEs remote cards. The closest thing is mode 2, which only deletes *local* state. A destructive "wipe remote and replace" mode is intentionally out of scope for MVP — too easy to lose real work by mis-pairing.
 
 ## UI
 
@@ -185,7 +188,7 @@ Always shows a single **Fizzy** row. Three visual states, all routing to `FizzyA
 Single sheet with three logical sections inside a `Form`:
 
 - **Connection** — `Server URL` (TextField), `Access token` (SecureField with eye-toggle), `Account slug` (TextField), `Verify connection` button. On success: shows `✓ Signed in as <email>` from `GET /my/identity`.
-- **Pair a board** — `Local board` (Picker of FenixKanban Boards), `Fizzy board` (Picker of remote boards from `GET /:account/boards`), `Pull options` (the two modes above), `Pair and sync` button.
+- **Pair a board** — `Local board` (Picker of FenixKanban Boards), `Fizzy board` (Picker of remote boards from `GET /:account/boards`), `First sync` (the three modes above; default **Push local to Fizzy**), `Pair and sync` button.
 - **Disconnect** — Destructive button that clears Keychain entries, the pairing, and nulls `fizzyID`/`fizzyEtag`/`fizzyUpdatedAt` on every Card in the paired board (so a future re-pair starts clean).
 
 ### `CardView` (modified)
@@ -246,8 +249,12 @@ Tapping a card with an error badge opens `CardDetailView`, which surfaces the er
 - `isPaired` predicate reflects state correctly
 
 **`FizzySyncEngineTests`** (the bulk — fully mocked client):
-- Pull-only: 3 remote, 0 local → 3 local created with `fizzyID`
-- Push-only: 1 local with `nil fizzyID`, 0 remote → 1 POST, returned ID stored
+- First-sync mode 1 (Push local to Fizzy, default): 5 local with `nil fizzyID`, 0 remote → 5 POSTs, each returned ID stored, 0 deletions
+- First-sync mode 1 with non-empty remote: 5 local with `nil fizzyID`, 2 remote → 5 POSTs + 2 new local Cards created (existing remote untouched)
+- First-sync mode 2 (Replace local with Fizzy): 3 local with `nil fizzyID`, 4 remote → 3 local Cards deleted, 4 new local Cards created from remote
+- First-sync mode 3 (Merge if no conflicts): 2 local + 2 remote with no title overlap → 2 POSTs + 2 pulls; with 1 title overlap → 1 collision in `SyncResult.errors`, no merge
+- Pull-only (steady-state, post-pair): 3 remote, 0 local with `fizzyID` → 3 local created
+- Push-only (steady-state): 1 local with `nil fizzyID`, paired board has existing cards → 1 POST, returned ID stored
 - Update from remote (LWW): remote newer → local updated
 - Update from local (LWW): local newer → PATCH issued
 - Conflict resolution: both differ; remote-wins case and local-wins case
@@ -290,7 +297,9 @@ Six phases, each its own PR. Linear dependency chain; each ships verifiable beha
 - [ ] All ~30 new tests pass; full suite 161/161.
 - [ ] Token paste flow stores credentials in Keychain; `Verify connection` confirms via `GET /my/identity`.
 - [ ] Pairing UI shows live Fizzy boards from `GET /:account/boards`.
+- [ ] **Push local to Fizzy** mode (default) POSTs every local card to Fizzy, stores returned `fizzyID`s, and leaves any pre-existing remote cards untouched.
 - [ ] **Replace local with Fizzy** mode wipes the paired board's local cards and pulls Fizzy state.
+- [ ] **Merge if no conflicts** mode pushes local-only cards, pulls remote-only cards, and logs same-title collisions to `SyncResult.errors` without merging.
 - [ ] Edit a card title in FenixKanban → next sync PATCHes Fizzy; refresh Fizzy in browser, title updated.
 - [ ] Edit a card title in Fizzy → next sync (manual or after 5 min) pulls the change.
 - [ ] Toggle `golden` in either side → next sync reflects on the other.
