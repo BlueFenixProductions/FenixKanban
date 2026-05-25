@@ -585,3 +585,39 @@ and executed via
 - Core Spotlight indexing (the cancellation from this round can be reversed cheaply — the `AppEntity` scaffold makes it ~1 new file)
 - `Label` as `AppEntity` (Full tier)
 - Focus Filters (Full tier)
+
+---
+
+## 🎟️ 2026-05-25 — Golden Ticket Priority
+
+Implements the design in `docs/superpowers/specs/2026-05-25-golden-ticket-priority-design.md` per the plan in `docs/superpowers/plans/2026-05-25-golden-ticket-priority.md`. Fizzy.do-inspired single-flag priority: `Card.isGolden` boolean, composite sort floats golden cards to the top of their column, faded-gold tinted Liquid Glass + ticket icon visual, four toggle surfaces (`CardDetailView` toolbar / `CardView` context menu / iOS `GoldenSwipeModifier` / `GoldZoneChip` drop target), and App Intents (`ToggleGoldenIntent` + `FindGoldenCardsIntent`) wired into `FenixKanbanShortcuts`.
+
+**TDD phases (each its own atomic commit):**
+
+1. `feat(model): add Card.isGolden attribute (v2 lightweight migration)` — `CardGoldenTicketTests`
+2. `feat(sort): float golden cards to the top of their column` — `CardRepositoryGoldenSortTests` (+ a follow-up `test(sort): assert column.sortedCards directly, not through repo`)
+3. `feat(viewmodel): BoardViewModel.toggleGolden(for:/cardID:)` — `BoardViewModelGoldenTests`
+4. `feat(viewmodel): CardDetailViewModel.toggleGolden()` — appended case in `CardDetailViewModelTests`
+5. `feat(color): add goldenTicket + goldenTicketIcon with Increase-Contrast` — appended cases in `ColorCrossPlatformTests` (+ a follow-up `docs(color): correct comment on goldenTicket contrast variant`)
+6. `feat(ui): gold-tinted glass + ticket-icon overlay on golden cards` (+ `fix(a11y): drop .isHeader trait from golden-ticket icon`)
+7. `feat(ui): toolbar ticket button toggles card golden state` (+ `fix(a11y): make golden-ticket toolbar hint reflect both directions`)
+8. `feat(ui): context-menu toggle for golden ticket` (+ `fix(ui): pass onToggleGolden through to each CardView`)
+9. `feat(ui): iOS swipe gesture reveals golden toggle` (+ `polish(swipe): single animation context + VoiceOver label`)
+10. `feat(ui): gold drop-zone chip in column header`
+11. `feat(intents): expose isGolden on CardEntity` (+ `test(intents): lock in CardEntity.isGolden + Golden ticket subtitle`)
+12. `feat(intents): ToggleGoldenIntent for Siri / Shortcuts` — `ToggleGoldenIntentTests`
+13. `feat(intents): FindGoldenCardsIntent + register both shortcuts` — `FindGoldenCardsIntentTests`
+
+Plus mid-flight readability fixes that emerged from user feedback during execution:
+- `fix(a11y): force light-mode text on golden cards in dark mode` (later superseded)
+- `fix(ui): faded gold tint + gold rim on golden cards` (final visual: matches the column-color pattern)
+
+**Manual verification still needed:**
+
+- Two-device CloudKit round-trip (mark on device A, observe on device B).
+- VoiceOver + Increase Contrast on both platforms per `docs/accessibility-walkthrough.md`.
+- iPhone Simulator: confirm `GoldenSwipeModifier` and the existing `.draggable` long-press coexist (1.5× horizontal-dominance ratio is the gate).
+
+**Outstanding release checklist item (manual, must happen before App Store):**
+
+- [ ] **Before the App Store release that includes this feature:** Open CloudKit Dashboard → Container `iCloud.com.bluefenixproductions.FenixKanban` → Schema → Deploy Schema Changes to Production. Without this step, `isGolden` sync breaks for App Store users until the dashboard step happens. The app stays functional locally; sync resumes silently once promoted.
