@@ -57,7 +57,9 @@ extension Color {
     /// Warm gold used as the .glassEffect tint for cards marked golden.
     static var goldenTicket: Color {
         if Self.shouldUseIncreasedContrast {
-            return Color(red: 0.99, green: 0.82, blue: 0.20)  // deeper gold
+            // Brighter tint widens the luminance gap to the (darker)
+            // goldenTicketIcon foreground when Increase Contrast is on.
+            return Color(red: 0.99, green: 0.82, blue: 0.20)
         }
         return Color(red: 0.95, green: 0.78, blue: 0.20)
     }
