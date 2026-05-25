@@ -111,7 +111,7 @@ struct CardDetailView: View {
                     }
                     .tint(viewModel.card.isGolden ? Color.goldenTicketIcon : .primary)
                     .accessibilityLabel(viewModel.card.isGolden ? "Remove golden ticket" : "Mark as golden ticket")
-                    .accessibilityHint("Promotes this card to the top of the column.")
+                    .accessibilityHint(viewModel.card.isGolden ? "Removes golden ticket priority from this card." : "Promotes this card to the top of the column.")
                 }
                 #else
                 ToolbarItem(placement: .navigation) {
@@ -122,7 +122,7 @@ struct CardDetailView: View {
                     }
                     .tint(viewModel.card.isGolden ? Color.goldenTicketIcon : .primary)
                     .accessibilityLabel(viewModel.card.isGolden ? "Remove golden ticket" : "Mark as golden ticket")
-                    .accessibilityHint("Promotes this card to the top of the column.")
+                    .accessibilityHint(viewModel.card.isGolden ? "Removes golden ticket priority from this card." : "Promotes this card to the top of the column.")
                 }
                 #endif
                 ToolbarItem(placement: .confirmationAction) {
