@@ -45,7 +45,9 @@ struct TipJarView: View {
             }
         }
         .navigationTitle("Tip Jar")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .task { await store.loadProducts() }
         .onChange(of: store.purchaseMessage) { _, message in
             showAlert = message != nil

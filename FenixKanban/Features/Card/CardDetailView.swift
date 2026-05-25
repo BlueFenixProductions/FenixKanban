@@ -98,7 +98,9 @@ struct CardDetailView: View {
                 }
             }
             .navigationTitle("Card Detail")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
@@ -135,7 +137,9 @@ struct CardDetailView: View {
             .datePickerStyle(.graphical)
             .padding()
             .navigationTitle("Due Date")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {

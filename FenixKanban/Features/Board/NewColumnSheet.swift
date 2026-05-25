@@ -25,7 +25,7 @@ struct NewColumnSheet: View {
                         // "No color" swatch
                         ZStack {
                             Circle()
-                                .fill(Color(.tertiarySystemBackground))
+                                .fill(Color.crossPlatformTertiarySystemBackground)
                             Image(systemName: "slash.circle")
                                 .foregroundStyle(.secondary)
                         }
@@ -51,7 +51,9 @@ struct NewColumnSheet: View {
                 }
             }
             .navigationTitle(isEditing ? "Edit Column" : "New Column")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
