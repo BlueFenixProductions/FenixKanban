@@ -396,3 +396,29 @@ relevant to current code:
 
 This research is recorded into global Claude memory as well so future sessions can apply these
 rules without re-reading the source docs.
+
+---
+
+## 🪟 May 25, 2026 — Liquid Glass Minimal Adoption
+
+Minimal-sweep adoption of Liquid Glass on iOS 26 / macOS 26 per
+[`docs/superpowers/specs/2026-05-25-liquid-glass-adoption-design.md`](docs/superpowers/specs/2026-05-25-liquid-glass-adoption-design.md)
+and executed via
+[`docs/superpowers/plans/2026-05-25-liquid-glass-adoption.md`](docs/superpowers/plans/2026-05-25-liquid-glass-adoption.md).
+
+**Changes:**
+
+- `AuthView.swift` (commit `a113553`): removed the platform-conditional `.background(Color(uiColor:/nsColor: ...))` at the top level. The system window background now applies, allowing Liquid Glass to render.
+- `BoardListView.swift` (commit `deb32fd`): removed `.listRowBackground(Color.crossPlatformSecondarySystemBackground)` from the sidebar rows. `.listStyle(.sidebar)` now controls the row appearance; per-board identity remains via the color swatch in `BoardRowView`.
+- `TipJarView.swift`: verified `.listRowBackground(Color.clear)` stays — it removes a background rather than imposing one, so Liquid Glass shows through.
+- **Mid-plan regression fix** (`FenixKanbanApp.swift`, commit `27f68f7`): removed a stray `#if os(iOS)` guard around `.adaptiveLayout()` that was making macOS, iPad, and iOS-landscape fall through to the default `AdaptiveLayoutInfo(isCompact: true, isLandscape: false)` and render the single-column TabView carousel instead of the intended multi-column horizontal scroll. `Environment(\.horizontalSizeClass)` works on macOS (returns `.regular`), so the guard was unnecessary.
+
+**Workflow note (deviation from project TDD):** This adoption sweep did NOT follow strict red-green-refactor because the changes are pure view-modifier deletions with no new behavior to assert. The 78-test regression suite was the safety net; visual verification on the iPhone 17 simulator was the acceptance criterion. This deviation is intentional and bounded to view-modifier deletions only — new logic continues to follow the project's TDD workflow.
+
+**Out-of-scope follow-ups still tracked:**
+
+1. Moderate-scope sweep — wrap custom content surfaces (card tints, column "Add Card" pill) in `.glassEffect(.regular, in: ...)` / `GlassEffectContainer` for native Liquid Glass on content.
+2. Full-scope sweep — add increased-contrast variants for every custom color; walk every screen under reduce-transparency, reduce-motion, and the alternate Liquid Glass appearance.
+3. App icon rebuild in Icon Composer with layered semi-transparent shapes (design task).
+4. App Intents + Core Spotlight adoption — high-leverage hook into Siri / Shortcuts / Apple Intelligence / Visual Intelligence.
+5. CLAUDE.md "Common Patterns" section still lists the `#if os(iOS) ... #elseif os(macOS) ... background(...)` pattern as `// ✅ Good`. That guidance is now superseded by the Liquid Glass adoption direction; update on a future docs pass.
