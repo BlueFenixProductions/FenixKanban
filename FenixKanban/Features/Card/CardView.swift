@@ -7,12 +7,12 @@ struct CardView: View {
 
     private var glassTint: Color {
         // Golden priority takes precedence over the column-color tint.
-        // The faded gold mirrors the column-color tint pattern so the
-        // card text remains readable in both light and dark mode against
-        // the Liquid Glass material — solid gold suppressed dark-mode
-        // .primary text.
+        // Brighter than the column-color tint so golden cards visibly
+        // pop on the board, but still translucent enough that .primary
+        // text stays readable through the Liquid Glass material in dark
+        // mode (solid gold suppressed it).
         if card.isGolden {
-            return Color.goldenTicket.opacity(0.18)
+            return Color.goldenTicket.opacity(0.32)
         }
         // Subtle column-color tint on the Liquid Glass material. Falls back
         // to clear so non-tinted cards get the plain system glass appearance.
