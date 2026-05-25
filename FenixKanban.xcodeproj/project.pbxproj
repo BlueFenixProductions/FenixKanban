@@ -46,6 +46,7 @@
 		6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9D9F931CC1F616741916216 /* Assets.xcassets */; };
 		6C8C404DB12E296DC35C51F5 /* CardQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F592F755DD0739220B0604 /* CardQuery.swift */; };
 		703038A826EEB17114395035 /* PreviewPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */; };
+		7217E9831E28A4081879F59C /* CardGoldenTicketTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */; };
 		73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E24C6748D661CCE038C4F0 /* TipJarStoreTests.swift */; };
 		75FC5EF6E991CBC99BD5DD9B /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */; };
 		77C47FCFD6828F64E05B55C9 /* BoardSyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88DE2CFAB1D67DA8824B424 /* BoardSyncProvider.swift */; };
@@ -106,6 +107,7 @@
 		0E2D11BAE72815F0D7F274CD /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
+		1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 2.xcdatamodel"; sourceTree = "<group>"; };
 		1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepository.swift; sourceTree = "<group>"; };
 		2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
 		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 		E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModel.swift; sourceTree = "<group>"; };
 		E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBoardIntentTests.swift; sourceTree = "<group>"; };
 		EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntityTests.swift; sourceTree = "<group>"; };
+		F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardGoldenTicketTests.swift; sourceTree = "<group>"; };
 		F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBoardIntent.swift; sourceTree = "<group>"; };
 		F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
@@ -495,6 +498,14 @@
 			path = Navigation;
 			sourceTree = "<group>";
 		};
+		ED92A51CF99AD7208A720C96 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		F16B1B49246B6D4A03A47839 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -523,6 +534,7 @@
 				DACE608239CEF0D6E6257310 /* Core */,
 				665F4780CBBF754531D47F1D /* Extensions */,
 				2E96249D89F978A03046C06B /* Intents */,
+				ED92A51CF99AD7208A720C96 /* Models */,
 				CEB25DA70C666F89336E18F6 /* Repositories */,
 				74EE9E89E5F457BABDDF039C /* Services */,
 				7F68A8D5B1BEE2A3B176B872 /* ViewModels */,
@@ -699,6 +711,7 @@
 				1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */,
 				85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */,
 				24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */,
+				7217E9831E28A4081879F59C /* CardGoldenTicketTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
 				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
@@ -976,9 +989,10 @@
 		EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */,
 				86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */,
 			);
-			currentVersion = 86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */;
+			currentVersion = 1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */;
 			path = FenixKanban.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
