@@ -9,6 +9,7 @@ struct FenixKanbanApp: App {
     @StateObject private var authService = AuthenticationService()
     @StateObject private var syncMonitor: SyncMonitor
     @State private var navigator = NavigationModel()
+    @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
 
     init() {
         let launchArgs = ProcessInfo.processInfo.arguments
@@ -52,7 +53,7 @@ struct FenixKanbanApp: App {
                 .environment(\.managedObjectContext, persistence.viewContext)
                 .environmentObject(authService)
                 .environmentObject(syncMonitor)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(AppearanceMode(rawValue: appearanceRaw)?.colorScheme)
                 .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
                     NotificationService.shared.refreshAllReminders(context: persistence.viewContext)
                 }
