@@ -706,3 +706,33 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **Test Coverage:** 8 new tests (4 per type). Full suite still green.
 
 **What ships:** Two small persistence types ready for Phase 3 (CoreData migration) and Phase 4 (sync engine) to consume. No app wiring yet — `FizzySyncProvider.register()` and the `signOut()` orchestration land in Phase 5 once the engine + UI exist.
+
+### Fizzy Integration — Phase 3: CoreData Migration ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Wrote `CardFizzyAttributesTests` (4 tests) against three not-yet-existing `Card` properties — defaults are nil, and each of `fizzyID` / `fizzyEtag` / `fizzyUpdatedAt` round-trips through save/refresh.
+- Verified the tests failed before adding the v3 model (`Value of type 'Card' has no member 'fizzyID'`).
+
+**🟢 Green Phase:**
+- `FenixKanban/Core/Persistence/FenixKanban.xcdatamodeld/FenixKanban 3.xcdatamodel/contents` — clone of v2 with three new optional `Card` attributes:
+  - `fizzyID: String?` — Fizzy's opaque card ID; `nil` = local-only
+  - `fizzyEtag: String?` — last ETag seen for this card (sent on next GET for 304 short-circuit)
+  - `fizzyUpdatedAt: Date?` — Fizzy's `last_active_at` from the last successful fetch (drives LWW)
+- `.xccurrentversion` bumped to `FenixKanban 3.xcdatamodel`.
+- `usedWithCloudKit="YES"` preserved on the root `<model>` element.
+- New attributes alphabetically slotted between `dueDate` and `id` in the Card entity.
+
+**🔵 Refactor Phase:**
+- None needed — additive, optional migration; no code changes outside the model.
+- v1 and v2 model files preserved for users upgrading from older builds.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-3-coredata.md`
+
+**Test Coverage:** 4 new tests; full suite green at 173/173 (Phase 2 baseline 169 + Phase 3 added 4).
+
+**CloudKit smoke:** Manual — run the app on a real device or simulator with iCloud Drive enabled, create a card, observe in CloudKit Dashboard (`iCloud.com.bluefenixproductions.FenixKanban` → Schema → Development) that `CD_fizzyID` / `CD_fizzyEtag` / `CD_fizzyUpdatedAt` fields appear on the `CD_Card` record type. Deploy-to-production happens in a single CloudKit Dashboard step before the App Store release that includes any Fizzy sync writes (Phase 5+).
+
+**What ships:** Three optional Card attributes ready for Phase 4's sync engine to read/write. Zero behavior change for users until the engine + UI land.
