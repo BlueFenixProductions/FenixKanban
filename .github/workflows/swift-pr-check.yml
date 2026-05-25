@@ -99,10 +99,20 @@ jobs:
         # entitlements file (keychain-access-groups in particular),
         # otherwise SecItemAdd denies and KeychainHelperTests +
         # AuthenticationServiceTests fail.
+        #
+        # TEST_RUNNER_<NAME>=value build settings are baked into
+        # the xctestrun file generated here and forwarded as env
+        # vars (prefix stripped) into the test runner inside the
+        # simulator. Must be set on build-for-testing, not on the
+        # downstream test-without-building — the xctestrun is
+        # finalized at this step and test-without-building only
+        # reads it.
         run: |
           xcodebuild build-for-testing \
             -scheme FenixKanban \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            TEST_RUNNER_CI=true \
+            TEST_RUNNER_GITHUB_ACTIONS=true
 
       - name: Unit tests (iOS simulator)
         # 127+ tests in FenixKanbanTests. Cross-platform — they run
@@ -120,22 +130,15 @@ jobs:
       - name: iOS UI tests
         # Drives the card-drag / tap-to-select surfaces that the
         # unit suite can't reach. The bundle is wired in by the
-        # add-ui-test-target.rb step above.
-        #
-        # TEST_RUNNER_<NAME>=value build settings are forwarded by
-        # xcodebuild as env vars into the test runner's process
-        # inside the simulator. Shell-level CI / GITHUB_ACTIONS
-        # don't cross that boundary on their own (the iOS sim has
-        # its own env namespace), which is why the drag-test skip
-        # didn't fire on run 26411763840.
+        # add-ui-test-target.rb step above. TEST_RUNNER_ env-
+        # forwarding is set on the build step above (xctestrun
+        # is finalized there).
         run: |
           xcodebuild test-without-building \
             -scheme FenixKanban \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -only-testing:FenixKanbanUITests \
-            -resultBundlePath build/results/ios-ui.xcresult \
-            TEST_RUNNER_CI=true \
-            TEST_RUNNER_GITHUB_ACTIONS=true
+            -resultBundlePath build/results/ios-ui.xcresult
 
       - name: Upload xcresult on failure
         # xcresult bundles contain screenshots, video recordings,

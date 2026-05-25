@@ -156,12 +156,19 @@ final class FenixKanbanUITests: XCTestCase {
     /// Verified locally on every run; the CI gate covers the same
     /// toggleGolden → badge pipeline via the toolbar test below.
     func testLongPressDragCardToGoldChipMarksItGolden() throws {
-        // Belt-and-suspenders CI detection — `CI` is set by GitHub
-        // Actions but the xcodebuild test runner may not always
-        // inherit it; `GITHUB_ACTIONS` is more specific and just as
-        // reliable. Either being set means: skip.
+        // CI detection — three independent signals, any one is enough.
+        // - TEST_RUNNER_CI / TEST_RUNNER_GITHUB_ACTIONS: passed by the
+        //   workflow via `xcodebuild build-for-testing TEST_RUNNER_X=Y`,
+        //   which strips the prefix and exposes them as env vars to
+        //   the test runner inside the simulator. (Shell-level CI=true
+        //   doesn't cross the simctl-spawn boundary.)
+        // - /Users/runner/work: the canonical GitHub-hosted macOS
+        //   runner workspace path. iOS sim test runners can read host
+        //   filesystem so this is a reliable fallback.
         let env = ProcessInfo.processInfo.environment
-        let onCI = env["CI"] == "true" || env["GITHUB_ACTIONS"] == "true"
+        let onCI = env["CI"] == "true"
+            || env["GITHUB_ACTIONS"] == "true"
+            || FileManager.default.fileExists(atPath: "/Users/runner/work")
         try XCTSkipIf(
             onCI,
             "iOS drag-and-drop synthesis is unreliable on GitHub-hosted runners — see testToolbarMarkAsGoldenShowsBadge for the CI equivalent."
