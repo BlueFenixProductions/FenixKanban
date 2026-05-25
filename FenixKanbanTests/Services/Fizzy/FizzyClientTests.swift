@@ -297,3 +297,46 @@ struct FizzyClientPutTests {
 }
 
 private final class FixtureLocatorPut {}
+
+@Suite("FizzyClient — DELETE", .serialized)
+struct FizzyClientDeleteTests {
+
+    init() { MockURLProtocol.reset() }
+
+    private func makeClient() -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: session
+        )
+    }
+
+    @Test("DELETE succeeds on 204")
+    func deleteSucceeds() async throws {
+        MockURLProtocol.handler = { req in
+            #expect(req.httpMethod == "DELETE")
+            #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/1")
+            return (Data(), .response(for: req, status: 204))
+        }
+
+        let client = makeClient()
+        try await client.delete("/cards/1")
+        #expect(MockURLProtocol.requests.count == 1)
+    }
+
+    @Test("DELETE surfaces 404 as FizzyError.notFound")
+    func deleteNotFound() async throws {
+        MockURLProtocol.handler = { req in
+            return (Data(), .response(for: req, status: 404))
+        }
+
+        let client = makeClient()
+        await #expect(throws: FizzyError.notFound) {
+            try await client.delete("/cards/999")
+        }
+    }
+}

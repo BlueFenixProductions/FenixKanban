@@ -142,6 +142,28 @@ final class FizzyClient: Sendable {
         }
     }
 
+    /// DELETE a resource. Returns on 204; throws on any other status.
+    func delete(_ path: String) async throws {
+        var request = URLRequest(url: url(for: path))
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await urlSession.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw FizzyError.unexpectedStatus(0)
+        }
+
+        switch http.statusCode {
+        case 204:
+            return
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
     /// Internal: GET an absolute URL (skipping the slug interpolation) and
     /// decode the body. Used by `post` to follow `Location`.
     private func followLocation<T: Decodable & Sendable>(_ url: URL, as: T.Type) async throws -> T {
