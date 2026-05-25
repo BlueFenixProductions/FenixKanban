@@ -21,5 +21,23 @@ struct FenixKanbanShortcuts: AppShortcutsProvider {
             shortTitle: "Open Card",
             systemImageName: "doc.text"
         )
+        AppShortcut(
+            intent: ToggleGoldenIntent(),
+            phrases: [
+                "Toggle golden ticket in \(.applicationName)",
+                "Mark the golden ticket in \(.applicationName)"
+            ],
+            shortTitle: "Toggle Golden",
+            systemImageName: "ticket.fill"
+        )
+        AppShortcut(
+            intent: FindGoldenCardsIntent(),
+            phrases: [
+                "Find golden cards in \(.applicationName)",
+                "Show my golden tickets in \(.applicationName)"
+            ],
+            shortTitle: "Find Golden Cards",
+            systemImageName: "ticket"
+        )
     }
 }
