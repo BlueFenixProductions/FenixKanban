@@ -130,7 +130,6 @@ struct BoardListView: View {
                 NavigationLink(value: board.objectID) {
                     BoardRowView(board: board)
                 }
-                .listRowBackground(Color.crossPlatformSecondarySystemBackground)
                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                     Button {
                         presentEditBoardSheet(for: board)
