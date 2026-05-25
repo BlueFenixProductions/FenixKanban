@@ -19,6 +19,7 @@
 		2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E20A59A4E9DDCD06081E6A7 /* CardView.swift */; };
 		2B4EC97C9498E37E6B2F4292 /* LabelBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A14F077027BF8262193AEE /* LabelBadge.swift */; };
 		2BAB3B616AC9A95A8CC6D3B1 /* AuthenticationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4352F68CBFA8610EEC9EE57A /* AuthenticationServiceTests.swift */; };
+		2BE7A2F079F329C4788390D0 /* OpenCardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411F394EE3281672E6FE03F0 /* OpenCardIntent.swift */; };
 		3006918E8F888BD08EEDD237 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */; };
 		3234809B8B3230567DA0DF54 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */; };
 		32BA63F4742BBE3D1371E561 /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
@@ -61,6 +62,7 @@
 		A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */; };
 		A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B36134843F5683038443D750 /* TipJarProducts.storekit */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
+		B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */; };
 		B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1964FFB87532CE5ED41070 /* BoardRowView.swift */; };
 		B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E468616D12A084C045616D44 /* FenixKanbanTests.swift */; };
 		BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78234911E102475108AE9455 /* KeychainHelperTests.swift */; };
@@ -112,6 +114,7 @@
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
 		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
+		411F394EE3281672E6FE03F0 /* OpenCardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCardIntent.swift; sourceTree = "<group>"; };
 		4352F68CBFA8610EEC9EE57A /* AuthenticationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServiceTests.swift; sourceTree = "<group>"; };
 		4655A9176AC7C9288D8920FE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		48E24C6748D661CCE038C4F0 /* TipJarStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarStoreTests.swift; sourceTree = "<group>"; };
@@ -134,6 +137,7 @@
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
 		8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Relative.swift"; sourceTree = "<group>"; };
 		8CE57AC031B96D8412DAB25F /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCardIntentTests.swift; sourceTree = "<group>"; };
 		8F3DBD8353B993911279540C /* FenixKanban.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FenixKanban.entitlements; sourceTree = "<group>"; };
 		8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModel.swift; sourceTree = "<group>"; };
 		91F0817152C485773F9923C6 /* TipJarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarView.swift; sourceTree = "<group>"; };
@@ -202,6 +206,7 @@
 				E0435462C469D8222A55798D /* CardEntity.swift */,
 				B4F592F755DD0739220B0604 /* CardQuery.swift */,
 				F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */,
+				411F394EE3281672E6FE03F0 /* OpenCardIntent.swift */,
 			);
 			path = Intents;
 			sourceTree = "<group>";
@@ -264,6 +269,7 @@
 				4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */,
 				EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */,
 				E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */,
+				8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */,
 			);
 			path = Intents;
 			sourceTree = "<group>";
@@ -660,6 +666,7 @@
 				3234809B8B3230567DA0DF54 /* NotificationSettingsView.swift in Sources */,
 				CB732A1614AF3916C0C2C058 /* NotificationSettingsViewModel.swift in Sources */,
 				83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */,
+				2BE7A2F079F329C4788390D0 /* OpenCardIntent.swift in Sources */,
 				DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */,
 				A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */,
 				703038A826EEB17114395035 /* PreviewPersistence.swift in Sources */,
@@ -695,6 +702,7 @@
 				43CF64EA2977EEE9323333DB /* NavigationModelTests.swift in Sources */,
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
 				3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */,
+				B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */,
 				BFA7112B4AC02616859C2445 /* SyncMonitorTests.swift in Sources */,
 				73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */,
 			);
