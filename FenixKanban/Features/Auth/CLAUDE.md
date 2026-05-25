@@ -62,15 +62,29 @@ That document is the authoritative spec for how work gets done here. Once `CONTR
 ## Common Patterns
 
 ### Color handling (cross-platform)
-```swift
-// ✅ Good
-#if os(iOS)
-.background(Color(uiColor: .systemBackground))
-#elseif os(macOS)
-.background(Color(nsColor: .windowBackgroundColor))
-#endif
 
-// ❌ Avoid (not cross-platform)
+On iOS 26 / macOS 26 the system supplies the window background via Liquid Glass. Don't impose your own — let the system render. Custom `.background()` on top of a navigation/chrome surface (toolbars, tab bars, sidebars, sheets, list rows) *suppresses* Liquid Glass and is the #1 visual symptom of an un-audited app. See `docs/apple-technology-overviews.md` for the full rules.
+
+```swift
+// ✅ Best — no .background at all on full-bleed views; system handles it
+VStack { /* content */ }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+// ✅ Acceptable — for content surfaces that legitimately need a tint,
+//                use the cross-platform helper instead of hand-rolled #if
+SomeContentView()
+    .background(Color.crossPlatformTertiarySystemBackground)
+
+// ❌ Avoid — suppresses Liquid Glass on the underlying window/chrome
+SomeView()
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    #if os(iOS)
+    .background(Color(uiColor: .systemBackground))
+    #elseif os(macOS)
+    .background(Color(nsColor: .windowBackgroundColor))
+    #endif
+
+// ❌ Avoid — also not cross-platform
 .background(Color(.systemBackground))
 ```
 
