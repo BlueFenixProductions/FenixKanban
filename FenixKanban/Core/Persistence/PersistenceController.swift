@@ -2,11 +2,24 @@ import CoreData
 import CloudKit
 
 final class PersistenceController: ObservableObject {
-    /// In UI-test mode the app launches with `-uitest-reset-store` so
-    /// each test starts from a clean, in-memory store with no CloudKit
-    /// round-trips. Production launches behave identically to before.
+    /// Test hosts (XCTest + UI tests) get an in-memory, non-CloudKit
+    /// store so the suite is hermetic — no iCloud creds, no disk
+    /// writes, no cross-test bleed. Production launches behave
+    /// identically to before.
+    ///
+    /// Triggers:
+    /// - `XCTestConfigurationFilePath` env var is present whenever
+    ///   xctest hosts the bundle (unit tests run inside the app's
+    ///   test-host process and would otherwise hit the real
+    ///   PersistenceController init).
+    /// - `-uitest-reset-store` is the explicit launchArguments flag
+    ///   set by FenixKanbanUITests for the same reason.
     static let shared: PersistenceController = {
-        if ProcessInfo.processInfo.arguments.contains("-uitest-reset-store") {
+        let processInfo = ProcessInfo.processInfo
+        let isUnderTest = processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+            || processInfo.arguments.contains("-uitest-reset-store")
+        if isUnderTest {
             return PersistenceController(inMemory: true, useCloudKit: false)
         }
         return PersistenceController()
