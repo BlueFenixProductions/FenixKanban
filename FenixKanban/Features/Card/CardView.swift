@@ -5,9 +5,12 @@ struct CardView: View {
     var columnColor: Color? = nil
 
     private var glassTint: Color {
+        if card.isGolden {
+            return .goldenTicket
+        }
         // Subtle column-color tint on the Liquid Glass material. Falls back
         // to clear so non-tinted cards get the plain system glass appearance.
-        columnColor?.opacity(0.18) ?? .clear
+        return columnColor?.opacity(0.18) ?? .clear
     }
 
     private var borderColor: Color {
@@ -43,5 +46,15 @@ struct CardView: View {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(borderColor, lineWidth: columnColor == nil ? 0 : 1.5)
         )
+        .overlay(alignment: .topLeading) {
+            if card.isGolden {
+                Image(systemName: "ticket.fill")
+                    .imageScale(.medium)
+                    .foregroundStyle(Color.goldenTicketIcon)
+                    .padding(8)
+                    .accessibilityLabel("Golden ticket priority")
+                    .accessibilityAddTraits(.isHeader)
+            }
+        }
     }
 }
