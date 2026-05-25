@@ -64,7 +64,9 @@ struct ContentView: View {
                     if let boardID = selectedBoardID,
                        let board = try? context.existingObject(with: boardID) as? Board {
                         BoardView(board: board, context: context)
+                            #if os(iOS)
                             .adaptiveLayout()
+                            #endif
                             // Force a fresh BoardView (and fresh @StateObject
                             // BoardViewModel) for each distinct board so
                             // selecting a different board actually updates
