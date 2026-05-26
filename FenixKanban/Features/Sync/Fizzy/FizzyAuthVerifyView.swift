@@ -17,7 +17,9 @@ struct FizzyAuthVerifyView: View {
             Section {
                 TextField("Paste your fizzy.bluefenix.net token", text: $enteredToken)
                     .textContentType(.password)
+                    #if os(iOS)
                     .textInputAutocapitalization(.never)
+                    #endif
                     .disableAutocorrection(true)
                     .monospaced()
                     .onSubmit(verify)
