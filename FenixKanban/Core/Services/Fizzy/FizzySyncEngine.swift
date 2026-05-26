@@ -114,7 +114,32 @@ final class FizzySyncEngine {
             result.itemsCreated += 1
         }
 
-        // LWW updates and soft-delete added incrementally by later tasks.
+        // LWW for paired cards (both sides have fizzyID).
+        let remoteByID = Dictionary(uniqueKeysWithValues: remoteCards.map { ($0.id, $0) })
+        for (fizzyID, card) in pairedByFizzyID {
+            guard let remote = remoteByID[fizzyID] else { continue }
+            let localFizzyTimestamp = card.fizzyUpdatedAt ?? .distantPast
+            let localModified = card.modifiedAt ?? .distantPast
+            let remoteTimestamp = remote.lastActiveAt
+
+            if remoteTimestamp > localFizzyTimestamp && localModified <= localFizzyTimestamp {
+                // Remote newer, local untouched → pull.
+                applyRemote(remote, to: card)
+                result.itemsUpdated += 1
+            } else if localModified > localFizzyTimestamp {
+                // Local edited since last sync → push.
+                do {
+                    let updated = try await putCard(card, fizzyID: fizzyID)
+                    card.fizzyUpdatedAt = updated.lastActiveAt
+                    result.itemsUpdated += 1
+                } catch let error as FizzyError {
+                    result.errors.append("Push update '\(card.title ?? "(untitled)")': \(error)")
+                }
+            }
+            // else: both equal or remote stale → no-op.
+        }
+
+        // Soft-delete added by later task.
 
         // Push: local cards with nil fizzyID (not yet paired) → POST.
         for card in localCards where card.fizzyID == nil {
@@ -341,6 +366,24 @@ final class FizzySyncEngine {
     }
 
     // MARK: - Card writes
+
+    /// PUT an updated local card to the remote. Returns the updated FizzyCard
+    /// so we can sync back the server's lastActiveAt.
+    private func putCard(_ card: Card, fizzyID: String) async throws -> FizzyCard {
+        let payload = FizzyCardWritePayload(
+            card: FizzyCardWrite(
+                title: card.title ?? "",
+                description: card.cardDescription,
+                status: nil,
+                tagIds: nil
+            )
+        )
+        return try await client.put(
+            "/cards/\(fizzyID)",
+            body: payload,
+            as: FizzyCard.self
+        )
+    }
 
     /// POSTs a local card to the remote board and returns the resulting
     /// `FizzyCard` (the client follows Location to fetch the full record).
