@@ -1057,3 +1057,66 @@ struct FizzySyncEngineCrashRecoveryTests {
         #expect(result.errors.isEmpty)
     }
 }
+
+@Suite("FizzySyncEngine — idempotence", .serialized)
+@MainActor
+struct FizzySyncEngineIdempotenceTests {
+
+    @Test("running sync() twice in a row produces zero changes on second run")
+    func doubleSyncIsNoop() async throws {
+        let persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "B")
+        let column = boardRepo.createColumn(in: board, name: "C")
+        try persistence.viewContext.save()
+
+        let prefix = "test.fizzy.idemp.\(UUID().uuidString)"
+        let authState = FizzyAuthState(keyPrefix: prefix)
+        defer { authState.clear() }
+        authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
+
+        let suiteName = "test.fizzy.idemp.mapping.\(UUID().uuidString)"
+        let mappingDefaults = UserDefaults(suiteName: suiteName)!
+        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
+        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+        let stableISO = "2026-05-25T00:00:00Z"
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                let body = """
+                [{"id":"fz1","number":1,"title":"R","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(stableISO)","created_at":"\(stableISO)","url":"https://x/1"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t", accountSlug: "ACCT",
+            urlSession: session, clock: ImmediateClock()
+        )
+        let engine = FizzySyncEngine(
+            client: client, authState: authState, mapping: mapping,
+            context: persistence.viewContext
+        )
+
+        let first = try await engine.sync()
+        let second = try await engine.sync()
+
+        #expect(first.itemsCreated == 1)
+        #expect(second.itemsCreated == 0)
+        #expect(second.itemsUpdated == 0)
+        #expect(second.itemsDeleted == 0)
+        #expect(second.errors.isEmpty)
+    }
+}

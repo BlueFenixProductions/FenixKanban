@@ -131,6 +131,7 @@ final class FizzySyncEngine {
                 do {
                     let updated = try await putCard(card, fizzyID: fizzyID)
                     card.fizzyUpdatedAt = updated.lastActiveAt
+                    card.modifiedAt = updated.lastActiveAt
                     result.itemsUpdated += 1
                 } catch let error as FizzyError {
                     result.errors.append("Push update '\(card.title ?? "(untitled)")': \(error)")
@@ -161,6 +162,7 @@ final class FizzySyncEngine {
             if let orphan {
                 card.fizzyID = orphan.id
                 card.fizzyUpdatedAt = orphan.lastActiveAt
+                card.modifiedAt = orphan.lastActiveAt
                 result.itemsUpdated += 1
                 continue
             }
@@ -168,6 +170,7 @@ final class FizzySyncEngine {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
                 card.fizzyID = created.id
                 card.fizzyUpdatedAt = created.lastActiveAt
+                card.modifiedAt = created.lastActiveAt
                 result.itemsCreated += 1
             } catch let error as FizzyError {
                 result.errors.append("Push '\(card.title ?? "(untitled)")': \(error)")
@@ -359,12 +362,17 @@ final class FizzySyncEngine {
     /// Writes the synced fields from a `FizzyCard` onto a local `Card`.
     /// Phase 4a maps only the first remote tag to `Card.label`; remaining
     /// tags are dropped (documented limitation).
+    ///
+    /// `modifiedAt` is reset to `fizzyUpdatedAt` so the next steady-state LWW
+    /// check sees "local untouched since last sync" and doesn't spuriously
+    /// re-push. Steady-state convergence depends on this.
     private func applyRemote(_ remote: FizzyCard, to card: Card) {
         card.title = remote.title
         card.cardDescription = remote.description
         card.isGolden = remote.golden
         card.fizzyID = remote.id
         card.fizzyUpdatedAt = remote.lastActiveAt
+        card.modifiedAt = remote.lastActiveAt
 
         if let firstTag = remote.tags.first {
             card.label = findOrCreateLabel(name: firstTag)
