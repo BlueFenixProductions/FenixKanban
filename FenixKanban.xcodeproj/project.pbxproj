@@ -110,6 +110,8 @@
 		D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C24E1E16D4DABFE2B4EDD2 /* FontCrossPlatformTests.swift */; };
 		D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */; };
 		5C30EAA2231F4D0DA63544E4 /* FizzySyncEngineBoardIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DFA5E485F5948A2B39F99B3 /* FizzySyncEngineBoardIsolationTests.swift */; };
+		41548A4F99F9828955EB6E9D /* FizzySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61318F0904559BF12B11F6B7 /* FizzySyncProvider.swift */; };
+		29C533FDC3CBBBA33CB46B5F /* FizzySyncProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF9A4DE5F8BB6B6C9FE219D2 /* FizzySyncProviderTests.swift */; };
 		DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */; };
 		DC7454E09D93F33B9F51A899 /* FizzySyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */; };
 		DC765919BB731CC54C2A813D /* SyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7572B48C962A3EB824956E /* SyncMonitor.swift */; };
@@ -267,6 +269,8 @@
 		FABCA245F11BC88FC3B11A90 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		FAE77B96655930ABFC5A54DA /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		FF14922C6549BC2260540129 /* FizzyClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClient.swift; sourceTree = "<group>"; };
+		61318F0904559BF12B11F6B7 /* FizzySyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProvider.swift; sourceTree = "<group>"; };
+		CF9A4DE5F8BB6B6C9FE219D2 /* FizzySyncProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProviderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -408,8 +412,25 @@
 			isa = PBXGroup;
 			children = (
 				BF535EE32C224752B80004A5 /* Backup */,
+				D76189AC9DEBF92FF48032CE /* Sync */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		D76189AC9DEBF92FF48032CE /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				52B18C557610266C9A1F0D51 /* Fizzy */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		52B18C557610266C9A1F0D51 /* Fizzy */ = {
+			isa = PBXGroup;
+			children = (
+				CF9A4DE5F8BB6B6C9FE219D2 /* FizzySyncProviderTests.swift */,
+			);
+			path = Fizzy;
 			sourceTree = "<group>";
 		};
 		3E79D7ED2835B50A526E19C8 /* Features */ = {
@@ -561,8 +582,17 @@
 			isa = PBXGroup;
 			children = (
 				9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */,
+				D624BA9BCA1B070652D5FBA1 /* Fizzy */,
 			);
 			path = Sync;
+			sourceTree = "<group>";
+		};
+		D624BA9BCA1B070652D5FBA1 /* Fizzy */ = {
+			isa = PBXGroup;
+			children = (
+				61318F0904559BF12B11F6B7 /* FizzySyncProvider.swift */,
+			);
+			path = Fizzy;
 			sourceTree = "<group>";
 		};
 		96DDEE00F91795695589CA9B /* Services */ = {
@@ -870,6 +900,7 @@
 				C071193A6B7A63C7AC32817D /* FizzyError.swift in Sources */,
 				857344412226E98D29897FCA /* FizzyResponse.swift in Sources */,
 				E7142545CF6A399053654C8C /* FizzySyncEngine.swift in Sources */,
+				41548A4F99F9828955EB6E9D /* FizzySyncProvider.swift in Sources */,
 				DC7454E09D93F33B9F51A899 /* FizzySyncMapping.swift in Sources */,
 				DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */,
 				5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */,
@@ -937,6 +968,7 @@
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,
 				5C30EAA2231F4D0DA63544E4 /* FizzySyncEngineBoardIsolationTests.swift in Sources */,
 				321C0D7DB3CF3DD8D9ECD6B4 /* FizzySyncMappingTests.swift in Sources */,
+				29C533FDC3CBBBA33CB46B5F /* FizzySyncProviderTests.swift in Sources */,
 				D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */,
 				BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
