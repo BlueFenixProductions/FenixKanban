@@ -17,7 +17,11 @@ struct BackupDocument: FileDocument {
     /// in the default filename; the OS doesn't need to know about it yet.
     static let bundleType: UTType = .package
 
-    static var readableContentTypes: [UTType] { [bundleType] }
+    // Write-only document — readableContentTypes intentionally empty so the
+    // system never routes "Open with" actions to this type. `init(configuration:)`
+    // throws anyway, but advertising zero capability prevents user-facing
+    // confusion if a UTType registration ever appears in Info.plist.
+    static var readableContentTypes: [UTType] { [] }
     static var writableContentTypes: [UTType] { [bundleType] }
 
     /// URL of the verified bundle on disk (in a temp dir).
@@ -31,6 +35,10 @@ struct BackupDocument: FileDocument {
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        try FileWrapper(url: bundleURL, options: [.immediate])
+        // Use `[]` (lazy) rather than `.immediate` so SwiftUI's .fileExporter
+        // streams the bundle to its destination instead of reading the entire
+        // directory tree into memory on the main thread. Backups can reach
+        // hundreds of MB with a heavily-used CoreData store + WAL.
+        try FileWrapper(url: bundleURL, options: [])
     }
 }
