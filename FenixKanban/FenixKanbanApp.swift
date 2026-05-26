@@ -45,6 +45,18 @@ struct FenixKanbanApp: App {
 
         AppDependencyManager.shared.add(dependency: viewContext)
         AppDependencyManager.shared.add(dependency: navigatorValue)
+
+        // Register Fizzy as a BoardSyncProvider. The provider is constructed
+        // with the production singletons (Keychain-backed FizzyAuthState,
+        // standard UserDefaults-backed FizzyBoardMapping, the shared
+        // PersistenceController). It is registered before the first scene
+        // renders so SyncSettingsView's list is populated on cold launch.
+        let fizzyProvider = FizzySyncProvider(
+            authState: FizzyAuthState(),
+            mapping: FizzyBoardMapping(),
+            persistence: PersistenceController.shared
+        )
+        PluginRegistry.shared.register(fizzyProvider)
     }
 
     var body: some Scene {
