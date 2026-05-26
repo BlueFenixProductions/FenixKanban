@@ -146,8 +146,24 @@ final class FizzySyncEngine {
             result.itemsDeleted += 1
         }
 
-        // Push: local cards with nil fizzyID (not yet paired) → POST.
+        // Push: local cards with nil fizzyID (not yet paired) → claim orphan
+        // or POST. Crash-after-POST recovery: if remote has a card with the
+        // same title created within ±60s of our local createdAt, claim it
+        // instead of POSTing a duplicate.
+        let orphanWindow: TimeInterval = 60
         for card in localCards where card.fizzyID == nil {
+            let localCreated = card.createdAt ?? .distantPast
+            let orphan = remoteCards.first { remote in
+                remote.title == (card.title ?? "")
+                    && abs(remote.createdAt.timeIntervalSince(localCreated)) <= orphanWindow
+                    && pairedByFizzyID[remote.id] == nil
+            }
+            if let orphan {
+                card.fizzyID = orphan.id
+                card.fizzyUpdatedAt = orphan.lastActiveAt
+                result.itemsUpdated += 1
+                continue
+            }
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
                 card.fizzyID = created.id
