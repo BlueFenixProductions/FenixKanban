@@ -71,6 +71,15 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Data") {
+                    NavigationLink("Backup") {
+                        BackupSettingsView(persistence: viewModel.persistence)
+                    }
+                    Button("Delete All Data", role: .destructive) {
+                        viewModel.showDeleteConfirmation = true
+                    }
+                }
+
                 Section("Integrations") {
                     NavigationLink("Board Sync") {
                         SyncSettingsView()
@@ -80,12 +89,6 @@ struct SettingsView: View {
                 Section("Support") {
                     NavigationLink("Tip Jar") {
                         TipJarView()
-                    }
-                }
-
-                Section("Data") {
-                    Button("Delete All Data", role: .destructive) {
-                        viewModel.showDeleteConfirmation = true
                     }
                 }
             }

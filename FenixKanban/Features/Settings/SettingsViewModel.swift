@@ -6,7 +6,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var syncEnabled: Bool
 
     let authService: AuthenticationService
-    private let persistence: PersistenceController
+    let persistence: PersistenceController
 
     var userEmail: String? {
         authService.isAuthenticated ? "Signed In" : nil
