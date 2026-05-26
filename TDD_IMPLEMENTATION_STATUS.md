@@ -962,3 +962,44 @@ mechanical proof that non-paired boards stay untouched.
 **What ships:** A complete manual-sync UX for one Fizzy account/board pairing,
 with verified backup safety net (Phase 4c) and proven board-isolation
 guarantees. Phase 6 adds polling and per-card sync badges.
+
+---
+
+### UAT regression fix — slug-with-leading-slash → malformed URL
+
+**Status:** Complete (Red → Green) — Bug found during Phase 5 UAT against
+real fizzy.bluefenix.net.
+
+**Symptom:** After verifying token + pairing, the board picker showed
+`Couldn't load Fizzy boards` with `NSErrorFailingURLStringKey=https://1/boards`
+— request was being sent to host `1`, not `fizzy.bluefenix.net`.
+
+**Root cause:** Fizzy's `/my/identity` returns `slug` with a leading `/`
+(e.g. `"/897362094"`, `"/1"`). `FizzyClient.url(for:)` did
+`"/\(accountSlug)\(path)"` which produced `"//897362094/boards"`. URL
+parsers treat `//host/path` as a protocol-relative URL, so the slug
+became the host. `/my/identity` survived because that branch skips slug
+interpolation entirely. All existing FizzyClient tests passed
+`accountSlug: "ACCT"` (no leading slash) — they never exercised the
+real wire shape, even though the fixture `identity.json` has it.
+
+**🔴 Red:** Added `slugWithLeadingSlashIsHandled` to
+`FizzyClientTests.FizzyClientAuthTests`. Test failed with
+`req.url?.absoluteString → "https://897362094/boards"` instead of
+`"https://fizzy.bluefenix.net/897362094/boards"`.
+
+**🟢 Green:** `FizzyClient.url(for:)` now strips a single leading `/`
+from `accountSlug` before interpolation. Handles both wire shapes
+(`/897362094` and `897362094`) so already-persisted Keychain values
+work without migration.
+
+**Files Modified:**
+- `FenixKanban/Core/Services/Fizzy/FizzyClient.swift` (URL builder normalizes leading slash)
+- `FenixKanbanTests/Services/Fizzy/FizzyClientTests.swift` (1 new test)
+
+**Test Coverage:** 1 new test; full suite **219/219** green on iOS;
+macOS clean build ✓.
+
+**UAT impact:** Items 2–7 were blocked on this. After rebuild + reinstall
+on the simulator, the user's existing pairing (slug `/1`) should resolve
+correctly without re-signing-in.

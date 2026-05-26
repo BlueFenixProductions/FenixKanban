@@ -64,6 +64,24 @@ struct FizzyClientAuthTests {
         let req = try #require(MockURLProtocol.requests.first)
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/myth-busters")
     }
+
+    @Test("slug with leading slash (real wire shape) is handled correctly")
+    func slugWithLeadingSlashIsHandled() async throws {
+        // Regression: Fizzy's /my/identity returns slug as "/897362094" (leading
+        // slash). The previous URL builder produced "//897362094/boards" which
+        // parses as a protocol-relative URL with host=897362094.
+        MockURLProtocol.handler = { req in
+            let body = "[]".data(using: .utf8)!
+            return (body, .ok(for: req))
+        }
+
+        let client = makeClient(slug: "/897362094")
+        _ = try await client.get("/boards", as: [FizzyBoard].self)
+
+        let req = try #require(MockURLProtocol.requests.first)
+        #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/boards")
+        #expect(req.url?.host == "fizzy.bluefenix.net")
+    }
 }
 
 @Suite("FizzyClient — ETag", .serialized)
