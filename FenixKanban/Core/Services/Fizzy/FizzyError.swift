@@ -7,6 +7,7 @@ import Foundation
 /// response.
 enum FizzyError: Error, Equatable {
     case unauthorized              // 401 — token revoked/expired
+    case requiresInteractiveAuth   // signal: caller must open FizzyAuthView for token paste
     case forbidden                 // 403 — token lacks scope
     case notFound                  // 404 — resource gone or never existed
     case validation([String])      // 422 — `{ "errors": { field: [msg, ...] } }` flattened to "field: msg" strings
