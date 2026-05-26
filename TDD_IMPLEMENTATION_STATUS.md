@@ -866,3 +866,99 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **What ships:** A safety net the user can rely on before exercising
 Phase 5's UI against real Fizzy data. The board-isolation suite gives
 mechanical proof that non-paired boards stay untouched.
+
+### Fizzy Integration — Phase 5: UI ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-26
+
+**🔴 Red Phase:**
+- 7 new tests in `FizzySyncProviderTests`:
+  - providerName == "Fizzy"
+  - isAuthenticated mirrors authState.isConfigured
+  - authenticate() throws .requiresInteractiveAuth
+  - signOut clears authState + mapping without touching Cards
+  - fetchRemoteBoards maps FizzyBoard DTOs to RemoteBoard (incl. url round-trip)
+  - sync(_:_:) translates FizzySyncResult → public SyncResult (non-zero counts)
+  - lastSyncDate delegates to mapping.lastSyncAt regardless of boardId
+- Sub-views (Verify / Pair / Status) are SwiftUI surfaces validated via
+  manual UAT (deferred — needs real fizzy.bluefenix.net token); no XCUITest
+  at this stage.
+
+**🟢 Green Phase:**
+- `FizzyError.requiresInteractiveAuth` new case — protocol-bridging signal
+  for `BoardSyncProvider.authenticate()`.
+- `FizzySyncProvider` (`@MainActor final class`) — BoardSyncProvider
+  conformance. Holds authState/mapping/persistence; rebuilds FizzyClient +
+  engine on demand so token changes propagate without re-registration.
+- `FizzyAuthPhase` enum — `.unconfigured / .unpaired / .paired /
+  .pairedNoToken` computed from authState + mapping.
+- `FizzyAuthView` parent — phase switch with `forceVerify` override for
+  401 recovery; hosts three sub-views.
+- `FizzyAuthVerifyView` — token paste form, calls `GET /my/identity`,
+  stores token + first account's slug on success. 401 clears authState
+  and surfaces "Invalid token" inline.
+- `FizzyAuthPairView` — three pickers (local board, Fizzy board, mode),
+  destructive-mode UX (red-tinted segment + warning row + adaptive
+  primary button + confirmation alert), dismissable backup banner with
+  deep-link to BackupSettingsView.
+- `FizzyAuthStatusView` — status hero (board names, last sync via
+  RelativeDateTimeFormatter, live Card count), Sync Now button, Sign Out
+  destructive button, inline yellow 401 banner above hero when
+  `pairedNoToken`.
+- `SyncSettingsView` — new row badge (green ✓ / orange ! / none) and
+  NavigationLink push to FizzyAuthView; "No Providers" empty state
+  removed.
+- `FenixKanbanApp.init()` — registers FizzySyncProvider at launch.
+
+**🔵 Refactor Phase:**
+- All async operations stored in `@State var task: Task<Void, Never>?`
+  and cancelled `.onDisappear`.
+- `forceVerify` override lets the status view's "Re-enter Token" route
+  to the verify view without clearing the pairing — pairing persists
+  through re-auth.
+- `refreshTrigger: UUID` on the parent forces SwiftUI to re-evaluate
+  phase after sub-views mutate authState/mapping.
+- `FizzyAuthVerifyView`'s `.textInputAutocapitalization(.never)` wrapped
+  in `#if os(iOS)` — modifier is iOS-only and would break the macOS
+  build otherwise.
+- `FizzyAuthPairView` qualifies `SwiftUI.Label` to disambiguate from the
+  CoreData `Label` entity (same module imports both).
+- `SyncSettingsView`'s `Section("title") { } footer: { }` rewritten as
+  `Section { } header: { Text("title") } footer: { Text(...) }` — the
+  title-string `Section` initializer doesn't accept a footer trailing
+  closure.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-phase-5-ui-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-26-fizzy-phase-5-ui.md`
+
+**Test Coverage:** 7 new tests; full suite 218/218 green.
+
+**Manual UAT (against real fizzy.bluefenix.net — deferred to user):**
+1. Cold launch, no Fizzy setup → Settings → Board Sync → Fizzy row
+   chevron-only → tap → verify with valid token → account name appears
+   → board pickers materialize → pair with default mode (.push) →
+   returns to status view, "Sync Now" enabled.
+2. Edit a card title in FenixKanban → tap "Sync Now" → refresh
+   fizzy.bluefenix.net in browser → title updated.
+3. Edit a card title in Fizzy → tap "Sync Now" → local card title
+   updated.
+4. Toggle `golden` in Fizzy → "Sync Now" → local card's gold state
+   matches.
+5. Pick `.replace` for a NEW pairing → "Pair & Sync" → confirmation
+   alert with card count → confirm → local cards wiped + replaced with
+   Fizzy's; other local boards' cards unchanged.
+6. Revoke token in Fizzy admin → "Sync Now" → yellow banner above
+   status hero → tap "Re-enter Token" → re-verify → banner clears on
+   next sync.
+7. Sign Out → mapping clears, authState clears, local cards retained →
+   re-pair to same Fizzy board with `.merge` → orphan-claim re-binds
+   cards by title+createdAt.
+
+**Out of scope (deferred):**
+1. Foreground polling timer (5-min while `scenePhase == .active`) → Phase 6.
+2. CardView cloud badges → Phase 6.
+3. Phase 4c reviewer follow-ups (BackupExporter off-main-actor, BackupDocument: Sendable, Data section split, schema-name constant) → Phase 6 polish or separate Phase 4d.
+
+**What ships:** A complete manual-sync UX for one Fizzy account/board pairing,
+with verified backup safety net (Phase 4c) and proven board-isolation
+guarantees. Phase 6 adds polling and per-card sync badges.
