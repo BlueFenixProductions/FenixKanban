@@ -113,6 +113,7 @@
 		41548A4F99F9828955EB6E9D /* FizzySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61318F0904559BF12B11F6B7 /* FizzySyncProvider.swift */; };
 		9DF8C1C188A343E0A599DC6F /* FizzyAuthPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D30DD421E944383905DDA66 /* FizzyAuthPhase.swift */; };
 		A2C24F47008E4D908470B095 /* FizzyAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C59750950E4C9594DA4679 /* FizzyAuthView.swift */; };
+		2AEB3E1D84FF4B4FAF0196A8 /* FizzyAuthVerifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC481341C7D4DE7BC349F33 /* FizzyAuthVerifyView.swift */; };
 		29C533FDC3CBBBA33CB46B5F /* FizzySyncProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF9A4DE5F8BB6B6C9FE219D2 /* FizzySyncProviderTests.swift */; };
 		DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */; };
 		DC7454E09D93F33B9F51A899 /* FizzySyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */; };
@@ -274,6 +275,7 @@
 		61318F0904559BF12B11F6B7 /* FizzySyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProvider.swift; sourceTree = "<group>"; };
 		8D30DD421E944383905DDA66 /* FizzyAuthPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthPhase.swift; sourceTree = "<group>"; };
 		D1C59750950E4C9594DA4679 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
+		AFC481341C7D4DE7BC349F33 /* FizzyAuthVerifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthVerifyView.swift; sourceTree = "<group>"; };
 		CF9A4DE5F8BB6B6C9FE219D2 /* FizzySyncProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProviderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -597,6 +599,7 @@
 				61318F0904559BF12B11F6B7 /* FizzySyncProvider.swift */,
 				8D30DD421E944383905DDA66 /* FizzyAuthPhase.swift */,
 				D1C59750950E4C9594DA4679 /* FizzyAuthView.swift */,
+				AFC481341C7D4DE7BC349F33 /* FizzyAuthVerifyView.swift */,
 			);
 			path = Fizzy;
 			sourceTree = "<group>";
@@ -909,6 +912,7 @@
 				41548A4F99F9828955EB6E9D /* FizzySyncProvider.swift in Sources */,
 				9DF8C1C188A343E0A599DC6F /* FizzyAuthPhase.swift in Sources */,
 				A2C24F47008E4D908470B095 /* FizzyAuthView.swift in Sources */,
+				2AEB3E1D84FF4B4FAF0196A8 /* FizzyAuthVerifyView.swift in Sources */,
 				DC7454E09D93F33B9F51A899 /* FizzySyncMapping.swift in Sources */,
 				DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */,
 				5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */,
