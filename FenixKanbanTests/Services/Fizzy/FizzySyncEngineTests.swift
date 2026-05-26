@@ -358,3 +358,183 @@ struct FizzySyncEngineReplaceLocalTests {
         #expect(localColumnNames.contains("In Progress"))
     }
 }
+
+@Suite("FizzySyncEngine — first-sync mode 3 (merge)", .serialized)
+@MainActor
+struct FizzySyncEngineMergeTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.merge.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t")
+            authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.merge.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t",
+                accountSlug: "ACCT",
+                urlSession: session,
+                clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client,
+                authState: authState,
+                mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+    }
+
+    @Test("merge mode: no title overlap → 2 POSTs + 2 local creates, no errors")
+    func mergeNoOverlap() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        _ = h.cardRepo.createCard(in: h.column, title: "Local A")
+        _ = h.cardRepo.createCard(in: h.column, title: "Local B")
+        try h.persistence.viewContext.save()
+
+        var postCount = 0
+        var nextNumber = 100
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                let body = """
+                [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                let body = """
+                [
+                  {"id":"fzR1","number":1,"title":"Remote X","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/1"},
+                  {"id":"fzR2","number":2,"title":"Remote Y","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/2"}
+                ]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                postCount += 1
+                let n = nextNumber
+                nextNumber += 1
+                let response = HTTPURLResponse(
+                    url: req.url!,
+                    statusCode: 201,
+                    httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/\(n)"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/"):
+                let n = (p as NSString).lastPathComponent
+                let body = """
+                {"id":"fz-\(n)","number":\(n),"title":"x","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/\(n)"}
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected request: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+
+        #expect(postCount == 2, "both local cards pushed")
+        #expect(result.itemsCreated == 4, "2 POSTs + 2 local creates from remote")
+        #expect(result.errors.isEmpty)
+
+        let localCards: [Card] = (h.column.cards as? Set<Card>).map { Array($0) } ?? []
+        let localTitles = Set(localCards.compactMap(\.title))
+        #expect(localTitles == Set(["Local A", "Local B", "Remote X", "Remote Y"]))
+    }
+
+    @Test("merge mode: title collision → FizzySyncResult.errors entry, neither side merged")
+    func mergeWithTitleCollision() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let collidingLocal = h.cardRepo.createCard(in: h.column, title: "Shared title")
+        _ = h.cardRepo.createCard(in: h.column, title: "Only local")
+        try h.persistence.viewContext.save()
+
+        var postCount = 0
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                let body = """
+                [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                let body = """
+                [
+                  {"id":"fzR1","number":1,"title":"Shared title","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/1"},
+                  {"id":"fzR2","number":2,"title":"Only remote","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/2"}
+                ]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                postCount += 1
+                let response = HTTPURLResponse(
+                    url: req.url!,
+                    statusCode: 201,
+                    httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/99"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/"):
+                let n = (p as NSString).lastPathComponent
+                let body = """
+                {"id":"fz-\(n)","number":\(n),"title":"Only local","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/\(n)"}
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected request: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+
+        #expect(postCount == 1, "only Only local is pushed; Shared title is skipped due to collision")
+        #expect(result.errors.count == 1)
+        #expect(result.errors.first?.contains("Shared title") == true)
+
+        // The colliding local card keeps its nil fizzyID — unmerged.
+        h.persistence.viewContext.refresh(collidingLocal, mergeChanges: false)
+        #expect(collidingLocal.fizzyID == nil)
+    }
+}

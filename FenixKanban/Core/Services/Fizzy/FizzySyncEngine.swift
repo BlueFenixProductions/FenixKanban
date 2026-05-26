@@ -136,7 +136,78 @@ final class FizzySyncEngine {
     }
 
     private func syncFirstMerge(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
-        FizzySyncResult()  // Implemented in Task 6
+        var result = FizzySyncResult()
+
+        // Fetch both sides.
+        let remoteColumns = try await fetchRemoteColumns(boardID: fizzyBoardID)
+        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
+
+        let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
+        let localCards: [Card] = localColumns.flatMap { column -> [Card] in
+            (column.cards as? Set<Card>).map { Array($0) } ?? []
+        }
+
+        // Lower-cased title sets for collision detection.
+        let localTitleMap: [String: String] = Dictionary(
+            localCards.compactMap { card -> (String, String)? in
+                guard let title = card.title else { return nil }
+                return (title.lowercased(), title)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let localTitles = Set(localTitleMap.keys)
+        let remoteTitlesLower = Set(remoteCards.map { $0.title.lowercased() })
+
+        // Collisions = title appears on BOTH sides. Skipped entirely (neither side touched).
+        let collisions = localTitles.intersection(remoteTitlesLower)
+        for collidingTitleLower in collisions {
+            let displayTitle = localTitleMap[collidingTitleLower] ?? collidingTitleLower
+            result.errors.append("Same-title collision: '\(displayTitle)'")
+        }
+
+        // Auto-create local columns for any remote name not seen (so we have somewhere to drop pulls).
+        var resolvedColumns: [String: Column] = Dictionary(
+            uniqueKeysWithValues: localColumns.compactMap { col -> (String, Column)? in
+                guard let name = col.name else { return nil }
+                return (FizzySyncMapping.normalizedColumnName(name), col)
+            }
+        )
+        for remote in remoteColumns {
+            let key = FizzySyncMapping.normalizedColumnName(remote.name)
+            if resolvedColumns[key] == nil {
+                let newColumn = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
+                resolvedColumns[key] = newColumn
+            }
+        }
+
+        // Pull remote-only cards (not in local, not a collision).
+        for remote in remoteCards where !localTitles.contains(remote.title.lowercased()) {
+            let targetColumn = remote.column
+                .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
+                ?? resolvedColumns.values.first
+                ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
+            let card = CardRepository(context: context).createCard(in: targetColumn, title: remote.title)
+            applyRemote(remote, to: card)
+            result.itemsCreated += 1
+        }
+
+        // Push local-only cards (nil fizzyID, not a collision).
+        for card in localCards where card.fizzyID == nil
+                                && !remoteTitlesLower.contains(card.title?.lowercased() ?? "") {
+            do {
+                let created = try await postCard(card, toBoardID: fizzyBoardID)
+                card.fizzyID = created.id
+                card.fizzyUpdatedAt = created.lastActiveAt
+                result.itemsCreated += 1
+            } catch let error as FizzyError {
+                result.errors.append("Push '\(card.title ?? "(untitled)")': \(error)")
+            }
+        }
+
+        if context.hasChanges {
+            try context.save()
+        }
+        return result
     }
 
     // MARK: - Remote fetches
