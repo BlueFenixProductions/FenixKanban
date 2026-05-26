@@ -567,3 +567,126 @@ struct FizzySyncEngineSyncPairingTests {
         #expect(result == FizzySyncResult())
     }
 }
+
+@Suite("FizzySyncEngine — steady-state pull", .serialized)
+@MainActor
+struct FizzySyncEngineSteadyPullTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let mapping: FizzyBoardMapping
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.steadypull.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t")
+            authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.steadypull.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t", accountSlug: "ACCT",
+                urlSession: session, clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client, authState: authState, mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+    }
+
+    @Test("steady pull: 3 remote, 0 local with fizzyID → 3 local created")
+    func pullRemoteOnly() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [
+          {"id":"fz1","number":1,"title":"R1","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/1"},
+          {"id":"fz2","number":2,"title":"R2","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/2"},
+          {"id":"fz3","number":3,"title":"R3","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/3"}
+        ]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.itemsCreated == 3)
+        #expect(result.errors.isEmpty)
+
+        let titles = Set(((h.column.cards as? Set<Card>).map { Array($0) } ?? []).compactMap(\.title))
+        #expect(titles == Set(["R1", "R2", "R3"]))
+    }
+
+    @Test("steady pull: skips remote cards already paired locally (no duplicate creates)")
+    func pullSkipsAlreadyPaired() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        // Local card already paired with fz1
+        let paired = h.cardRepo.createCard(in: h.column, title: "Existing")
+        paired.fizzyID = "fz1"
+        try h.persistence.viewContext.save()
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                let body = """
+                [{"id":"fz1","number":1,"title":"Existing","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/1"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+        #expect(result.itemsCreated == 0, "no new cards — fz1 already paired")
+    }
+}

@@ -73,8 +73,56 @@ final class FizzySyncEngine {
     }
 
     private func steadyStateSync(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
-        // Implemented incrementally across Tasks 2-8.
-        FizzySyncResult()
+        var result = FizzySyncResult()
+
+        // Fetch remote state.
+        let remoteColumns = try await fetchRemoteColumns(boardID: fizzyBoardID)
+        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
+
+        // Local cards keyed by fizzyID (only paired ones).
+        let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
+        let localCards: [Card] = localColumns.flatMap { col -> [Card] in
+            (col.cards as? Set<Card>).map { Array($0) } ?? []
+        }
+        let pairedByFizzyID: [String: Card] = Dictionary(
+            uniqueKeysWithValues: localCards.compactMap { card in card.fizzyID.map { ($0, card) } }
+        )
+
+        // Resolve columns: auto-create local for any remote name not seen.
+        var resolvedColumns: [String: Column] = Dictionary(
+            uniqueKeysWithValues: localColumns.compactMap { col -> (String, Column)? in
+                guard let name = col.name else { return nil }
+                return (FizzySyncMapping.normalizedColumnName(name), col)
+            }
+        )
+        for remote in remoteColumns {
+            let key = FizzySyncMapping.normalizedColumnName(remote.name)
+            if resolvedColumns[key] == nil {
+                let new = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
+                resolvedColumns[key] = new
+            }
+        }
+
+        // Pull: for each remote card not yet paired locally, create it.
+        for remote in remoteCards where pairedByFizzyID[remote.id] == nil {
+            let targetColumn = remote.column
+                .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
+                ?? resolvedColumns.values.first
+                ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
+            let card = CardRepository(context: context).createCard(in: targetColumn, title: remote.title)
+            applyRemote(remote, to: card)
+            result.itemsCreated += 1
+        }
+
+        // LWW updates, push, soft-delete, etc. — added incrementally.
+
+        // Persist lastSyncAt.
+        mapping.setLastSync(.now)
+
+        if context.hasChanges {
+            try context.save()
+        }
+        return result
     }
 
     // MARK: - Mode implementations (skeleton — return empty in this task; filled by Tasks 4-6)
