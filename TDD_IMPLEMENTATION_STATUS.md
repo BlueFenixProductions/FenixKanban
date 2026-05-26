@@ -804,3 +804,65 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 3. Card.label is single-valued; only the first remote tag mapped on pull. Push omits `tag_ids`.
 
 **What ships:** Engine is feature-complete for Phase 5 to wire to UI. `syncFirst(mode:)` for one-shot pair; `sync()` for the foreground-polling cycle.
+
+### Fizzy Integration — Phase 4c: Backup + Safety ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- 12 new tests across 3 suites: `BackupManifestTests` (3),
+  `BackupExporterTests` (5), `FizzySyncEngineBoardIsolationTests` (4).
+- Each test verified failing before implementation (isolation tests
+  passed on first run — invariant already held; suite locks it).
+
+**🟢 Green Phase:**
+- `BackupManifest` (Codable, entity counts + ISO-8601 timestamps).
+- `BackupExporter.exportVerified(to:from:)`: copies SQLite files into
+  a `.fenixkanban-backup` directory bundle + writes manifest + immediately
+  re-loads the bundle into a throwaway `NSPersistentContainer` and
+  re-derives counts; throws `ExportError.verificationFailed` on mismatch.
+- `BackupDocument: FileDocument` so SwiftUI's `.fileExporter` can present
+  the verified bundle to the user for final save.
+- `BackupSettingsView`: Settings → Data → Backup. Tap "Export Backup" →
+  exports to temp + verifies → presents `.fileExporter` for save.
+- Settings root gets a "Data" section above "Integrations".
+- `PersistenceController.sharedModel` exposed `internal` so the backup
+  verifier can build a temp container against the same model.
+
+**🔵 Refactor Phase:**
+- File-copy helper handles missing sidecar (`-wal`/`-shm`) gracefully —
+  SQLite doesn't always have them.
+- BackupExporter has no dependency on PersistenceController; it takes a
+  raw `NSPersistentContainer` so tests can build isolated stores.
+- `sourceStoreURL` reads from `container.persistentStoreCoordinator.persistentStores`
+  (canonical post-load) rather than `persistentStoreDescriptions` (pre-load) —
+  prevents silent empty exports when `NSPersistentCloudKitContainer` normalizes
+  the path.
+- `verify(bundleAt:)` explicitly removes the persistent store before the
+  scratch-dir teardown runs — eliminates `BUG IN CLIENT OF libsqlite3.dylib`
+  noise in test output.
+- Test helper `drainContainer(_:)` mirrors the same pattern at the test layer
+  so source-container teardown is also clean.
+- `BackupSettingsView`'s `.fileExporter` completion handler runs state
+  mutations inside `Task { @MainActor in ... }` (Swift strict concurrency)
+  and cleans up the staging temp directory to prevent leaks on repeated exports.
+- `BackupDocument` uses lazy `FileWrapper(url:, options: [])` rather than
+  `.immediate` to avoid main-thread memory spikes for large stores.
+- `BackupExporterTests.rejectsCountMismatch` was added to exercise the
+  count-mismatch guard branch (the existing `rejectsCorruption` test only
+  exercised the load-failure path).
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-phase-5-ui-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-4c-backup-and-safety.md`
+
+**Test Coverage:** 12 new tests across 3 suites. Full suite green.
+
+**Documented limitations:**
+1. Restore is a manual file-replace; no in-app restore UI yet.
+2. Backups are plaintext SQLite — user is responsible for storage hygiene.
+3. No multi-version history; each export overwrites the destination.
+4. No backup encryption.
+
+**What ships:** A safety net the user can rely on before exercising
+Phase 5's UI against real Fizzy data. The board-isolation suite gives
+mechanical proof that non-paired boards stay untouched.
