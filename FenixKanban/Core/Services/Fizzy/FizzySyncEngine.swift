@@ -86,11 +86,105 @@ final class FizzySyncEngine {
     }
 
     private func syncFirstReplaceLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
-        FizzySyncResult()  // Implemented in Task 5
+        var result = FizzySyncResult()
+
+        // 1. Wipe local cards on the paired board.
+        let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
+        let localCards: [Card] = localColumns.flatMap { column -> [Card] in
+            (column.cards as? Set<Card>).map { Array($0) } ?? []
+        }
+        for card in localCards {
+            context.delete(card)
+            result.itemsDeleted += 1
+        }
+
+        // 2. Pull remote columns + cards.
+        let remoteColumns = try await fetchRemoteColumns(boardID: fizzyBoardID)
+        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
+
+        // 3. Auto-create local columns for any remote name not seen.
+        var resolvedColumns: [String: Column] = Dictionary(
+            uniqueKeysWithValues: localColumns.compactMap { col -> (String, Column)? in
+                guard let name = col.name else { return nil }
+                return (FizzySyncMapping.normalizedColumnName(name), col)
+            }
+        )
+        for remote in remoteColumns {
+            let key = FizzySyncMapping.normalizedColumnName(remote.name)
+            if resolvedColumns[key] == nil {
+                let newColumn = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
+                resolvedColumns[key] = newColumn
+            }
+        }
+
+        // 4. Create local cards mirroring each remote.
+        for remote in remoteCards {
+            let targetColumn = remote.column
+                .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
+                ?? resolvedColumns.values.first
+                ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
+
+            let card = CardRepository(context: context).createCard(in: targetColumn, title: remote.title)
+            applyRemote(remote, to: card)
+            result.itemsCreated += 1
+        }
+
+        if context.hasChanges {
+            try context.save()
+        }
+        return result
     }
 
     private func syncFirstMerge(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
         FizzySyncResult()  // Implemented in Task 6
+    }
+
+    // MARK: - Remote fetches
+
+    private func fetchRemoteColumns(boardID: String) async throws -> [FizzyColumn] {
+        try await client.get("/boards/\(boardID)/columns", as: [FizzyColumn].self)
+    }
+
+    /// Fetches all cards for a remote board via the per-board list endpoint
+    /// `GET /:account/cards?board_ids[]=<id>`. Phase 4a uses the list shape
+    /// (no `column` field per Fizzy docs) — column placement is recovered
+    /// from each card's column relationship on a follow-up GET if needed.
+    /// For the first-sync modes we accept "no column" → drop into the
+    /// first available column.
+    private func fetchRemoteCards(boardID: String) async throws -> [FizzyCard] {
+        try await client.get("/cards?board_ids[]=\(boardID)", as: [FizzyCard].self)
+    }
+
+    // MARK: - Apply remote → local
+
+    /// Writes the synced fields from a `FizzyCard` onto a local `Card`.
+    /// Phase 4a maps only the first remote tag to `Card.label`; remaining
+    /// tags are dropped (documented limitation).
+    private func applyRemote(_ remote: FizzyCard, to card: Card) {
+        card.title = remote.title
+        card.cardDescription = remote.description
+        card.isGolden = remote.golden
+        card.fizzyID = remote.id
+        card.fizzyUpdatedAt = remote.lastActiveAt
+
+        if let firstTag = remote.tags.first {
+            card.label = findOrCreateLabel(name: firstTag)
+        } else {
+            card.label = nil
+        }
+    }
+
+    /// Finds a `Label` by case-insensitive name or creates one with a
+    /// deterministic color derived from the name.
+    private func findOrCreateLabel(name: String) -> Label {
+        let request: NSFetchRequest<Label> = Label.fetchRequest()
+        request.predicate = NSPredicate(format: "name ==[c] %@", name)
+        request.fetchLimit = 1
+        if let existing = (try? context.fetch(request))?.first {
+            return existing
+        }
+        let colorHex = FizzySyncMapping.labelColorHex(forName: name)
+        return LabelRepository(context: context).createLabel(name: name, colorHex: colorHex)
     }
 
     // MARK: - Card writes

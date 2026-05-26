@@ -209,6 +209,14 @@ final class FizzyClient: Sendable {
     private func url(for path: String) -> URL {
         precondition(path.hasPrefix("/"), "FizzyClient paths must begin with `/`")
         let prefix = path.hasPrefix("/my/") ? "" : "/\(accountSlug)"
-        return baseURL.appending(path: "\(prefix)\(path)")
+        let combined = "\(prefix)\(path)"
+        // Use URL(string:relativeTo:) to preserve query strings.
+        // `URL.appending(path:)` percent-encodes `?` into the path component,
+        // which prevents URLSession from splitting path/query correctly.
+        if let url = URL(string: combined, relativeTo: baseURL) {
+            return url.absoluteURL
+        }
+        // Fallback: percent-encode the path (no query) and append directly.
+        return baseURL.appending(path: combined)
     }
 }

@@ -212,3 +212,149 @@ struct FizzySyncEnginePushLocalTests {
         #expect(alreadyPushed.fizzyID == "fz-existing", "already-paired card's fizzyID is preserved")
     }
 }
+
+@Suite("FizzySyncEngine — first-sync mode 2 (replace local)", .serialized)
+@MainActor
+struct FizzySyncEngineReplaceLocalTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let labelRepo: LabelRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            labelRepo = LabelRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.replace.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t")
+            authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.replace.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t",
+                accountSlug: "ACCT",
+                urlSession: session,
+                clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client,
+                authState: authState,
+                mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+    }
+
+    /// Mock handler that returns the given remote state for columns + cards
+    /// endpoints. The engine's remote-card fetch uses `/cards?board_ids[]=...`,
+    /// which urlSession converts to `/cards` + query, so we match on path
+    /// suffix `/cards` (NOT `.contains("?")`).
+    private static func mockBoardState(columnsJSON: String, cardsJSON: String) -> (URLRequest) throws -> (Data, HTTPURLResponse) {
+        { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected request: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+    }
+
+    @Test("replace mode: 3 local cards deleted, 2 remote cards pulled into local")
+    func replaceDestructivePull() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        // Local state: 3 cards
+        _ = h.cardRepo.createCard(in: h.column, title: "Local A")
+        _ = h.cardRepo.createCard(in: h.column, title: "Local B")
+        _ = h.cardRepo.createCard(in: h.column, title: "Local C")
+        try h.persistence.viewContext.save()
+
+        // Remote state: 1 column + 2 cards (one golden, one tagged)
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [
+          {"id":"fz1","number":1,"title":"Remote One","status":"published","description":"desc one","description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/1"},
+          {"id":"fz2","number":2,"title":"Remote Two","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":["bug"],"golden":true,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/2"}
+        ]
+        """
+        MockURLProtocol.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
+
+        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+
+        #expect(result.itemsDeleted == 3)
+        #expect(result.itemsCreated == 2)
+        #expect(result.errors.isEmpty)
+
+        // Verify local state matches remote
+        let localCards: [Card] = (h.column.cards as? Set<Card>).map { Array($0) } ?? []
+        let titles = Set(localCards.compactMap(\.title))
+        #expect(titles == Set(["Remote One", "Remote Two"]))
+
+        // Verify golden flag was pulled
+        let golden = localCards.first { $0.title == "Remote Two" }
+        #expect(golden?.isGolden == true)
+
+        // Verify a local Label was auto-created for the "bug" tag and attached
+        #expect(golden?.label?.name == "bug")
+    }
+
+    @Test("replace mode: remote column missing locally → auto-created")
+    func replaceAutoCreatesLocalColumn() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        // Remote has a column named "In Progress" that doesn't exist locally
+        let columnsJSON = """
+        [{"id":"FC2","name":"In Progress","color":{"name":"Lime","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = "[]"
+        MockURLProtocol.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
+
+        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+
+        #expect(result.errors.isEmpty)
+
+        // Verify the column exists locally now
+        let localColumns: [Column] = (h.board.columns as? Set<Column>).map { Array($0) } ?? []
+        let localColumnNames = Set(localColumns.compactMap(\.name))
+        #expect(localColumnNames.contains("In Progress"))
+    }
+}
