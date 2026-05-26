@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7C3EE609F4264B979A86457B /* BackupManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F224CED68D4C789A3488C9 /* BackupManifest.swift */; };
+		31B83079C1D94761AE9486D5 /* BackupManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 211092B4510E4C73B4DA3ACE /* BackupManifestTests.swift */; };
 		0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
 		01E3AFEC069DF18B4E2A0C4E /* SyncResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCED96777A4573DFBA0FF0AA /* SyncResult.swift */; };
 		0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0435462C469D8222A55798D /* CardEntity.swift */; };
@@ -133,6 +135,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		75F224CED68D4C789A3488C9 /* BackupManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifest.swift; sourceTree = "<group>"; };
+		211092B4510E4C73B4DA3ACE /* BackupManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifestTests.swift; sourceTree = "<group>"; };
 		0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModelTests.swift; sourceTree = "<group>"; };
 		0906AE18DFC56CF8C029EE3E /* BoardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepositoryTests.swift; sourceTree = "<group>"; };
 		09EACADBB67BFDA43E39C6E2 /* SyncResultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncResultTests.swift; sourceTree = "<group>"; };
@@ -370,9 +374,34 @@
 			path = TipJar;
 			sourceTree = "<group>";
 		};
+		3B9DFBB8C06C4CF1911C5063 /* Backup */ = {
+			isa = PBXGroup;
+			children = (
+				75F224CED68D4C789A3488C9 /* BackupManifest.swift */,
+			);
+			path = Backup;
+			sourceTree = "<group>";
+		};
+		BF535EE32C224752B80004A5 /* Backup */ = {
+			isa = PBXGroup;
+			children = (
+				211092B4510E4C73B4DA3ACE /* BackupManifestTests.swift */,
+			);
+			path = Backup;
+			sourceTree = "<group>";
+		};
+		FD7D3D77B2644D20AE919AB2 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				BF535EE32C224752B80004A5 /* Backup */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
 		3E79D7ED2835B50A526E19C8 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				3B9DFBB8C06C4CF1911C5063 /* Backup */,
 				9F7F63F146DCE5A5D0241825 /* Auth */,
 				213B05F03EA16355A3DD3E04 /* Board */,
 				C437AC694A256CC96E54074C /* BoardList */,
@@ -657,6 +686,7 @@
 				E468616D12A084C045616D44 /* FenixKanbanTests.swift */,
 				DACE608239CEF0D6E6257310 /* Core */,
 				665F4780CBBF754531D47F1D /* Extensions */,
+				FD7D3D77B2644D20AE919AB2 /* Features */,
 				C324BCF806B80C2A14FFB431 /* Fixtures */,
 				2E96249D89F978A03046C06B /* Intents */,
 				ED92A51CF99AD7208A720C96 /* Models */,
@@ -787,6 +817,7 @@
 				F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */,
 				443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */,
 				7B489206B8BFF570139BFC5E /* BoardEntity.swift in Sources */,
+				7C3EE609F4264B979A86457B /* BackupManifest.swift in Sources */,
 				4C558BCB1F1A5E83A77D351E /* BoardListView.swift in Sources */,
 				C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */,
 				C2902035A969FF5D17E7BAA0 /* BoardQuery.swift in Sources */,
@@ -860,6 +891,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				31B83079C1D94761AE9486D5 /* BackupManifestTests.swift in Sources */,
 				A30A97626FA931BBFCD62BA3 /* AppearanceModeTests.swift in Sources */,
 				2BAB3B616AC9A95A8CC6D3B1 /* AuthenticationServiceTests.swift in Sources */,
 				12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */,
