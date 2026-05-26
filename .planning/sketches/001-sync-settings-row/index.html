@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sketch 001 — SyncSettingsView row</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  /* Localized: a chip for the trailing status text */
+  .row-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+  .row-status.connected { color: var(--color-success); }
+  .row-status.warning { color: var(--color-warning); }
+
+  .row-icon-fizzy { background: linear-gradient(135deg, #ff6b35, #f7931e); }
+  .row-icon-github { background: #1c1c1e; }
+  .row-icon-jira { background: #0052cc; }
+  .row-icon-linear { background: linear-gradient(135deg, #5e6ad2, #8b91e7); }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="show('a', event)">A: icon + checkmark only</button>
+  <button class="variant-tab" onclick="show('b', event)">B: icon + status text + chevron</button>
+  <button class="variant-tab" onclick="show('c', event)">C ★ Selected: icon + trailing badge + caption</button>
+</div>
+
+<!-- ============================== Variant A ============================== -->
+<div id="variant-a" class="variant active">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Settings</span>
+        <span class="nav-title">Board Sync</span>
+        <span class="nav-right"></span>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Sync Providers</div>
+        <div class="form-card">
+          <div class="row" onclick="alert('navigate to FizzyAuthView')">
+            <div class="row-icon row-icon-fizzy">⚡︎</div>
+            <div class="row-content">
+              <div class="row-title">Fizzy</div>
+            </div>
+            <div class="row-trailing">
+              <span class="badge badge-success">✓</span>
+            </div>
+          </div>
+          <div class="row" onclick="alert('GitHub Projects (future)')">
+            <div class="row-icon row-icon-github">G</div>
+            <div class="row-content">
+              <div class="row-title">GitHub Projects</div>
+            </div>
+            <div class="row-trailing chevron"></div>
+          </div>
+        </div>
+        <div class="form-section-footer">
+          Tap a provider to authenticate and pair a board.
+        </div>
+      </div>
+
+      <p style="text-align:center; color: var(--color-text-secondary); font-size: var(--text-sm); padding: 0 20px;">
+        Pros: minimal, fast scan. Cons: badge meaning ambiguous —<br>
+        is ✓ "authenticated", "paired", or "synced and healthy"?
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== Variant B ============================== -->
+<div id="variant-b" class="variant">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Settings</span>
+        <span class="nav-title">Board Sync</span>
+        <span class="nav-right"></span>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Sync Providers</div>
+        <div class="form-card">
+          <!-- Connected + paired -->
+          <div class="row" onclick="alert('navigate to FizzyAuthView paired state')">
+            <div class="row-icon row-icon-fizzy">⚡︎</div>
+            <div class="row-content">
+              <div class="row-title">Fizzy</div>
+              <div class="row-subtitle">Paired with “Roadmap” · Synced 2 min ago</div>
+            </div>
+            <div class="row-trailing chevron">
+              <span class="row-status connected">Connected</span>
+            </div>
+          </div>
+          <!-- Token revoked -->
+          <div class="row" onclick="alert('navigate to FizzyAuthView 401 state')">
+            <div class="row-icon row-icon-fizzy" style="opacity:0.55">⚡︎</div>
+            <div class="row-content">
+              <div class="row-title">Fizzy (second account)</div>
+              <div class="row-subtitle">Re-enter access token</div>
+            </div>
+            <div class="row-trailing chevron">
+              <span class="row-status warning">⚠ Action needed</span>
+            </div>
+          </div>
+          <!-- Not set up -->
+          <div class="row" onclick="alert('navigate to GitHub auth')">
+            <div class="row-icon row-icon-github">G</div>
+            <div class="row-content">
+              <div class="row-title">GitHub Projects</div>
+            </div>
+            <div class="row-trailing chevron"></div>
+          </div>
+        </div>
+        <div class="form-section-footer">
+          Sync your local boards with cards on remote services.
+        </div>
+      </div>
+
+      <p style="text-align:center; color: var(--color-text-secondary); font-size: var(--text-sm); padding: 0 20px;">
+        Pros: fully self-explanatory. Cons: row gets tall, two-line subtitle on every row.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== Variant C ============================== -->
+<div id="variant-c" class="variant">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Settings</span>
+        <span class="nav-title">Board Sync</span>
+        <span class="nav-right"></span>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Sync Providers</div>
+        <div class="form-card">
+          <div class="row">
+            <div class="row-icon row-icon-fizzy">⚡︎</div>
+            <div class="row-content">
+              <div class="row-title">Fizzy</div>
+              <div class="row-subtitle">Synced 2 min ago</div>
+            </div>
+            <div class="row-trailing">
+              <span class="badge badge-success">✓</span>
+              <span style="font-size: 18px; color: var(--color-text-tertiary);">›</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-icon row-icon-fizzy" style="opacity:0.55">⚡︎</div>
+            <div class="row-content">
+              <div class="row-title">Fizzy (second account)</div>
+              <div class="row-subtitle">Tap to re-enter token</div>
+            </div>
+            <div class="row-trailing">
+              <span class="badge badge-warning">!</span>
+              <span style="font-size: 18px; color: var(--color-text-tertiary);">›</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-icon row-icon-github">G</div>
+            <div class="row-content">
+              <div class="row-title">GitHub Projects</div>
+              <div class="row-subtitle">Not set up</div>
+            </div>
+            <div class="row-trailing">
+              <span style="font-size: 18px; color: var(--color-text-tertiary);">›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p style="text-align:center; color: var(--color-text-secondary); font-size: var(--text-sm); padding: 0 20px;">
+        Hybrid: badge for icon-quick-read, subtitle for what action means.<br>
+        Mid-density.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Sketch tools -->
+<div id="sketch-tools" style="position:fixed;bottom:12px;right:12px;z-index:9999;font-family:system-ui;font-size:12px;background:rgba(0,0,0,0.7);color:white;padding:8px 12px;border-radius:8px;opacity:0.4;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.4'">
+  Sketch 001 — SyncSettingsView row
+</div>
+
+<script>
+  function show(id, ev) {
+    document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('variant-' + id).classList.add('active');
+    ev.currentTarget.classList.add('active');
+  }
+</script>
+</body>
+</html>
