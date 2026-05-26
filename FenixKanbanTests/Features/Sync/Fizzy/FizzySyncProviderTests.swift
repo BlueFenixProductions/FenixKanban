@@ -148,6 +148,8 @@ struct FizzySyncProviderTests {
         #expect(remoteBoards[0].provider == "Fizzy")
         #expect(remoteBoards[1].id == "FB2")
         #expect(remoteBoards[1].name == "Private")
+        #expect(remoteBoards[0].url == URL(string: "https://fizzy.bluefenix.net/ACCT/boards/FB1"))
+        #expect(remoteBoards[1].url == nil)
     }
 
     @Test("sync() translates FizzySyncResult counts to public SyncResult")
@@ -163,13 +165,22 @@ struct FizzySyncProviderTests {
         let mapping = FizzyBoardMapping(defaults: h.mappingDefaults)
         mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-        // Steady-state sync fetches empty columns/cards — engine returns zero changes.
+        // Seed the remote with one card on one column so the steady-state pull
+        // loop creates exactly one local card. itemsCreated must therefore
+        // arrive at the public SyncResult as 1 — that proves the field carries
+        // through rather than being mapped from the wrong source.
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                let body = """
+                [{"id":"FC1","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                let body = """
+                [{"id":"fz1","number":1,"title":"R1","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/1"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
             default:
                 return (Data(), .response(for: req, status: 500))
             }
@@ -177,9 +188,23 @@ struct FizzySyncProviderTests {
 
         let result = try await h.provider.sync(boardId: board.id!, remoteProjectId: "FB1")
 
-        #expect(result.itemsCreated == 0)
+        // Non-trivial values prove the field-by-field translation is correct
+        // (swap itemsCreated ↔ itemsDeleted in the provider and this fails).
+        #expect(result.itemsCreated == 1)
         #expect(result.itemsUpdated == 0)
         #expect(result.itemsDeleted == 0)
         #expect(result.errors.isEmpty)
+    }
+
+    @Test("lastSyncDate returns mapping.lastSyncAt regardless of boardId")
+    func lastSyncDateDelegatesToMapping() {
+        let h = Harness(); defer { h.tearDown() }
+        // Initially nil — mapping has no recorded sync.
+        #expect(h.provider.lastSyncDate(for: UUID()) == nil)
+        // After recording on the mapping, the provider exposes it through
+        // lastSyncDate(for:) regardless of the boardId argument (singleton
+        // pairing — boardId is documented as ignored).
+        h.provider.mappingRef.setLastSync(.now)
+        #expect(h.provider.lastSyncDate(for: UUID()) != nil)
     }
 }
