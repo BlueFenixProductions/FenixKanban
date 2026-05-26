@@ -736,3 +736,39 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **CloudKit smoke:** Manual — run the app on a real device or simulator with iCloud Drive enabled, create a card, observe in CloudKit Dashboard (`iCloud.com.bluefenixproductions.FenixKanban` → Schema → Development) that `CD_fizzyID` / `CD_fizzyEtag` / `CD_fizzyUpdatedAt` fields appear on the `CD_Card` record type. Deploy-to-production happens in a single CloudKit Dashboard step before the App Store release that includes any Fizzy sync writes (Phase 5+).
 
 **What ships:** Three optional Card attributes ready for Phase 4's sync engine to read/write. Zero behavior change for users until the engine + UI land.
+
+### Fizzy Integration — Phase 4a: First-Sync Engine ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- 15 tests across 7 suites: `FirstSyncModeTests` (3), `FizzySyncResultTests` (2), `FizzySyncMappingTests` (3), `FizzySyncEnginePairingTests` (1), `FizzySyncEnginePushLocalTests` (2), `FizzySyncEngineReplaceLocalTests` (2), `FizzySyncEngineMergeTests` (2).
+- All verified failing before implementation.
+
+**🟢 Green Phase:**
+- `FirstSyncMode` enum + `FizzySyncResult` struct — type renamed from spec's `SyncResult` to avoid conflict with the existing public `BoardSyncProvider.SyncResult` (different shape — immutable, `syncDate`).
+- `FizzySyncMapping` — pure helpers: `normalizedColumnName` (lowercase + trim), `labelColorHex` (FNV-1a → `#RRGGBB`, deterministic across reinstalls).
+- `FizzySyncEngine` (`@MainActor final class`) composing `FizzyClient` + `FizzyAuthState` + `FizzyBoardMapping` + `NSManagedObjectContext`. Single public method: `syncFirst(mode:)`.
+- Three first-sync modes:
+  - `.pushLocalToFizzy` (default) — POST every local card with `nil fizzyID`; store returned `fizzyID + fizzyUpdatedAt`. Non-destructive on remote.
+  - `.replaceLocalWithFizzy` — delete all local cards on paired board, pull remote columns + cards. Auto-create local columns + Labels.
+  - `.mergeIfNoConflicts` — case-insensitive title collisions → `FizzySyncResult.errors`; non-colliding remote-only cards pulled; non-colliding local-only cards POSTed.
+
+**🔵 Refactor Phase:**
+- Field mapping centralized in `applyRemote(_:to:)` + `postCard(_:toBoardID:)`.
+- Column resolution in a single `resolvedColumns: [String: Column]` dict keyed by `normalizedColumnName`.
+- Tag → Label via `findOrCreateLabel(name:)` (case-insensitive).
+- Dropped the `enum Fizzy { typealias SyncResult }` namespace — over-engineered for one type; `FizzySyncResult` stands on its own.
+- `FizzyClient.url(for:)` fixed to use `URL(string:relativeTo:)` so query strings are preserved as proper query components (necessary for the `/cards?board_ids[]=...` endpoint).
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-4a-first-sync.md`
+
+**Test Coverage:** 15 new tests across 7 suites. Full suite green at 186/186.
+
+**Documented MVP limitations** (also flagged in source comments):
+1. Card.label is single-valued; only the first remote tag is mapped on pull. Push omits `tag_ids` entirely.
+2. Column matching is by case-insensitive name only — no `fizzyColumnID` attribute on local Column. Renaming a column on either side creates a phantom column on next sync.
+3. `description` synced as plain text; `description_html` ignored on pull.
+
+**What ships:** A one-shot first-sync engine usable by Phase 5's `FizzyAuthView` "Pair and sync" button. Phase 4b adds steady-state diff, LWW resolution, soft-delete, crash-after-POST recovery, idempotence, and 401 handling.
