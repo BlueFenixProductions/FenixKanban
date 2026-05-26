@@ -76,13 +76,7 @@ struct FizzyAuthView: View {
     }
 }
 
-// TEMPORARY STUBS — replaced by real sub-views in Tasks 5–6.
-struct FizzyAuthPairView: View {
-    let provider: FizzySyncProvider
-    let onPaired: () -> Void
-    let onSignOutRequested: () -> Void
-    var body: some View { Text("Pair (stub)") }
-}
+// TEMPORARY STUBS — replaced by real sub-views in Task 6.
 struct FizzyAuthStatusView: View {
     let provider: FizzySyncProvider
     let showsReauthBanner: Bool
