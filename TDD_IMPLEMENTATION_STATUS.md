@@ -772,3 +772,35 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 3. `description` synced as plain text; `description_html` ignored on pull.
 
 **What ships:** A one-shot first-sync engine usable by Phase 5's `FizzyAuthView` "Pair and sync" button. Phase 4b adds steady-state diff, LWW resolution, soft-delete, crash-after-POST recovery, idempotence, and 401 handling.
+
+### Fizzy Integration — Phase 4b: Steady-State Sync Engine ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- 9 new tests across 7 suites: `FizzySyncEngineSyncPairingTests` (1), `FizzySyncEngineSteadyPullTests` (2), `FizzySyncEngineSteadyPushTests` (1), `FizzySyncEngineLWWTests` (2), `FizzySyncEngineSoftDeleteTests` (1), `FizzySyncEngineCrashRecoveryTests` (1), `FizzySyncEngineIdempotenceTests` (1), `FizzySyncEngine401Tests` (1).
+- Each test verified failing before implementation.
+
+**🟢 Green Phase:**
+- Added public `FizzySyncEngine.sync()` method, called after `syncFirst(mode:)` has paired the board.
+- Steady-state cycle: fetch remote → diff against `fizzyID`-keyed locals → pull new remotes, LWW-update paired cards, soft-delete missing-from-remote locals, push nil-fizzyID locals (with title+createdAt orphan-claim).
+- 401 from any HTTP call clears `authState.clear()` and rethrows.
+- `mapping.setLastSync(.now)` written at the end of every successful cycle.
+- New private helpers: `putCard(_:fizzyID:)` (for LWW updates pushing local→remote); orphan-claim window logic in the push loop.
+- `applyRemote(_:to:)` (and the push/PUT/orphan-claim paths) now also reset `card.modifiedAt = fizzyUpdatedAt` so the next LWW check sees "local untouched" and doesn't spuriously re-PUT. Required for steady-state convergence (caught by the idempotence test).
+
+**🔵 Refactor Phase:**
+- Pull/LWW/soft-delete/push are sequential within `steadyStateSync`; each operates on the same `remoteCards` + `pairedByFizzyID` snapshots fetched at the top.
+- Column resolution reuses the same dict pattern as Phase 4a's `syncFirstReplaceLocal` / `syncFirstMerge`.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-4b-steady-state.md`
+
+**Test Coverage:** 9 new tests across 7 suites. Full suite green.
+
+**Documented limitations** (carried over from 4a; still flagged in source comments):
+1. Per-card ETag persistence (`Card.fizzyEtag`) not populated — Phase 4b refetches the whole board each cycle. Acceptable for personal use; revisit if board cards reach low-hundreds count.
+2. LWW is card-level (single timestamp), not field-level.
+3. Card.label is single-valued; only the first remote tag mapped on pull. Push omits `tag_ids`.
+
+**What ships:** Engine is feature-complete for Phase 5 to wire to UI. `syncFirst(mode:)` for one-shot pair; `sync()` for the foreground-polling cycle.
