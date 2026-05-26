@@ -83,7 +83,10 @@ final class PersistenceController: ObservableObject {
     // duplicate NSManagedObjectModels with the same entity names, which
     // makes +[Entity entity] ambiguous and routes fetches and inserts to
     // different stacks.
-    private static let sharedModel: NSManagedObjectModel = {
+    /// Loaded once and reused. Exposed `internal` so `BackupExporter`'s
+    /// verifier can build a throwaway `NSPersistentContainer` against the
+    /// same managed-object model without duplicate-entity warnings.
+    static let sharedModel: NSManagedObjectModel = {
         let bundle = Bundle(for: SharedModelLoader.self)
         guard let url = bundle.url(forResource: "FenixKanban", withExtension: "momd"),
               let model = NSManagedObjectModel(contentsOf: url) else {
