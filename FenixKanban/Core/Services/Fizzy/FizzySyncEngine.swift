@@ -58,7 +58,31 @@ final class FizzySyncEngine {
     // MARK: - Mode implementations (skeleton — return empty in this task; filled by Tasks 4-6)
 
     private func syncFirstPushLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
-        FizzySyncResult()  // Implemented in Task 4
+        // Push mode: POST every local card on the paired board. We don't
+        // pull anything from remote in Phase 4a — pre-existing remote cards
+        // (if any) stay untouched and become local cards in Phase 4b's
+        // steady-state sync.
+        var result = FizzySyncResult()
+        let columns = (localBoard.columns as? Set<Column>) ?? Set<Column>()
+        let cards: [Card] = columns.flatMap { column in
+            (column.cards as? Set<Card>) ?? Set<Card>()
+        }
+
+        for card in cards where card.fizzyID == nil {
+            do {
+                let created = try await postCard(card, toBoardID: fizzyBoardID)
+                card.fizzyID = created.id
+                card.fizzyUpdatedAt = created.lastActiveAt
+                result.itemsCreated += 1
+            } catch let error as FizzyError {
+                result.errors.append("Push '\(card.title ?? "(untitled)")': \(error)")
+            }
+        }
+
+        if context.hasChanges {
+            try context.save()
+        }
+        return result
     }
 
     private func syncFirstReplaceLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
@@ -67,6 +91,30 @@ final class FizzySyncEngine {
 
     private func syncFirstMerge(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
         FizzySyncResult()  // Implemented in Task 6
+    }
+
+    // MARK: - Card writes
+
+    /// POSTs a local card to the remote board and returns the resulting
+    /// `FizzyCard` (the client follows Location to fetch the full record).
+    ///
+    /// Phase 4a does not push `tag_ids` — see "Important spec divergences"
+    /// in the plan. The Fizzy API treats `tag_ids` as optional; omitting it
+    /// preserves whatever tags the server defaults to (none, for new cards).
+    private func postCard(_ card: Card, toBoardID fizzyBoardID: String) async throws -> FizzyCard {
+        let payload = FizzyCardWritePayload(
+            card: FizzyCardWrite(
+                title: card.title ?? "",
+                description: card.cardDescription,
+                status: nil,
+                tagIds: nil
+            )
+        )
+        return try await client.post(
+            "/boards/\(fizzyBoardID)/cards",
+            body: payload,
+            as: FizzyCard.self
+        )
     }
 
     // MARK: - Lookups
