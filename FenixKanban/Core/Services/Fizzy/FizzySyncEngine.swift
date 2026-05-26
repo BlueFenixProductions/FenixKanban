@@ -69,7 +69,14 @@ final class FizzySyncEngine {
         else {
             return FizzySyncResult()
         }
-        return try await steadyStateSync(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+        do {
+            return try await steadyStateSync(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+        } catch FizzyError.unauthorized {
+            // Token revoked or expired — clear Keychain entries so Phase 5's
+            // UI can prompt re-auth.
+            authState.clear()
+            throw FizzyError.unauthorized
+        }
     }
 
     private func steadyStateSync(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {

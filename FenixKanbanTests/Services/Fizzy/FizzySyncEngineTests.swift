@@ -1120,3 +1120,60 @@ struct FizzySyncEngineIdempotenceTests {
         #expect(second.errors.isEmpty)
     }
 }
+
+@Suite("FizzySyncEngine — 401 handling", .serialized)
+@MainActor
+struct FizzySyncEngine401Tests {
+
+    @Test("401 from remote clears authState; engine surfaces error")
+    func unauthorizedClearsAuth() async throws {
+        let persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "B")
+        _ = boardRepo.createColumn(in: board, name: "C")
+        try persistence.viewContext.save()
+
+        let prefix = "test.fizzy.401.\(UUID().uuidString)"
+        let authState = FizzyAuthState(keyPrefix: prefix)
+        defer { authState.clear() }
+        authState.setAccessToken("revoked-token")
+        authState.setAccountSlug("ACCT")
+
+        let suiteName = "test.fizzy.401.mapping.\(UUID().uuidString)"
+        let mappingDefaults = UserDefaults(suiteName: suiteName)!
+        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
+        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = { req in
+            (Data(), .response(for: req, status: 401))
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "revoked-token", accountSlug: "ACCT",
+            urlSession: session, clock: ImmediateClock()
+        )
+        let engine = FizzySyncEngine(
+            client: client, authState: authState, mapping: mapping,
+            context: persistence.viewContext
+        )
+
+        // Pre-condition
+        #expect(authState.accessToken == "revoked-token")
+
+        do {
+            _ = try await engine.sync()
+            Issue.record("expected sync() to throw on 401")
+        } catch let error as FizzyError {
+            #expect(error == .unauthorized)
+        }
+
+        // Post-condition: authState cleared
+        #expect(authState.accessToken == nil)
+    }
+}
