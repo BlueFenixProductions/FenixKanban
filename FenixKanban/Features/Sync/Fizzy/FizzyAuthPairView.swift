@@ -169,9 +169,7 @@ struct FizzyAuthPairView: View {
     }
 
     private var destructiveWarningRow: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
+        SwiftUI.Label {
             VStack(alignment: .leading, spacing: 4) {
                 Text("This will delete all \(pickedLocalBoardCardCount) cards on \"\(pickedLocalBoard?.name ?? "")\".")
                     .font(.callout).fontWeight(.semibold)
@@ -179,6 +177,9 @@ struct FizzyAuthPairView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        } icon: {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
         }
     }
 
