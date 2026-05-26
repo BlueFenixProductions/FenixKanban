@@ -114,7 +114,19 @@ final class FizzySyncEngine {
             result.itemsCreated += 1
         }
 
-        // LWW updates, push, soft-delete, etc. — added incrementally.
+        // LWW updates and soft-delete added incrementally by later tasks.
+
+        // Push: local cards with nil fizzyID (not yet paired) → POST.
+        for card in localCards where card.fizzyID == nil {
+            do {
+                let created = try await postCard(card, toBoardID: fizzyBoardID)
+                card.fizzyID = created.id
+                card.fizzyUpdatedAt = created.lastActiveAt
+                result.itemsCreated += 1
+            } catch let error as FizzyError {
+                result.errors.append("Push '\(card.title ?? "(untitled)")': \(error)")
+            }
+        }
 
         // Persist lastSyncAt.
         mapping.setLastSync(.now)
