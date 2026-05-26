@@ -7,6 +7,17 @@ import Foundation
 @MainActor
 struct BackupExporterTests {
 
+    /// Removes all persistent stores from `container` so SQLite can checkpoint
+    /// its WAL and release file descriptors before the temp directory is
+    /// deleted. Without this, `defer { try? FileManager.default.removeItem }`
+    /// deletes files out from under open SQLite handles and triggers
+    /// `BUG IN CLIENT OF libsqlite3.dylib` log noise.
+    private func drainContainer(_ container: NSPersistentContainer) {
+        for store in container.persistentStoreCoordinator.persistentStores {
+            try? container.persistentStoreCoordinator.remove(store)
+        }
+    }
+
     /// Builds an isolated on-disk store in a temp dir. We need on-disk because
     /// the exporter copies the SQLite files; an in-memory store has nothing
     /// to copy.
@@ -42,7 +53,7 @@ struct BackupExporterTests {
     @Test("export verified round-trip — counts match")
     func roundTrip() async throws {
         let (container, tempDir) = try makeOnDiskContainer(seedBoards: 2, cardsPerBoard: 4)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        defer { drainContainer(container); try? FileManager.default.removeItem(at: tempDir) }
 
         let destination = tempDir.appendingPathComponent("export.fenixkanban-backup", isDirectory: true)
         let exporter = BackupExporter()
@@ -59,7 +70,7 @@ struct BackupExporterTests {
     @Test("empty store round-trip")
     func emptyStoreRoundTrip() async throws {
         let (container, tempDir) = try makeOnDiskContainer(seedBoards: 0, cardsPerBoard: 0)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        defer { drainContainer(container); try? FileManager.default.removeItem(at: tempDir) }
 
         let destination = tempDir.appendingPathComponent("export.fenixkanban-backup", isDirectory: true)
         let exporter = BackupExporter()
@@ -72,7 +83,7 @@ struct BackupExporterTests {
     @Test("verifier rejects corrupted store (truncated SQLite)")
     func rejectsCorruption() async throws {
         let (container, tempDir) = try makeOnDiskContainer(seedBoards: 1, cardsPerBoard: 5)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        defer { drainContainer(container); try? FileManager.default.removeItem(at: tempDir) }
 
         let destination = tempDir.appendingPathComponent("export.fenixkanban-backup", isDirectory: true)
         let exporter = BackupExporter()
@@ -92,7 +103,7 @@ struct BackupExporterTests {
     @Test("loads manifest from exported bundle")
     func canLoadManifest() async throws {
         let (container, tempDir) = try makeOnDiskContainer(seedBoards: 1, cardsPerBoard: 7)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        defer { drainContainer(container); try? FileManager.default.removeItem(at: tempDir) }
 
         let destination = tempDir.appendingPathComponent("export.fenixkanban-backup", isDirectory: true)
         let exporter = BackupExporter()
@@ -102,5 +113,30 @@ struct BackupExporterTests {
         #expect(manifest.entityCounts["Card"] == 7)
         #expect(manifest.entityCounts["Board"] == 1)
         #expect(manifest.version == 1)
+    }
+
+    @Test("verifier rejects count mismatch (manifest disagrees with store)")
+    func rejectsCountMismatch() async throws {
+        let (container, tempDir) = try makeOnDiskContainer(seedBoards: 1, cardsPerBoard: 3)
+        defer { drainContainer(container); try? FileManager.default.removeItem(at: tempDir) }
+
+        let destination = tempDir.appendingPathComponent("export.fenixkanban-backup", isDirectory: true)
+        let exporter = BackupExporter()
+        _ = try await exporter.exportVerified(to: destination, from: container)
+
+        // Doctor the manifest to claim wildly wrong counts. The store itself
+        // is still valid and loadable — the verifier must catch the
+        // count-vs-manifest mismatch and throw, not silently accept.
+        let doctored = BackupManifest(
+            version: 1,
+            exportedAt: .now,
+            schemaName: "FenixKanban 3",
+            entityCounts: ["Board": 99, "Column": 99, "Card": 999, "Label": 99]
+        )
+        try doctored.encoded().write(to: destination.appendingPathComponent("manifest.json"), options: .atomic)
+
+        await #expect(throws: BackupExporter.ExportError.self) {
+            _ = try await exporter.verify(bundleAt: destination)
+        }
     }
 }

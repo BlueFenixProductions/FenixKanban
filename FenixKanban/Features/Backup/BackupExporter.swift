@@ -122,6 +122,14 @@ final class BackupExporter {
 
         let derived = try entityCounts(in: container)
 
+        // Explicitly remove the store so SQLite checkpoints the WAL and
+        // releases its file descriptors before the deferred scratch-dir
+        // removal runs. Without this, the temp dir gets deleted out from
+        // under SQLite and `BUG IN CLIENT OF libsqlite3.dylib` is logged.
+        if let store = container.persistentStoreCoordinator.persistentStores.first {
+            try? container.persistentStoreCoordinator.remove(store)
+        }
+
         guard derived == manifest.entityCounts else {
             throw ExportError.verificationFailed(
                 "manifest \(manifest.entityCounts) ≠ derived \(derived)"
@@ -165,7 +173,7 @@ final class BackupExporter {
     }
 
     private func sourceStoreURL(from container: NSPersistentContainer) throws -> URL {
-        guard let url = container.persistentStoreDescriptions.first?.url else {
+        guard let url = container.persistentStoreCoordinator.persistentStores.first?.url else {
             throw ExportError.sourceStoreMissing
         }
         return url
