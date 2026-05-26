@@ -70,21 +70,35 @@ struct BackupSettingsView: View {
             contentType: BackupDocument.bundleType,
             defaultFilename: defaultFilename
         ) { result in
-            switch result {
-            case .success(let url):
-                lastError = nil
-                lastSummary = lastSummary.map { previous in
-                    BackupExporter.Summary(
-                        path: url,
-                        counts: previous.counts,
-                        bytesWritten: previous.bytesWritten,
-                        verifiedAt: previous.verifiedAt
-                    )
+            // Capture staging URL BEFORE we hop to MainActor (closure isn't
+            // guaranteed @MainActor-isolated; the .bundleURL read is safe
+            // because BackupDocument is a Sendable value type).
+            let stagingURL = stagingBundle?.bundleURL
+            Task { @MainActor in
+                // 1. Clean up the staging temp directory regardless of outcome —
+                //    .fileExporter has either moved it or abandoned it. Avoids
+                //    accumulating SQLite-store-sized leaks in NSTemporaryDirectory
+                //    across repeated exports.
+                if let stagingURL {
+                    try? FileManager.default.removeItem(at: stagingURL)
                 }
-            case .failure(let error):
-                lastError = "Save cancelled or failed: \(error.localizedDescription)"
+                // 2. Update view state on the main actor.
+                switch result {
+                case .success(let url):
+                    lastError = nil
+                    lastSummary = lastSummary.map { previous in
+                        BackupExporter.Summary(
+                            path: url,
+                            counts: previous.counts,
+                            bytesWritten: previous.bytesWritten,
+                            verifiedAt: previous.verifiedAt
+                        )
+                    }
+                case .failure(let error):
+                    lastError = "Save cancelled or failed: \(error.localizedDescription)"
+                }
+                stagingBundle = nil
             }
-            stagingBundle = nil
         }
     }
 
