@@ -55,6 +55,28 @@ final class FizzySyncEngine {
         }
     }
 
+    /// Steady-state sync. Runs the pull/push/LWW/soft-delete cycle. Caller
+    /// must have completed `syncFirst(mode:)` once before — `sync()` keys off
+    /// `Card.fizzyID` and won't pair anything by title.
+    ///
+    /// Returns an empty `FizzySyncResult` if the engine is unpaired.
+    /// Records `mapping.setLastSync(.now)` at the end of every successful cycle.
+    func sync() async throws -> FizzySyncResult {
+        guard authState.isConfigured,
+              let localBoardID = mapping.localBoardID,
+              let fizzyBoardID = mapping.fizzyBoardID,
+              let localBoard = fetchBoard(by: localBoardID)
+        else {
+            return FizzySyncResult()
+        }
+        return try await steadyStateSync(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+    }
+
+    private func steadyStateSync(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
+        // Implemented incrementally across Tasks 2-8.
+        FizzySyncResult()
+    }
+
     // MARK: - Mode implementations (skeleton — return empty in this task; filled by Tasks 4-6)
 
     private func syncFirstPushLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {

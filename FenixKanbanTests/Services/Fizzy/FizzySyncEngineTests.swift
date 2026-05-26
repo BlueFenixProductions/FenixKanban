@@ -538,3 +538,32 @@ struct FizzySyncEngineMergeTests {
         #expect(collidingLocal.fizzyID == nil)
     }
 }
+
+@Suite("FizzySyncEngine — sync() pairing precondition", .serialized)
+@MainActor
+struct FizzySyncEngineSyncPairingTests {
+
+    @Test("sync() returns empty FizzySyncResult when unpaired")
+    func unpairedReturnsEmpty() async throws {
+        let persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let authState = FizzyAuthState(keyPrefix: "test.fizzy.sync.\(UUID().uuidString)")
+        defer { authState.clear() }
+        let suiteName = "test.fizzy.sync.mapping.\(UUID().uuidString)"
+        let mappingDefaults = UserDefaults(suiteName: suiteName)!
+        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
+        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+
+        let client = FizzyClient(
+            baseURL: URL(string: "https://example.invalid")!,
+            accessToken: "t",
+            accountSlug: "ACCT"
+        )
+        let engine = FizzySyncEngine(
+            client: client, authState: authState, mapping: mapping,
+            context: persistence.viewContext
+        )
+
+        let result = try await engine.sync()
+        #expect(result == FizzySyncResult())
+    }
+}
