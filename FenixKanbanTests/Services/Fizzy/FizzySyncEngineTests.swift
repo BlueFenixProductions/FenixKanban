@@ -921,3 +921,67 @@ struct FizzySyncEngineLWWTests {
         #expect(result.itemsUpdated == 1)
     }
 }
+
+@Suite("FizzySyncEngine — soft-delete on missing remote", .serialized)
+@MainActor
+struct FizzySyncEngineSoftDeleteTests {
+
+    @Test("paired local card not in remote response → deleted locally")
+    func softDeletesMissingRemote() async throws {
+        let persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "B")
+        let column = boardRepo.createColumn(in: board, name: "C")
+        try persistence.viewContext.save()
+
+        let prefix = "test.fizzy.delete.\(UUID().uuidString)"
+        let authState = FizzyAuthState(keyPrefix: prefix)
+        defer { authState.clear() }
+        authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
+
+        let suiteName = "test.fizzy.delete.mapping.\(UUID().uuidString)"
+        let mappingDefaults = UserDefaults(suiteName: suiteName)!
+        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
+        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+        // Paired local card; remote will return empty list.
+        let card = cardRepo.createCard(in: column, title: "Doomed")
+        card.fizzyID = "fz-doomed"
+        try persistence.viewContext.save()
+        let cardObjectID = card.objectID
+
+        MockURLProtocol.reset()
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t", accountSlug: "ACCT",
+            urlSession: session, clock: ImmediateClock()
+        )
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let engine = FizzySyncEngine(
+            client: client, authState: authState, mapping: mapping,
+            context: persistence.viewContext
+        )
+        let result = try await engine.sync()
+
+        #expect(result.itemsDeleted == 1)
+        // The card should be deleted from the context.
+        let stillExists = (try? persistence.viewContext.existingObject(with: cardObjectID)) as? Card
+        #expect(stillExists?.isDeleted == true || stillExists == nil)
+    }
+}

@@ -139,7 +139,12 @@ final class FizzySyncEngine {
             // else: both equal or remote stale → no-op.
         }
 
-        // Soft-delete added by later task.
+        // Soft-delete: paired local cards whose fizzyID is no longer in the
+        // remote response were deleted on the server.
+        for (fizzyID, card) in pairedByFizzyID where remoteByID[fizzyID] == nil {
+            context.delete(card)
+            result.itemsDeleted += 1
+        }
 
         // Push: local cards with nil fizzyID (not yet paired) → POST.
         for card in localCards where card.fizzyID == nil {
