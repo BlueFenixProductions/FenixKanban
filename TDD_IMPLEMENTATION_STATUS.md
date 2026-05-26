@@ -1003,3 +1003,56 @@ macOS clean build ✓.
 **UAT impact:** Items 2–7 were blocked on this. After rebuild + reinstall
 on the simulator, the user's existing pairing (slug `/1`) should resolve
 correctly without re-signing-in.
+
+---
+
+### MainActor isolation for BoardSyncProvider + PluginRegistry
+
+**Status:** Complete — Swift 6 strict-concurrency cleanup surfaced during
+Phase 5 UAT rebuild.
+
+**Symptom:** `FizzySyncProvider.swift:14:32 — Conformance of 'FizzySyncProvider'
+to protocol 'BoardSyncProvider' crosses into main actor-isolated code and
+can cause data races; this is an error in the Swift 6 language mode`.
+
+**Fix:** `BoardSyncProvider` and `PluginRegistry` are now `@MainActor`.
+All current callers (App init, SwiftUI views, FizzySyncProviderTests) were
+already main-actor; making the contract explicit removes the warning
+without runtime changes.
+
+**Files Modified:**
+- `FenixKanban/Core/Plugins/BoardSyncProvider.swift`
+- `FenixKanban/Core/Plugins/PluginRegistry.swift`
+
+**Test Coverage:** No new tests (type-system fix); existing 219/219 green
+on iOS, macOS clean build ✓.
+
+---
+
+### Phase 5 UAT — paused (handoff written)
+
+**Status:** Paused after Item 3 with a discovered bug.
+See `.planning/HANDOFF.md` + `.planning/HANDOFF.json`.
+
+**UAT results so far:**
+
+| # | Item                                                            | Status        |
+| - | --------------------------------------------------------------- | ------------- |
+| 1 | Cold launch → verify token → pair board                         | ✅ Passed      |
+| 2 | Push: edit local card title → Sync Now → in Fizzy               | ✅ Passed      |
+| 3 | Pull: edit Fizzy card title → Sync Now → local                  | ✅ Passed      |
+| 4 | Pull: toggle Fizzy `golden` flag → Sync Now → local             | ⏸️  Queued    |
+| 5 | First-sync mode `.replace` with confirmation                    | ⏸️  Pending   |
+| 6 | 401 recovery banner + re-verify                                 | ⏸️  Pending   |
+| 7 | Sign Out + re-pair (orphan-claim by title + createdAt)          | ⏸️  Pending   |
+
+**Bug discovered during UAT (blocker for resume):**
+After items 1–3 against the real paired board, the live Fizzy board ended
+up with ~40 cards including many duplicates. Push appears to be creating
+new remote cards on every sync instead of reconciling by remote ID.
+Reproduce on a fresh test board pair, write a double-sync regression test,
+then fix in `FizzySyncEngine`.
+
+**Scope gap also surfaced:** Phase 5 supports exactly one local↔Fizzy
+pairing at a time (`FizzyBoardMapping` is a singleton). User has 7 local
+boards. Multi-board sync is now scoped as Phase 7 (see HANDOFF.md).

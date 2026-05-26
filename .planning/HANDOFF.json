@@ -1,0 +1,93 @@
+{
+  "status": "paused",
+  "saved_at": "2026-05-26T03:35:00-05:00",
+  "branch": "develop",
+  "phase": "Fizzy Phase 5 — UI / UAT",
+  "plan": "docs/superpowers/plans/2026-05-26-fizzy-phase-5-ui.md",
+  "spec": "docs/superpowers/specs/2026-05-25-fizzy-phase-5-ui-design.md",
+  "narrative": ".planning/HANDOFF.md",
+  "task": "UAT paused after Item 3. Item 4 is set up but not run; Items 5-7 still pending. Two bugs fixed mid-UAT, one new bug discovered (push duplicates) that needs investigation before continuing.",
+  "total_tasks": 7,
+  "completed_tasks": [
+    { "id": "UAT-1", "label": "Verify token + Pair board (cold launch flow)",     "status": "passed" },
+    { "id": "UAT-2", "label": "Push: edit local card title → Sync Now → in Fizzy", "status": "passed" },
+    { "id": "UAT-3", "label": "Pull: edit Fizzy card title → Sync Now → local",    "status": "passed" },
+    { "id": "UAT-4", "label": "Pull: toggle Fizzy golden flag → Sync Now → local", "status": "ready_to_run" },
+    { "id": "UAT-5", "label": "First-sync mode .replace (destructive)",            "status": "pending" },
+    { "id": "UAT-6", "label": "401 recovery banner + re-verify",                    "status": "pending" },
+    { "id": "UAT-7", "label": "Sign Out + re-pair (orphan-claim by title+createdAt)","status": "pending" }
+  ],
+  "blockers": [
+    {
+      "id": "BUG-push-duplicates",
+      "severity": "high",
+      "summary": "After UAT items 1-3 against a real board, the paired Fizzy board now has ~40 cards with many duplicates. Push appears to be creating new remote cards instead of reconciling by remote ID on subsequent syncs.",
+      "evidence": "User-observed on fizzy.bluefenix.net after running Sync Now multiple times against the same paired board.",
+      "next_step": "Reproduce on a fresh test board pair (NOT a real board). Trace FizzySyncEngine.sync() push path — verify (a) local Card.remoteID is being set on first push, (b) subsequent pushes look up remoteID before POST, (c) we're not POSTing on every steady-state sync. Add a regression test that runs sync() twice and asserts the remote receives N cards on the first call and 0 new POSTs on the second.",
+      "files_to_look_at": [
+        "FenixKanban/Core/Services/Fizzy/FizzySyncEngine.swift",
+        "FenixKanbanTests/Services/Fizzy/FizzySyncEngineTests.swift"
+      ]
+    }
+  ],
+  "human_actions_pending": [
+    {
+      "id": "ACTION-test-boards",
+      "summary": "Create a dedicated test board pair before resuming UAT.",
+      "why": "The currently-paired board contains real work tracked in FenixKanban. Items 5 (.replace), 7 (Sign Out + re-pair), and any push-duplicates repro will mutate that data destructively.",
+      "steps": [
+        "On fizzy.bluefenix.net: create a board named e.g. 'FenixKanban UAT Test' with 2-3 columns and 3-4 cards.",
+        "In FenixKanban: + a new local board with the same shape.",
+        "Settings → Board Sync → Fizzy → Sign Out (clears the current real-board pairing). Local cards remain — orphan-claim will re-bind them by title+createdAt if you re-pair later.",
+        "Re-pair to the new UAT Test board pair with .pushLocalToFizzy."
+      ]
+    },
+    {
+      "id": "ACTION-cleanup-fizzy-board",
+      "summary": "Manually deduplicate (or delete + recreate) the ~40-card Fizzy board that got polluted during UAT.",
+      "why": "Push-duplicates bug left it in an inconsistent state. Easier to clean than to migrate."
+    }
+  ],
+  "fixes_shipped_this_session": [
+    {
+      "sha": "8424677",
+      "title": "fix(fizzy): normalize leading slash on accountSlug in URL builder",
+      "discovered_by": "UAT Item 2 attempt — board picker showed 'Couldn't load Fizzy boards', URL was https://1/boards",
+      "tests_added": 1
+    },
+    {
+      "sha": "4c33125",
+      "title": "fix(sync): annotate BoardSyncProvider + PluginRegistry as @MainActor",
+      "discovered_by": "Swift 6 strict-concurrency warning on rebuild",
+      "tests_added": 0
+    }
+  ],
+  "out_of_scope_for_phase_5_but_open": {
+    "phase_6_polish": [
+      "Form scroll bug in Settings integrations UI (captured during UAT 08:10)",
+      "Backup error UX",
+      "Backup filename collision",
+      "Foreground polling timer (5-min while scenePhase == .active) — original Phase 5 deferral",
+      "CardView cloud badges — original Phase 5 deferral",
+      "Phase 4c reviewer follow-ups (BackupExporter off-main-actor, BackupDocument: Sendable, Data section split, schema-name constant)"
+    ],
+    "phase_7_multi_board_sync": [
+      "FizzyBoardMapping → list/dict of (localBoardID, fizzyBoardID, etag, lastSyncAt) per pairing",
+      "FizzyAuthStatusView → list of paired boards w/ per-row Sync Now",
+      "FizzyAuthPairView → 'Pair another board' entry point",
+      "FizzySyncEngine.sync() → iterate-all or sync(localBoardID:)",
+      "User has 7 local boards; singleton pairing is a hard limit on real use"
+    ],
+    "backup_revisit_user_flagged": [
+      "Verify restore round-trip actually works (Phase 4c only exercised export)",
+      "Address the 3 polish items above as part of backup hardening"
+    ]
+  },
+  "uncommitted_files": [],
+  "test_state": {
+    "ios": "219/219 green",
+    "macos": "clean build",
+    "swift6_strict_concurrency": "clean"
+  },
+  "next_action": "Read .planning/HANDOFF.md, do ACTION-test-boards, then investigate BUG-push-duplicates with a TDD regression test, fix, then resume UAT from Item 4."
+}
