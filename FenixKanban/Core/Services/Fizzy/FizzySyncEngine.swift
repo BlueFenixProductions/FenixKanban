@@ -110,8 +110,32 @@ final class FizzySyncEngine {
             }
         }
 
-        // Pull: for each remote card not yet paired locally, create it.
-        for remote in remoteCards where pairedByFizzyID[remote.id] == nil {
+        // Crash-after-POST recovery: precompute orphan claims so the pull loop
+        // doesn't also create a duplicate from the same remote. For each local
+        // card with nil fizzyID, try to find an unpaired remote with matching
+        // title + createdAt within ±60s. First-match wins; each remote is
+        // claimed by at most one local.
+        let orphanWindow: TimeInterval = 60
+        var orphansByLocalID: [NSManagedObjectID: String] = [:]
+        var claimedRemoteIDs: Set<String> = []
+        for card in localCards where card.fizzyID == nil {
+            let localCreated = card.createdAt ?? .distantPast
+            let orphan = remoteCards.first { remote in
+                remote.title == (card.title ?? "")
+                    && abs(remote.createdAt.timeIntervalSince(localCreated)) <= orphanWindow
+                    && pairedByFizzyID[remote.id] == nil
+                    && !claimedRemoteIDs.contains(remote.id)
+            }
+            if let orphan {
+                orphansByLocalID[card.objectID] = orphan.id
+                claimedRemoteIDs.insert(orphan.id)
+            }
+        }
+
+        // Pull: for each remote card not yet paired locally AND not earmarked
+        // for an orphan claim, create it.
+        for remote in remoteCards
+        where pairedByFizzyID[remote.id] == nil && !claimedRemoteIDs.contains(remote.id) {
             let targetColumn = remote.column
                 .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
                 ?? resolvedColumns.values.first
@@ -154,19 +178,11 @@ final class FizzySyncEngine {
             result.itemsDeleted += 1
         }
 
-        // Push: local cards with nil fizzyID (not yet paired) → claim orphan
-        // or POST. Crash-after-POST recovery: if remote has a card with the
-        // same title created within ±60s of our local createdAt, claim it
-        // instead of POSTing a duplicate.
-        let orphanWindow: TimeInterval = 60
+        // Push: local cards with nil fizzyID (not yet paired) → claim a
+        // precomputed orphan or POST a new card.
         for card in localCards where card.fizzyID == nil {
-            let localCreated = card.createdAt ?? .distantPast
-            let orphan = remoteCards.first { remote in
-                remote.title == (card.title ?? "")
-                    && abs(remote.createdAt.timeIntervalSince(localCreated)) <= orphanWindow
-                    && pairedByFizzyID[remote.id] == nil
-            }
-            if let orphan {
+            if let orphanID = orphansByLocalID[card.objectID],
+               let orphan = remoteByID[orphanID] {
                 card.fizzyID = orphan.id
                 card.fizzyUpdatedAt = orphan.lastActiveAt
                 card.modifiedAt = orphan.lastActiveAt

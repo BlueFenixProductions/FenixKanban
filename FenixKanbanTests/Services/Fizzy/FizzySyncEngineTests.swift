@@ -1056,6 +1056,75 @@ struct FizzySyncEngineCrashRecoveryTests {
         #expect(card.fizzyID == "fz-orphan", "local claimed the orphan")
         #expect(result.errors.isEmpty)
     }
+
+    @Test("orphan claim does not also pull-create a duplicate local card")
+    func orphanClaimNoDuplicatePull() async throws {
+        let persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "B")
+        let column = boardRepo.createColumn(in: board, name: "C")
+        try persistence.viewContext.save()
+
+        let prefix = "test.fizzy.crashdup.\(UUID().uuidString)"
+        let authState = FizzyAuthState(keyPrefix: prefix)
+        defer { authState.clear() }
+        authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
+
+        let suiteName = "test.fizzy.crashdup.mapping.\(UUID().uuidString)"
+        let mappingDefaults = UserDefaults(suiteName: suiteName)!
+        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
+        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+        let baseline = Date(timeIntervalSince1970: 1_000_000)
+        let card = cardRepo.createCard(in: column, title: "Orphan-prone")
+        card.createdAt = baseline
+        try persistence.viewContext.save()
+
+        MockURLProtocol.reset()
+        let withinWindow = baseline.addingTimeInterval(30)
+        let iso = ISO8601DateFormatter().string(from: withinWindow)
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                let body = """
+                [{"id":"fz-orphan","number":1,"title":"Orphan-prone","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(iso)","created_at":"\(iso)","url":"https://x/1"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            case ("POST", _):
+                Issue.record("orphan claim should suppress POST")
+                return (Data(), .response(for: req, status: 201, headers: ["Location": "https://x/999"]))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t", accountSlug: "ACCT",
+            urlSession: session, clock: ImmediateClock()
+        )
+        let engine = FizzySyncEngine(
+            client: client, authState: authState, mapping: mapping,
+            context: persistence.viewContext
+        )
+
+        _ = try await engine.sync()
+
+        // Across the entire board there should be exactly ONE local card with
+        // fizzyID == "fz-orphan" — the original claimer. The pull loop must
+        // not have also created a duplicate.
+        let request: NSFetchRequest<Card> = Card.fetchRequest()
+        request.predicate = NSPredicate(format: "fizzyID == %@", "fz-orphan")
+        let matches = try persistence.viewContext.fetch(request)
+        #expect(matches.count == 1, "expected single claimer, got \(matches.count)")
+    }
 }
 
 @Suite("FizzySyncEngine — idempotence", .serialized)
