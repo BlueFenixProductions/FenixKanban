@@ -1099,3 +1099,24 @@ file afterward — it stays as Claude Code working state, just no longer
 wired into the app bundle.
 
 **Action on Itachi:** `git pull` and ⌘B; no other steps required.
+
+---
+
+## 2026-05-27 — Task 5: RootView (Splash Screen Plan)
+
+**File:** `FenixKanban/Features/Splash/RootView.swift`
+
+**What was done:**
+Created `RootView`, the SwiftUI wrapper that hosts the splash overlay on iOS
+and passes through directly to `ContentView` on macOS.
+
+- On iOS: `ZStack` overlays `SplashView` until `SplashState.phase == .done`,
+  then crossfades `ContentView` in via `.easeIn(duration: 0.65)`.
+- On macOS: entire splash path is compiled out via `#if os(iOS)` — no
+  `SplashState` constructed, no Mac launch animation.
+
+**🟢 Green:** Both iOS simulator and macOS builds succeed (BUILD SUCCEEDED,
+zero warnings). `RootView` is defined but not yet wired into `FenixKanbanApp`
+(that is Task 6).
+
+**Commit:** `059006a`
