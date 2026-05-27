@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="LSF-vc-ctl">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="LSF-sc-zzz">
+            <objects>
+                <viewController id="LSF-vc-ctl" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="LSF-vw-root">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" image="SplashGradient" translatesAutoresizingMaskIntoConstraints="NO" id="LSF-iv-grad"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="SplashLogo" translatesAutoresizingMaskIntoConstraints="NO" id="LSF-iv-icon"/>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="LSF-sa-area"/>
+                        <constraints>
+                            <constraint firstItem="LSF-iv-grad" firstAttribute="top" secondItem="LSF-vw-root" secondAttribute="top" id="LSF-c-grad-top"/>
+                            <constraint firstItem="LSF-iv-grad" firstAttribute="leading" secondItem="LSF-vw-root" secondAttribute="leading" id="LSF-c-grad-leading"/>
+                            <constraint firstAttribute="trailing" secondItem="LSF-iv-grad" secondAttribute="trailing" id="LSF-c-grad-trailing"/>
+                            <constraint firstAttribute="bottom" secondItem="LSF-iv-grad" secondAttribute="bottom" id="LSF-c-grad-bottom"/>
+                            <constraint firstItem="LSF-iv-icon" firstAttribute="centerX" secondItem="LSF-vw-root" secondAttribute="centerX" id="LSF-c-icon-cx"/>
+                            <constraint firstItem="LSF-iv-icon" firstAttribute="centerY" secondItem="LSF-vw-root" secondAttribute="centerY" id="LSF-c-icon-cy"/>
+                            <constraint firstItem="LSF-iv-icon" firstAttribute="width" constant="200" id="LSF-c-icon-w"/>
+                            <constraint firstItem="LSF-iv-icon" firstAttribute="height" constant="200" id="LSF-c-icon-h"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="LSF-fr-resp" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="SplashGradient" width="1290" height="2796"/>
+        <image name="SplashLogo" width="1024" height="1024"/>
+    </resources>
+</document>

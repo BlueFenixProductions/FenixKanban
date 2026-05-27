@@ -56,6 +56,7 @@
 		58F792A039D26E85E170C0A6 /* NavigationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9864DD5AE3F9D3B1B6B2348 /* NavigationModel.swift */; };
 		5E7BDD56C001FD9FF4B9C87C /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */; };
 		63D0C71A1CC4E212A545376F /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */; };
+		6721B436DE044A5FB471EA5C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C5675C125FA0A0508D8E6A50 /* LaunchScreen.storyboard */; };
 		6821052820164D6848537418 /* BoardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0906AE18DFC56CF8C029EE3E /* BoardRepositoryTests.swift */; };
 		69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CACAAF5DC4AC402C5BBD81E2 /* CardRepository.swift */; };
 		6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9D9F931CC1F616741916216 /* Assets.xcassets */; };
@@ -240,6 +241,7 @@
 		B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
 		BD784E3CA7CE3F415BADE4CE /* settings.local.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = settings.local.json; sourceTree = "<group>"; };
+		C5675C125FA0A0508D8E6A50 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyResponse.swift; sourceTree = "<group>"; };
 		C8266DABF5BF6B426312B202 /* FenixKanbanShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanShortcuts.swift; sourceTree = "<group>"; };
 		C88DE2CFAB1D67DA8824B424 /* BoardSyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSyncProvider.swift; sourceTree = "<group>"; };
@@ -329,6 +331,7 @@
 				C9D9F931CC1F616741916216 /* Assets.xcassets */,
 				8F3DBD8353B993911279540C /* FenixKanban.entitlements */,
 				4EDF50E7292C3DD2CAB259B0 /* Info-Partial.plist */,
+				C5675C125FA0A0508D8E6A50 /* LaunchScreen.storyboard */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -859,6 +862,7 @@
 			files = (
 				41FB1CBD9C9C0051431EFFE7 /* AppIcon.icns in Resources */,
 				6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */,
+				6721B436DE044A5FB471EA5C /* LaunchScreen.storyboard in Resources */,
 				A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */,
 				C26844E899CB05EB6F26442D /* settings.local.json in Resources */,
 			);

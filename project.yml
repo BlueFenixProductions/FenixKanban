@@ -34,6 +34,7 @@ targets:
     resources:
       - path: FenixKanban/Resources/Assets.xcassets
       - path: FenixKanban/Core/Persistence/FenixKanban.xcdatamodeld
+      - path: FenixKanban/Resources/LaunchScreen.storyboard
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanban
