@@ -62,6 +62,7 @@
 		6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9D9F931CC1F616741916216 /* Assets.xcassets */; };
 		6C8C404DB12E296DC35C51F5 /* CardQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F592F755DD0739220B0604 /* CardQuery.swift */; };
 		6D71EC62F098049DA2784D72 /* FindGoldenCardsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD208E7FEC3CDAB1ACD3238E /* FindGoldenCardsIntent.swift */; };
+		6FC3A3B642A9D0A51E7B8E76 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6A718163E046B9AD66C186 /* RootView.swift */; };
 		703038A826EEB17114395035 /* PreviewPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */; };
 		7217E9831E28A4081879F59C /* CardGoldenTicketTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */; };
 		73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E24C6748D661CCE038C4F0 /* TipJarStoreTests.swift */; };
@@ -158,6 +159,7 @@
 		09EACADBB67BFDA43E39C6E2 /* SyncResultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncResultTests.swift; sourceTree = "<group>"; };
 		0BDB1F0B68F0499ABCF92B6D /* FizzyAuthState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthState.swift; sourceTree = "<group>"; };
 		0BFC2630360516F47B333AA9 /* FenixKanban 3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 3.xcdatamodel"; sourceTree = "<group>"; };
+		0C6A718163E046B9AD66C186 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		0E2D11BAE72815F0D7F274CD /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthStateTests.swift; sourceTree = "<group>"; };
 		139288734275D3EB49C0F400 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
@@ -628,6 +630,7 @@
 		B1DB74378EB36B9FB8BD5177 /* Splash */ = {
 			isa = PBXGroup;
 			children = (
+				0C6A718163E046B9AD66C186 /* RootView.swift */,
 				9E6812411A1B76CAA831B6A6 /* SplashSleeper.swift */,
 				7B5D91B107A56F590E3ADF47 /* SplashState.swift */,
 				2EEA9461B169922547CE96A3 /* SplashView.swift */,
@@ -971,6 +974,7 @@
 				DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */,
 				A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */,
 				703038A826EEB17114395035 /* PreviewPersistence.swift in Sources */,
+				6FC3A3B642A9D0A51E7B8E76 /* RootView.swift in Sources */,
 				27FBE181E269E549EEF69233 /* SettingsView.swift in Sources */,
 				C678410113CD945F4AD89AFC /* SettingsViewModel.swift in Sources */,
 				ECA39F94970828E23B70F18C /* SplashSleeper.swift in Sources */,
