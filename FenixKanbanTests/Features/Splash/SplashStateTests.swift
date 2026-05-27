@@ -1,22 +1,13 @@
 import Testing
-import Foundation
 @testable import FenixKanban
 
 /// Recording fake — captures every sleep duration so tests can assert
 /// the timeline executed without burning real wall-clock time.
 final class RecordingSplashSleeper: SplashSleeper, @unchecked Sendable {
-    private let lock = NSLock()
-    private var _sleeps: [Duration] = []
-
-    var sleeps: [Duration] {
-        lock.lock(); defer { lock.unlock() }
-        return _sleeps
-    }
+    private(set) var sleeps: [Duration] = []
 
     func sleep(for duration: Duration) async throws {
-        lock.lock()
-        _sleeps.append(duration)
-        lock.unlock()
+        sleeps.append(duration)
         await Task.yield()
     }
 }
@@ -57,7 +48,7 @@ struct SplashStateTests {
         let sleeper = RecordingSplashSleeper()
         await state.start(sleeper: sleeper)
         await state.start(sleeper: sleeper)
-        #expect(sleeper.sleeps.count == 2)  // not 4
+        #expect(sleeper.sleeps.count == 2)  // second start() is a no-op; count stays at 2
         #expect(state.phase == .done)
     }
 }
