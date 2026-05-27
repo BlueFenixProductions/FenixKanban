@@ -1,5 +1,3 @@
-import Foundation
-
 protocol SplashSleeper: Sendable {
     func sleep(for duration: Duration) async throws
 }
