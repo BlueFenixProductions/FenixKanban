@@ -11,11 +11,12 @@ struct RootView: View {
         #if os(iOS)
         ZStack {
             ContentView(navigator: navigator)
-                .opacity(splashState.phase == .done ? 1 : 0)
+                .opacity(splashState.phase == .pulsing ? 0 : 1)
                 .animation(.easeIn(duration: 0.65), value: splashState.phase)
 
             if splashState.phase != .done {
                 SplashView(phase: splashState.phase)
+                    .transition(.opacity)
                     .task { await splashState.start() }
             }
         }
