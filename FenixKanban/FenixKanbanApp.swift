@@ -61,7 +61,7 @@ struct FenixKanbanApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(navigator: navigator)
+            ContentView(navigator: navigator)
                 .environment(\.managedObjectContext, persistence.viewContext)
                 .environmentObject(authService)
                 .environmentObject(syncMonitor)
