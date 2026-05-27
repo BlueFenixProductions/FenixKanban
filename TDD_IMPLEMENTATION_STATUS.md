@@ -1099,3 +1099,43 @@ file afterward — it stays as Claude Code working state, just no longer
 wired into the app bundle.
 
 **Action on Itachi:** `git pull` and ⌘B; no other steps required.
+
+---
+
+### 13. Splash Screen (iOS) ✅
+**Status:** Complete — shipped a static iOS launch screen after a one-loop design pivot.
+**Date:** 2026-05-27
+**Spec:** `docs/superpowers/specs/2026-05-27-splash-screen-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-27-splash-screen.md`
+
+**Final shape:**
+- `LaunchScreen.storyboard` renders a vertical linear gradient (`#1F2030 → #15161D`, matching the icon's baked dark navy) full-bleed with the app icon centered at 200×200 pt.
+- Wired via `UILaunchStoryboardName: LaunchScreen` in `Info-Partial.plist`.
+- iOS only — excluded from the macOS build via `EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]` so the same dual-platform target keeps compiling for Mac.
+- No SwiftUI overlay, no animation: macOS launches directly into `ContentView`.
+
+**Design pivot:**
+The original plan was an animated SwiftUI splash that crossfaded into `ContentView` after a 1.1s pulse + fade. Built and shipped through TDD with seven tasks, code review, and visual verification. The visual verification surfaced two issues:
+1. `INFOPLIST_KEY_UILaunchScreen_Image` / `_BackgroundColor` build settings in Xcode 26 are recognized but produce an empty `UILaunchScreen` dict — confirmed by `PlistBuddy` on the compiled `Info.plist`. Fix: declare the dict explicitly in `Info-Partial.plist`.
+2. With the launch-screen wiring fixed, the system rendered the 1024 px `SplashLogo` PNG at near-full-screen size (iOS scales the centered image to its natural pixels), producing a visible "huge icon → 200 pt icon" jump at the handoff to the SwiftUI splash.
+
+Rather than resize the PNG or rework the handoff, the user pivoted to "no animation, just a clean static launch screen." Reverted the SwiftUI machinery, switched from `UILaunchScreen` plist dict to `UILaunchStoryboardName`, and authored `LaunchScreen.storyboard` by hand to host the gradient + centered icon at correct size.
+
+**Sub-fixes along the way:**
+- Each `make generate` was re-bundling `FenixKanban/.claude/settings.local.json` and `FenixKanban/Resources/AppIcon.icns` into the Resources build phase (via the recursive `sources: - path: FenixKanban` glob), undoing the earlier `9432cfc` fix. Added `**/.claude/**` and `Resources/AppIcon.icns` to the source-glob excludes.
+- Xcode 26 kept showing "Recommended Settings" validation on every project open because three settings (`STRING_CATALOG_GENERATE_SYMBOLS`, `ENABLE_USER_SCRIPT_SANDBOXING`, `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS`) weren't in `project.yml`. Added them to project-level `settings.base`.
+
+**Files (final shape):**
+- Added: `FenixKanban/Resources/LaunchScreen.storyboard`
+- Added: `FenixKanban/Resources/Assets.xcassets/SplashGradient.imageset/` (1290×2796 PNG)
+- Kept: `FenixKanban/Resources/Assets.xcassets/SplashLogo.imageset/` (reused for the storyboard's centered icon)
+- Kept: `FenixKanban/Resources/Assets.xcassets/SplashBackground.colorset/` (no longer referenced; left in place — harmless and could be useful for future UI)
+- Modified: `FenixKanban/Resources/Info-Partial.plist` (added `UILaunchStoryboardName`)
+- Modified: `project.yml` (resource entry for storyboard, macOS sdk exclusion, source-glob excludes, recommended Xcode settings)
+
+**Test coverage:** None — the launch screen is a static storyboard with no runtime behavior to verify. Visual cold-launch verification on iPhone 17 simulator confirmed the gradient renders full-bleed with the icon centered at the intended size. Test count returned to baseline (219).
+
+**Lessons:**
+- `test fixtures must match wire shape` applies here too: the original plan trusted `INFOPLIST_KEY_UILaunchScreen_*` would just work. Verifying on the compiled `Info.plist` (not just successful build) caught the no-op.
+- Visual verification is non-optional for launch-screen work. Build success only proves the assets compiled, not that they render the way the design assumed.
+- Plans that hinge on a "pixel-aligned invisible handoff" between system chrome and app code are fragile. A static launch screen with no app-side counterpart removes the whole class of timing/sizing/handoff failures.
