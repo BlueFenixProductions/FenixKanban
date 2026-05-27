@@ -48,6 +48,8 @@ targets:
         INFOPLIST_FILE: FenixKanban/Resources/Info-Partial.plist
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_BackgroundColor: SplashBackground
+        INFOPLIST_KEY_UILaunchScreen_Image: SplashLogo
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: FenixKanban
         CODE_SIGN_ENTITLEMENTS: FenixKanban/Resources/FenixKanban.entitlements
