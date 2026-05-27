@@ -1061,9 +1061,7 @@
 				INFOPLIST_FILE = "FenixKanban/Resources/Info-Partial.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = FenixKanban;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_BackgroundColor = SplashBackground;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Image = SplashLogo;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1256,9 +1254,7 @@
 				INFOPLIST_FILE = "FenixKanban/Resources/Info-Partial.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = FenixKanban;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_BackgroundColor = SplashBackground;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Image = SplashLogo;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

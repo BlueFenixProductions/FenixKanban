@@ -18,7 +18,20 @@
           screen."
         - UISupportedInterfaceOrientations: iPhone supports portrait and
           both landscapes (skip upside-down — modern iPhones don't use it).
+        - UILaunchScreen: INFOPLIST_KEY_UILaunchScreen_Generation=YES
+          generates an empty UILaunchScreen dict; the _Image and
+          _BackgroundColor variants are recognized as build settings
+          but don't populate the dict. So we declare UIImageName and
+          UIColorName explicitly here, pointing at the SplashLogo and
+          SplashBackground asset catalog entries.
     -->
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIImageName</key>
+        <string>SplashLogo</string>
+        <key>UIColorName</key>
+        <string>SplashBackground</string>
+    </dict>
     <key>UIBackgroundModes</key>
     <array>
         <string>remote-notification</string>
