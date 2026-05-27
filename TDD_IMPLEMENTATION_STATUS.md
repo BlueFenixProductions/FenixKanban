@@ -1056,3 +1056,46 @@ then fix in `FizzySyncEngine`.
 **Scope gap also surfaced:** Phase 5 supports exactly one local↔Fizzy
 pairing at a time (`FizzyBoardMapping` is a singleton). User has 7 local
 boards. Multi-board sync is now scoped as Phase 7 (see HANDOFF.md).
+
+---
+
+## 🛠 2026-05-26 — Fix: Itachi build failure (stray `.claude/settings.local.json` in app bundle)
+
+**Symptom (Itachi):**
+```
+CpResource …/FenixKanban.app/Contents/Resources/settings.local.json …/FenixKanban/.claude/settings.local.json
+error: The file "settings.local.json" couldn't be opened because there is no such file.
+Ld …/__preview.dylib  →  Command Ld failed with a nonzero exit code   (collateral)
+** BUILD FAILED **
+```
+
+**Root cause:**
+`FenixKanban/.claude/settings.local.json` had been added to the FenixKanban
+app target's *Copy Bundle Resources* phase (probably via Xcode's
+"add discovered files" prompt). The file is excluded by the global
+`~/.config/git/ignore` rule `**/.claude/settings.local.json`, so it's
+per-machine by design — Itachi never had a copy, build failed at
+`CpResource`, and the `__preview.dylib` Ld step failed as collateral.
+Shipping local Claude Code permissions inside the `.app` bundle is also
+wrong on principle.
+
+**🔴 Red:** Moved local copy aside on Hinata, reproduced the identical
+`CpResource … No such file or directory` failure with `xcodebuild`.
+
+**🟢 Green:** Surgical removal of all 5 references from
+`FenixKanban.xcodeproj/project.pbxproj`:
+- `PBXBuildFile` entry (`C26844E899CB05EB6F26442D`)
+- `PBXFileReference` (`BD784E3CA7CE3F415BADE4CE`)
+- `PBXGroup` `.claude` (`56D9D4B4483C928C91DA055E`)
+- group child entry inside the `FenixKanban` PBXGroup
+- `PBXResourcesBuildPhase` files-list entry
+
+`xcodebuild -list` parses clean, no orphan UUIDs remain
+(`grep -E '<uuid>|settings\.local\.json|\.claude'` → empty).
+
+**🔵 Refactor:** Re-ran `xcodebuild build` with the file still moved
+aside (full Itachi simulation): **BUILD SUCCEEDED**. Restored the local
+file afterward — it stays as Claude Code working state, just no longer
+wired into the app bundle.
+
+**Action on Itachi:** `git pull` and ⌘B; no other steps required.

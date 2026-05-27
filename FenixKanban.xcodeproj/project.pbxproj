@@ -96,7 +96,6 @@
 		BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78234911E102475108AE9455 /* KeychainHelperTests.swift */; };
 		BFA7112B4AC02616859C2445 /* SyncMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8BA67918984E11FD14D58F /* SyncMonitorTests.swift */; };
 		C071193A6B7A63C7AC32817D /* FizzyError.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABA181CFB55168EB577EAA1 /* FizzyError.swift */; };
-		C26844E899CB05EB6F26442D /* settings.local.json in Resources */ = {isa = PBXBuildFile; fileRef = BD784E3CA7CE3F415BADE4CE /* settings.local.json */; };
 		C2902035A969FF5D17E7BAA0 /* BoardQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5619875D16CD1B3B74E215 /* BoardQuery.swift */; };
 		C3476FFC4259355BF0F3555D /* SyncResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EACADBB67BFDA43E39C6E2 /* SyncResultTests.swift */; };
 		C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */; };
@@ -237,7 +236,6 @@
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
-		BD784E3CA7CE3F415BADE4CE /* settings.local.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = settings.local.json; sourceTree = "<group>"; };
 		C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyResponse.swift; sourceTree = "<group>"; };
 		C8266DABF5BF6B426312B202 /* FenixKanbanShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanShortcuts.swift; sourceTree = "<group>"; };
 		C88DE2CFAB1D67DA8824B424 /* BoardSyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSyncProvider.swift; sourceTree = "<group>"; };
@@ -474,14 +472,6 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
-		56D9D4B4483C928C91DA055E /* .claude */ = {
-			isa = PBXGroup;
-			children = (
-				BD784E3CA7CE3F415BADE4CE /* settings.local.json */,
-			);
-			path = .claude;
-			sourceTree = "<group>";
-		};
 		5E4B634E22267E69941C8216 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -577,7 +567,6 @@
 			children = (
 				85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */,
 				B36134843F5683038443D750 /* TipJarProducts.storekit */,
-				56D9D4B4483C928C91DA055E /* .claude */,
 				3A956BD31899F5633C596B02 /* Components */,
 				498E8C11D23914AF73EE7AAB /* Core */,
 				F18E30A529E95B92AD48B5D9 /* Extensions */,
@@ -860,7 +849,6 @@
 				41FB1CBD9C9C0051431EFFE7 /* AppIcon.icns in Resources */,
 				6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */,
 				A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */,
-				C26844E899CB05EB6F26442D /* settings.local.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
