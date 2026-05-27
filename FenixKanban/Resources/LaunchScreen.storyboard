@@ -3,6 +3,7 @@
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -14,19 +15,27 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" image="SplashGradient" translatesAutoresizingMaskIntoConstraints="NO" id="LSF-iv-grad"/>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="SplashLogo" translatesAutoresizingMaskIntoConstraints="NO" id="LSF-iv-icon"/>
+                            <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LSF-vw-tile">
+                                <rect key="frame" x="96.5" y="326" width="200" height="200"/>
+                                <subviews>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="SplashLogo" translatesAutoresizingMaskIntoConstraints="NO" id="LSF-iv-icon"/>
+                                </subviews>
+                                <layer key="layer" cornerRadius="45"/>
+                                <constraints>
+                                    <constraint firstItem="LSF-iv-icon" firstAttribute="top" secondItem="LSF-vw-tile" secondAttribute="top" id="LSF-c-img-top"/>
+                                    <constraint firstItem="LSF-iv-icon" firstAttribute="leading" secondItem="LSF-vw-tile" secondAttribute="leading" id="LSF-c-img-leading"/>
+                                    <constraint firstAttribute="trailing" secondItem="LSF-iv-icon" secondAttribute="trailing" id="LSF-c-img-trailing"/>
+                                    <constraint firstAttribute="bottom" secondItem="LSF-iv-icon" secondAttribute="bottom" id="LSF-c-img-bottom"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="LSF-sa-area"/>
+                        <color key="backgroundColor" name="SplashBackground"/>
                         <constraints>
-                            <constraint firstItem="LSF-iv-grad" firstAttribute="top" secondItem="LSF-vw-root" secondAttribute="top" id="LSF-c-grad-top"/>
-                            <constraint firstItem="LSF-iv-grad" firstAttribute="leading" secondItem="LSF-vw-root" secondAttribute="leading" id="LSF-c-grad-leading"/>
-                            <constraint firstAttribute="trailing" secondItem="LSF-iv-grad" secondAttribute="trailing" id="LSF-c-grad-trailing"/>
-                            <constraint firstAttribute="bottom" secondItem="LSF-iv-grad" secondAttribute="bottom" id="LSF-c-grad-bottom"/>
-                            <constraint firstItem="LSF-iv-icon" firstAttribute="centerX" secondItem="LSF-vw-root" secondAttribute="centerX" id="LSF-c-icon-cx"/>
-                            <constraint firstItem="LSF-iv-icon" firstAttribute="centerY" secondItem="LSF-vw-root" secondAttribute="centerY" id="LSF-c-icon-cy"/>
-                            <constraint firstItem="LSF-iv-icon" firstAttribute="width" constant="200" id="LSF-c-icon-w"/>
-                            <constraint firstItem="LSF-iv-icon" firstAttribute="height" constant="200" id="LSF-c-icon-h"/>
+                            <constraint firstItem="LSF-vw-tile" firstAttribute="centerX" secondItem="LSF-vw-root" secondAttribute="centerX" id="LSF-c-tile-cx"/>
+                            <constraint firstItem="LSF-vw-tile" firstAttribute="centerY" secondItem="LSF-vw-root" secondAttribute="centerY" id="LSF-c-tile-cy"/>
+                            <constraint firstItem="LSF-vw-tile" firstAttribute="width" constant="200" id="LSF-c-tile-w"/>
+                            <constraint firstItem="LSF-vw-tile" firstAttribute="height" constant="200" id="LSF-c-tile-h"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -35,7 +44,9 @@
         </scene>
     </scenes>
     <resources>
-        <image name="SplashGradient" width="1290" height="2796"/>
         <image name="SplashLogo" width="1024" height="1024"/>
+        <namedColor name="SplashBackground">
+            <color red="0.949" green="0.949" blue="0.969" alpha="1.0" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
     </resources>
 </document>
