@@ -52,6 +52,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: FenixKanban
         CODE_SIGN_ENTITLEMENTS: FenixKanban/Resources/FenixKanban.entitlements
         SUPPORTS_MACCATALYST: NO
+        "EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]": "LaunchScreen.storyboard"
 
   FenixKanbanTests:
     type: bundle.unit-test
