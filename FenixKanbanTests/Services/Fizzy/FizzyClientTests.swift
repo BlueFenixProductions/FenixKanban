@@ -2,6 +2,15 @@ import Testing
 import Foundation
 @testable import FenixKanban
 
+// All FizzyClient sub-suites share `MockURLProtocol`'s static `handler` /
+// `requests` state. The per-suite `.serialized` only orders tests within a
+// suite — peers still ran in parallel on CI, racing `handler = nil` resets
+// against in-flight requests and producing `URLError(.badURL)` (-1000) or
+// stale-handler crosstalk. Wrapping all sub-suites in this parent with
+// `.serialized` forces sequential execution across them too. See PR #9.
+@Suite("FizzyClient (MockURLProtocol-shared)", .serialized)
+struct FizzyClientSerialContainer {
+
 @Suite("FizzyClient — auth + URL construction", .serialized)
 struct FizzyClientAuthTests {
 
@@ -511,3 +520,5 @@ struct FizzyClientRetryTests {
         #expect(attempt == 3)
     }
 }
+
+} // FizzyClientSerialContainer
