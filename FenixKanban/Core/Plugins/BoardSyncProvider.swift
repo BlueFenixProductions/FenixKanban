@@ -1,6 +1,12 @@
 import Foundation
 
-/// Protocol for external board sync providers (e.g., GitHub Projects, Jira, Linear)
+/// Protocol for external board sync providers (e.g., GitHub Projects, Jira, Linear).
+///
+/// Providers are main-actor-isolated because their requirements typically touch
+/// UI-bound state (CoreData viewContext, SwiftUI `@Observable` registries, the
+/// auth keychain). Conforming types may freely access main-actor state; callers
+/// must invoke methods from a `@MainActor` context.
+@MainActor
 public protocol BoardSyncProvider {
     /// Display name for the provider (e.g., "GitHub Projects")
     var providerName: String { get }

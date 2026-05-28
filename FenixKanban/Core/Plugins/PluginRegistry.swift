@@ -1,8 +1,10 @@
 import Foundation
 import SwiftUI
 
-/// Central registry for discovered sync providers
+/// Central registry for discovered sync providers.
+/// Main-actor-isolated to match `BoardSyncProvider`'s isolation.
 @Observable
+@MainActor
 final class PluginRegistry {
     static let shared = PluginRegistry()
 

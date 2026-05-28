@@ -621,3 +621,521 @@ Plus mid-flight readability fixes that emerged from user feedback during executi
 **Outstanding release checklist item (manual, must happen before App Store):**
 
 - [ ] **Before the App Store release that includes this feature:** Open CloudKit Dashboard → Container `iCloud.com.bluefenixproductions.FenixKanban` → Schema → Deploy Schema Changes to Production. Without this step, `isGolden` sync breaks for App Store users until the dashboard step happens. The app stays functional locally; sync resumes silently once promoted.
+
+### Appearance Mode Setting ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Created `FenixKanbanTests/Core/Settings/AppearanceModeTests.swift` with 4 tests covering `colorScheme` mapping, raw-value round-trip, `allCases` ordering, and label strings.
+- Verified failing build (`Cannot find 'AppearanceMode' in scope`).
+
+**🟢 Green Phase:**
+- Created `FenixKanban/Core/Settings/AppearanceMode.swift` — enum with `system`/`light`/`dark` cases; maps to optional `ColorScheme` (`.system → nil` defers to OS).
+- All 4 tests pass.
+
+**🔵 Refactor Phase:**
+- `FenixKanban/FenixKanbanApp.swift`: replaced hard-coded `.preferredColorScheme(.dark)` at the root `WindowGroup` with `@AppStorage("appearanceMode")`-driven binding.
+- `FenixKanban/Features/Settings/SettingsView.swift`: added `Section("Appearance")` with `Picker` (segmented on iOS, default menu on macOS), label "Appearance" per Apple HIG.
+- Default is `.system`; setting persists via `@AppStorage` and updates app-wide immediately.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-appearance-mode-setting-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-appearance-mode-setting.md`
+
+**Test Coverage:** 4/4 new tests; full suite 131/131.
+
+**Follow-up:** Light-mode contrast audit for `goldenTicket`/`goldenTicketIcon` (`FenixKanban/Extensions/Color+CrossPlatform.swift:55-85`) — flagged in spec, not blocking.
+
+---
+
+### Fizzy Integration — Phase 1: Client + DTOs + Error ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Wrote tests for `FizzyError` (status → error mapping; 422 body parse; 429 Retry-After).
+- Wrote DTO decode tests against hand-transcribed fixtures (identity, boards, columns, cards list, single card).
+- Wrote `FizzyClient` tests for auth header, `:account_slug` interpolation (with the `/my/` trailing-slash discriminator), ETag round-trip, POST + Location-follow, PUT, DELETE, per-status error mapping, and transient retry/backoff with injected `Clock`.
+- All ~28 tests verified failing before implementation.
+
+**🟢 Green Phase:**
+- `FenixKanban/Core/Services/Fizzy/FizzyError.swift` — typed errors with 422 body parsing and 429 Retry-After handling.
+- `FenixKanban/Core/Services/Fizzy/FizzyDTOs.swift` — Codable mirrors of Identity/Account/User/Board/Column/Card/Step/CardWrite wire shapes; explicit `CodingKeys` (no `keyDecodingStrategy`) to preserve snake_case on encode round-trip.
+- `FenixKanban/Core/Services/Fizzy/FizzyResponse.swift` — `{ body, etag }` wrapper.
+- `FenixKanban/Core/Services/Fizzy/FizzyClient.swift` — HTTP wrapper: Bearer auth, `:account_slug` path interpolation (`/my/` paths bypass), GET with ETag, POST + Location-follow, PUT, DELETE, exponential-backoff retry on URLError + 5xx (1s/2s/4s), injected `any Clock<Duration> & Sendable` for testability.
+- `FenixKanbanTests/Services/Fizzy/MockURLProtocol.swift` — in-process URL intercept harness with `HTTPURLResponse` convenience inits + minimal `ImmediateClock` for instant test runs.
+- `FenixKanbanTests/Fixtures/fizzy/` — hand-transcribed sample payloads + refresh README.
+
+**🔵 Refactor Phase:**
+- `project.yml` `resources:` block packs fixtures into the test bundle; `excludes:` keeps JSON/MD out of compile sources.
+- Retry consolidated into a single `performWithRetry` helper called by every verb; the `HTTPURLResponse` cast that was duplicated in 5 places now lives in one method.
+- `hasPrefix("/my/")` (with trailing slash) replaced an early `hasPrefix("/my")` that would have falsely matched `/myth-busters` and similar.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-1-client.md`
+
+**Test Coverage:** ~28 new tests across `FizzyError`, `FizzyDTO`, and 6 `FizzyClient*` suites (auth, ETag, POST, PUT, DELETE, error mapping, retry). Full suite green.
+
+**What ships:** A standalone Fizzy HTTP client fully testable against a mock URL protocol, with no app wiring yet. Phases 2-6 layer on auth state, board mapping, CoreData migration, sync engine, UI, and timer/badges.
+
+**Deferred (acknowledged):**
+- Header duplication (Authorization + Accept set in 5 verbs) — fine for now, candidate for a small `addAuthHeaders` extraction in a future task.
+- 429 Retry-After driving the internal retry loop (currently caller-handled via `FizzyError.rateLimited`).
+
+### Fizzy Integration — Phase 2: Auth State + Board Mapping ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Wrote `FizzyBoardMappingTests` (4 tests) against a private `UserDefaults(suiteName:)` — default state, setPairing, lastSyncAt round-trip, clear.
+- Wrote `FizzyAuthStateTests` (4 tests) using a unique Keychain `keyPrefix` per test — default state, token+slug round-trip, baseURL override+revert, clear.
+- All tests verified failing before implementation.
+
+**🟢 Green Phase:**
+- `FenixKanban/Core/Services/Fizzy/FizzyBoardMapping.swift` — instance-based wrapper around 3 `UserDefaults` keys (`fizzy.pairing.localBoardID`, `fizzy.pairing.fizzyBoardID`, `fizzy.pairing.lastSyncAt`). `isPaired` predicate, `setPairing`, `setLastSync`, `clear`.
+- `FenixKanban/Core/Services/Fizzy/FizzyAuthState.swift` — instance-based wrapper around 3 Keychain keys (`fizzy.accessToken`, `fizzy.accountSlug`, `fizzy.baseURL`). `isConfigured` predicate, `set*` setters, `clear`, default `baseURL == https://fizzy.bluefenix.net`.
+
+**🔵 Refactor Phase:**
+- Cached `ISO8601DateFormatter` as `private static let` in `FizzyBoardMapping` — sync code reads/writes `lastSyncAt` every poll; formatter instantiation is non-trivial.
+- Both types use injected storage (UserDefaults for mapping, Keychain key prefix for auth) to keep tests fully isolated from production state.
+- No protocol abstractions or static-only APIs — instance + injection is the smallest unit of testability.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-2-state.md`
+
+**Test Coverage:** 8 new tests (4 per type). Full suite still green.
+
+**What ships:** Two small persistence types ready for Phase 3 (CoreData migration) and Phase 4 (sync engine) to consume. No app wiring yet — `FizzySyncProvider.register()` and the `signOut()` orchestration land in Phase 5 once the engine + UI exist.
+
+### Fizzy Integration — Phase 3: CoreData Migration ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- Wrote `CardFizzyAttributesTests` (4 tests) against three not-yet-existing `Card` properties — defaults are nil, and each of `fizzyID` / `fizzyEtag` / `fizzyUpdatedAt` round-trips through save/refresh.
+- Verified the tests failed before adding the v3 model (`Value of type 'Card' has no member 'fizzyID'`).
+
+**🟢 Green Phase:**
+- `FenixKanban/Core/Persistence/FenixKanban.xcdatamodeld/FenixKanban 3.xcdatamodel/contents` — clone of v2 with three new optional `Card` attributes:
+  - `fizzyID: String?` — Fizzy's opaque card ID; `nil` = local-only
+  - `fizzyEtag: String?` — last ETag seen for this card (sent on next GET for 304 short-circuit)
+  - `fizzyUpdatedAt: Date?` — Fizzy's `last_active_at` from the last successful fetch (drives LWW)
+- `.xccurrentversion` bumped to `FenixKanban 3.xcdatamodel`.
+- `usedWithCloudKit="YES"` preserved on the root `<model>` element.
+- New attributes alphabetically slotted between `dueDate` and `id` in the Card entity.
+
+**🔵 Refactor Phase:**
+- None needed — additive, optional migration; no code changes outside the model.
+- v1 and v2 model files preserved for users upgrading from older builds.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-3-coredata.md`
+
+**Test Coverage:** 4 new tests; full suite green at 173/173 (Phase 2 baseline 169 + Phase 3 added 4).
+
+**CloudKit smoke:** Manual — run the app on a real device or simulator with iCloud Drive enabled, create a card, observe in CloudKit Dashboard (`iCloud.com.bluefenixproductions.FenixKanban` → Schema → Development) that `CD_fizzyID` / `CD_fizzyEtag` / `CD_fizzyUpdatedAt` fields appear on the `CD_Card` record type. Deploy-to-production happens in a single CloudKit Dashboard step before the App Store release that includes any Fizzy sync writes (Phase 5+).
+
+**What ships:** Three optional Card attributes ready for Phase 4's sync engine to read/write. Zero behavior change for users until the engine + UI land.
+
+### Fizzy Integration — Phase 4a: First-Sync Engine ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- 15 tests across 7 suites: `FirstSyncModeTests` (3), `FizzySyncResultTests` (2), `FizzySyncMappingTests` (3), `FizzySyncEnginePairingTests` (1), `FizzySyncEnginePushLocalTests` (2), `FizzySyncEngineReplaceLocalTests` (2), `FizzySyncEngineMergeTests` (2).
+- All verified failing before implementation.
+
+**🟢 Green Phase:**
+- `FirstSyncMode` enum + `FizzySyncResult` struct — type renamed from spec's `SyncResult` to avoid conflict with the existing public `BoardSyncProvider.SyncResult` (different shape — immutable, `syncDate`).
+- `FizzySyncMapping` — pure helpers: `normalizedColumnName` (lowercase + trim), `labelColorHex` (FNV-1a → `#RRGGBB`, deterministic across reinstalls).
+- `FizzySyncEngine` (`@MainActor final class`) composing `FizzyClient` + `FizzyAuthState` + `FizzyBoardMapping` + `NSManagedObjectContext`. Single public method: `syncFirst(mode:)`.
+- Three first-sync modes:
+  - `.pushLocalToFizzy` (default) — POST every local card with `nil fizzyID`; store returned `fizzyID + fizzyUpdatedAt`. Non-destructive on remote.
+  - `.replaceLocalWithFizzy` — delete all local cards on paired board, pull remote columns + cards. Auto-create local columns + Labels.
+  - `.mergeIfNoConflicts` — case-insensitive title collisions → `FizzySyncResult.errors`; non-colliding remote-only cards pulled; non-colliding local-only cards POSTed.
+
+**🔵 Refactor Phase:**
+- Field mapping centralized in `applyRemote(_:to:)` + `postCard(_:toBoardID:)`.
+- Column resolution in a single `resolvedColumns: [String: Column]` dict keyed by `normalizedColumnName`.
+- Tag → Label via `findOrCreateLabel(name:)` (case-insensitive).
+- Dropped the `enum Fizzy { typealias SyncResult }` namespace — over-engineered for one type; `FizzySyncResult` stands on its own.
+- `FizzyClient.url(for:)` fixed to use `URL(string:relativeTo:)` so query strings are preserved as proper query components (necessary for the `/cards?board_ids[]=...` endpoint).
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-4a-first-sync.md`
+
+**Test Coverage:** 15 new tests across 7 suites. Full suite green at 186/186.
+
+**Documented MVP limitations** (also flagged in source comments):
+1. Card.label is single-valued; only the first remote tag is mapped on pull. Push omits `tag_ids` entirely.
+2. Column matching is by case-insensitive name only — no `fizzyColumnID` attribute on local Column. Renaming a column on either side creates a phantom column on next sync.
+3. `description` synced as plain text; `description_html` ignored on pull.
+
+**What ships:** A one-shot first-sync engine usable by Phase 5's `FizzyAuthView` "Pair and sync" button. Phase 4b adds steady-state diff, LWW resolution, soft-delete, crash-after-POST recovery, idempotence, and 401 handling.
+
+### Fizzy Integration — Phase 4b: Steady-State Sync Engine ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- 9 new tests across 7 suites: `FizzySyncEngineSyncPairingTests` (1), `FizzySyncEngineSteadyPullTests` (2), `FizzySyncEngineSteadyPushTests` (1), `FizzySyncEngineLWWTests` (2), `FizzySyncEngineSoftDeleteTests` (1), `FizzySyncEngineCrashRecoveryTests` (1), `FizzySyncEngineIdempotenceTests` (1), `FizzySyncEngine401Tests` (1).
+- Each test verified failing before implementation.
+
+**🟢 Green Phase:**
+- Added public `FizzySyncEngine.sync()` method, called after `syncFirst(mode:)` has paired the board.
+- Steady-state cycle: fetch remote → diff against `fizzyID`-keyed locals → pull new remotes, LWW-update paired cards, soft-delete missing-from-remote locals, push nil-fizzyID locals (with title+createdAt orphan-claim).
+- 401 from any HTTP call clears `authState.clear()` and rethrows.
+- `mapping.setLastSync(.now)` written at the end of every successful cycle.
+- New private helpers: `putCard(_:fizzyID:)` (for LWW updates pushing local→remote); orphan-claim window logic in the push loop.
+- `applyRemote(_:to:)` (and the push/PUT/orphan-claim paths) now also reset `card.modifiedAt = fizzyUpdatedAt` so the next LWW check sees "local untouched" and doesn't spuriously re-PUT. Required for steady-state convergence (caught by the idempotence test).
+
+**🔵 Refactor Phase:**
+- Pull/LWW/soft-delete/push are sequential within `steadyStateSync`; each operates on the same `remoteCards` + `pairedByFizzyID` snapshots fetched at the top.
+- Column resolution reuses the same dict pattern as Phase 4a's `syncFirstReplaceLocal` / `syncFirstMerge`.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-api-integration-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-4b-steady-state.md`
+
+**Test Coverage:** 9 new tests across 7 suites. Full suite green.
+
+**Documented limitations** (carried over from 4a; still flagged in source comments):
+1. Per-card ETag persistence (`Card.fizzyEtag`) not populated — Phase 4b refetches the whole board each cycle. Acceptable for personal use; revisit if board cards reach low-hundreds count.
+2. LWW is card-level (single timestamp), not field-level.
+3. Card.label is single-valued; only the first remote tag mapped on pull. Push omits `tag_ids`.
+
+**What ships:** Engine is feature-complete for Phase 5 to wire to UI. `syncFirst(mode:)` for one-shot pair; `sync()` for the foreground-polling cycle.
+
+### Fizzy Integration — Phase 4c: Backup + Safety ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-25
+
+**🔴 Red Phase:**
+- 12 new tests across 3 suites: `BackupManifestTests` (3),
+  `BackupExporterTests` (5), `FizzySyncEngineBoardIsolationTests` (4).
+- Each test verified failing before implementation (isolation tests
+  passed on first run — invariant already held; suite locks it).
+
+**🟢 Green Phase:**
+- `BackupManifest` (Codable, entity counts + ISO-8601 timestamps).
+- `BackupExporter.exportVerified(to:from:)`: copies SQLite files into
+  a `.fenixkanban-backup` directory bundle + writes manifest + immediately
+  re-loads the bundle into a throwaway `NSPersistentContainer` and
+  re-derives counts; throws `ExportError.verificationFailed` on mismatch.
+- `BackupDocument: FileDocument` so SwiftUI's `.fileExporter` can present
+  the verified bundle to the user for final save.
+- `BackupSettingsView`: Settings → Data → Backup. Tap "Export Backup" →
+  exports to temp + verifies → presents `.fileExporter` for save.
+- Settings root gets a "Data" section above "Integrations".
+- `PersistenceController.sharedModel` exposed `internal` so the backup
+  verifier can build a temp container against the same model.
+
+**🔵 Refactor Phase:**
+- File-copy helper handles missing sidecar (`-wal`/`-shm`) gracefully —
+  SQLite doesn't always have them.
+- BackupExporter has no dependency on PersistenceController; it takes a
+  raw `NSPersistentContainer` so tests can build isolated stores.
+- `sourceStoreURL` reads from `container.persistentStoreCoordinator.persistentStores`
+  (canonical post-load) rather than `persistentStoreDescriptions` (pre-load) —
+  prevents silent empty exports when `NSPersistentCloudKitContainer` normalizes
+  the path.
+- `verify(bundleAt:)` explicitly removes the persistent store before the
+  scratch-dir teardown runs — eliminates `BUG IN CLIENT OF libsqlite3.dylib`
+  noise in test output.
+- Test helper `drainContainer(_:)` mirrors the same pattern at the test layer
+  so source-container teardown is also clean.
+- `BackupSettingsView`'s `.fileExporter` completion handler runs state
+  mutations inside `Task { @MainActor in ... }` (Swift strict concurrency)
+  and cleans up the staging temp directory to prevent leaks on repeated exports.
+- `BackupDocument` uses lazy `FileWrapper(url:, options: [])` rather than
+  `.immediate` to avoid main-thread memory spikes for large stores.
+- `BackupExporterTests.rejectsCountMismatch` was added to exercise the
+  count-mismatch guard branch (the existing `rejectsCorruption` test only
+  exercised the load-failure path).
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-phase-5-ui-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-25-fizzy-phase-4c-backup-and-safety.md`
+
+**Test Coverage:** 12 new tests across 3 suites. Full suite green.
+
+**Documented limitations:**
+1. Restore is a manual file-replace; no in-app restore UI yet.
+2. Backups are plaintext SQLite — user is responsible for storage hygiene.
+3. No multi-version history; each export overwrites the destination.
+4. No backup encryption.
+
+**What ships:** A safety net the user can rely on before exercising
+Phase 5's UI against real Fizzy data. The board-isolation suite gives
+mechanical proof that non-paired boards stay untouched.
+
+### Fizzy Integration — Phase 5: UI ✅
+**Status:** Complete (Red → Green → Refactor)
+**Date:** 2026-05-26
+
+**🔴 Red Phase:**
+- 7 new tests in `FizzySyncProviderTests`:
+  - providerName == "Fizzy"
+  - isAuthenticated mirrors authState.isConfigured
+  - authenticate() throws .requiresInteractiveAuth
+  - signOut clears authState + mapping without touching Cards
+  - fetchRemoteBoards maps FizzyBoard DTOs to RemoteBoard (incl. url round-trip)
+  - sync(_:_:) translates FizzySyncResult → public SyncResult (non-zero counts)
+  - lastSyncDate delegates to mapping.lastSyncAt regardless of boardId
+- Sub-views (Verify / Pair / Status) are SwiftUI surfaces validated via
+  manual UAT (deferred — needs real fizzy.bluefenix.net token); no XCUITest
+  at this stage.
+
+**🟢 Green Phase:**
+- `FizzyError.requiresInteractiveAuth` new case — protocol-bridging signal
+  for `BoardSyncProvider.authenticate()`.
+- `FizzySyncProvider` (`@MainActor final class`) — BoardSyncProvider
+  conformance. Holds authState/mapping/persistence; rebuilds FizzyClient +
+  engine on demand so token changes propagate without re-registration.
+- `FizzyAuthPhase` enum — `.unconfigured / .unpaired / .paired /
+  .pairedNoToken` computed from authState + mapping.
+- `FizzyAuthView` parent — phase switch with `forceVerify` override for
+  401 recovery; hosts three sub-views.
+- `FizzyAuthVerifyView` — token paste form, calls `GET /my/identity`,
+  stores token + first account's slug on success. 401 clears authState
+  and surfaces "Invalid token" inline.
+- `FizzyAuthPairView` — three pickers (local board, Fizzy board, mode),
+  destructive-mode UX (red-tinted segment + warning row + adaptive
+  primary button + confirmation alert), dismissable backup banner with
+  deep-link to BackupSettingsView.
+- `FizzyAuthStatusView` — status hero (board names, last sync via
+  RelativeDateTimeFormatter, live Card count), Sync Now button, Sign Out
+  destructive button, inline yellow 401 banner above hero when
+  `pairedNoToken`.
+- `SyncSettingsView` — new row badge (green ✓ / orange ! / none) and
+  NavigationLink push to FizzyAuthView; "No Providers" empty state
+  removed.
+- `FenixKanbanApp.init()` — registers FizzySyncProvider at launch.
+
+**🔵 Refactor Phase:**
+- All async operations stored in `@State var task: Task<Void, Never>?`
+  and cancelled `.onDisappear`.
+- `forceVerify` override lets the status view's "Re-enter Token" route
+  to the verify view without clearing the pairing — pairing persists
+  through re-auth.
+- `refreshTrigger: UUID` on the parent forces SwiftUI to re-evaluate
+  phase after sub-views mutate authState/mapping.
+- `FizzyAuthVerifyView`'s `.textInputAutocapitalization(.never)` wrapped
+  in `#if os(iOS)` — modifier is iOS-only and would break the macOS
+  build otherwise.
+- `FizzyAuthPairView` qualifies `SwiftUI.Label` to disambiguate from the
+  CoreData `Label` entity (same module imports both).
+- `SyncSettingsView`'s `Section("title") { } footer: { }` rewritten as
+  `Section { } header: { Text("title") } footer: { Text(...) }` — the
+  title-string `Section` initializer doesn't accept a footer trailing
+  closure.
+
+**Spec:** `docs/superpowers/specs/2026-05-25-fizzy-phase-5-ui-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-26-fizzy-phase-5-ui.md`
+
+**Test Coverage:** 7 new tests; full suite 218/218 green.
+
+**Manual UAT (against real fizzy.bluefenix.net — deferred to user):**
+1. Cold launch, no Fizzy setup → Settings → Board Sync → Fizzy row
+   chevron-only → tap → verify with valid token → account name appears
+   → board pickers materialize → pair with default mode (.push) →
+   returns to status view, "Sync Now" enabled.
+2. Edit a card title in FenixKanban → tap "Sync Now" → refresh
+   fizzy.bluefenix.net in browser → title updated.
+3. Edit a card title in Fizzy → tap "Sync Now" → local card title
+   updated.
+4. Toggle `golden` in Fizzy → "Sync Now" → local card's gold state
+   matches.
+5. Pick `.replace` for a NEW pairing → "Pair & Sync" → confirmation
+   alert with card count → confirm → local cards wiped + replaced with
+   Fizzy's; other local boards' cards unchanged.
+6. Revoke token in Fizzy admin → "Sync Now" → yellow banner above
+   status hero → tap "Re-enter Token" → re-verify → banner clears on
+   next sync.
+7. Sign Out → mapping clears, authState clears, local cards retained →
+   re-pair to same Fizzy board with `.merge` → orphan-claim re-binds
+   cards by title+createdAt.
+
+**Out of scope (deferred):**
+1. Foreground polling timer (5-min while `scenePhase == .active`) → Phase 6.
+2. CardView cloud badges → Phase 6.
+3. Phase 4c reviewer follow-ups (BackupExporter off-main-actor, BackupDocument: Sendable, Data section split, schema-name constant) → Phase 6 polish or separate Phase 4d.
+
+**What ships:** A complete manual-sync UX for one Fizzy account/board pairing,
+with verified backup safety net (Phase 4c) and proven board-isolation
+guarantees. Phase 6 adds polling and per-card sync badges.
+
+---
+
+### UAT regression fix — slug-with-leading-slash → malformed URL
+
+**Status:** Complete (Red → Green) — Bug found during Phase 5 UAT against
+real fizzy.bluefenix.net.
+
+**Symptom:** After verifying token + pairing, the board picker showed
+`Couldn't load Fizzy boards` with `NSErrorFailingURLStringKey=https://1/boards`
+— request was being sent to host `1`, not `fizzy.bluefenix.net`.
+
+**Root cause:** Fizzy's `/my/identity` returns `slug` with a leading `/`
+(e.g. `"/897362094"`, `"/1"`). `FizzyClient.url(for:)` did
+`"/\(accountSlug)\(path)"` which produced `"//897362094/boards"`. URL
+parsers treat `//host/path` as a protocol-relative URL, so the slug
+became the host. `/my/identity` survived because that branch skips slug
+interpolation entirely. All existing FizzyClient tests passed
+`accountSlug: "ACCT"` (no leading slash) — they never exercised the
+real wire shape, even though the fixture `identity.json` has it.
+
+**🔴 Red:** Added `slugWithLeadingSlashIsHandled` to
+`FizzyClientTests.FizzyClientAuthTests`. Test failed with
+`req.url?.absoluteString → "https://897362094/boards"` instead of
+`"https://fizzy.bluefenix.net/897362094/boards"`.
+
+**🟢 Green:** `FizzyClient.url(for:)` now strips a single leading `/`
+from `accountSlug` before interpolation. Handles both wire shapes
+(`/897362094` and `897362094`) so already-persisted Keychain values
+work without migration.
+
+**Files Modified:**
+- `FenixKanban/Core/Services/Fizzy/FizzyClient.swift` (URL builder normalizes leading slash)
+- `FenixKanbanTests/Services/Fizzy/FizzyClientTests.swift` (1 new test)
+
+**Test Coverage:** 1 new test; full suite **219/219** green on iOS;
+macOS clean build ✓.
+
+**UAT impact:** Items 2–7 were blocked on this. After rebuild + reinstall
+on the simulator, the user's existing pairing (slug `/1`) should resolve
+correctly without re-signing-in.
+
+---
+
+### MainActor isolation for BoardSyncProvider + PluginRegistry
+
+**Status:** Complete — Swift 6 strict-concurrency cleanup surfaced during
+Phase 5 UAT rebuild.
+
+**Symptom:** `FizzySyncProvider.swift:14:32 — Conformance of 'FizzySyncProvider'
+to protocol 'BoardSyncProvider' crosses into main actor-isolated code and
+can cause data races; this is an error in the Swift 6 language mode`.
+
+**Fix:** `BoardSyncProvider` and `PluginRegistry` are now `@MainActor`.
+All current callers (App init, SwiftUI views, FizzySyncProviderTests) were
+already main-actor; making the contract explicit removes the warning
+without runtime changes.
+
+**Files Modified:**
+- `FenixKanban/Core/Plugins/BoardSyncProvider.swift`
+- `FenixKanban/Core/Plugins/PluginRegistry.swift`
+
+**Test Coverage:** No new tests (type-system fix); existing 219/219 green
+on iOS, macOS clean build ✓.
+
+---
+
+### Phase 5 UAT — paused (handoff written)
+
+**Status:** Paused after Item 3 with a discovered bug.
+See `.planning/HANDOFF.md` + `.planning/HANDOFF.json`.
+
+**UAT results so far:**
+
+| # | Item                                                            | Status        |
+| - | --------------------------------------------------------------- | ------------- |
+| 1 | Cold launch → verify token → pair board                         | ✅ Passed      |
+| 2 | Push: edit local card title → Sync Now → in Fizzy               | ✅ Passed      |
+| 3 | Pull: edit Fizzy card title → Sync Now → local                  | ✅ Passed      |
+| 4 | Pull: toggle Fizzy `golden` flag → Sync Now → local             | ⏸️  Queued    |
+| 5 | First-sync mode `.replace` with confirmation                    | ⏸️  Pending   |
+| 6 | 401 recovery banner + re-verify                                 | ⏸️  Pending   |
+| 7 | Sign Out + re-pair (orphan-claim by title + createdAt)          | ⏸️  Pending   |
+
+**Bug discovered during UAT (blocker for resume):**
+After items 1–3 against the real paired board, the live Fizzy board ended
+up with ~40 cards including many duplicates. Push appears to be creating
+new remote cards on every sync instead of reconciling by remote ID.
+Reproduce on a fresh test board pair, write a double-sync regression test,
+then fix in `FizzySyncEngine`.
+
+**Scope gap also surfaced:** Phase 5 supports exactly one local↔Fizzy
+pairing at a time (`FizzyBoardMapping` is a singleton). User has 7 local
+boards. Multi-board sync is now scoped as Phase 7 (see HANDOFF.md).
+
+---
+
+## 🛠 2026-05-26 — Fix: Itachi build failure (stray `.claude/settings.local.json` in app bundle)
+
+**Symptom (Itachi):**
+```
+CpResource …/FenixKanban.app/Contents/Resources/settings.local.json …/FenixKanban/.claude/settings.local.json
+error: The file "settings.local.json" couldn't be opened because there is no such file.
+Ld …/__preview.dylib  →  Command Ld failed with a nonzero exit code   (collateral)
+** BUILD FAILED **
+```
+
+**Root cause:**
+`FenixKanban/.claude/settings.local.json` had been added to the FenixKanban
+app target's *Copy Bundle Resources* phase (probably via Xcode's
+"add discovered files" prompt). The file is excluded by the global
+`~/.config/git/ignore` rule `**/.claude/settings.local.json`, so it's
+per-machine by design — Itachi never had a copy, build failed at
+`CpResource`, and the `__preview.dylib` Ld step failed as collateral.
+Shipping local Claude Code permissions inside the `.app` bundle is also
+wrong on principle.
+
+**🔴 Red:** Moved local copy aside on Hinata, reproduced the identical
+`CpResource … No such file or directory` failure with `xcodebuild`.
+
+**🟢 Green:** Surgical removal of all 5 references from
+`FenixKanban.xcodeproj/project.pbxproj`:
+- `PBXBuildFile` entry (`C26844E899CB05EB6F26442D`)
+- `PBXFileReference` (`BD784E3CA7CE3F415BADE4CE`)
+- `PBXGroup` `.claude` (`56D9D4B4483C928C91DA055E`)
+- group child entry inside the `FenixKanban` PBXGroup
+- `PBXResourcesBuildPhase` files-list entry
+
+`xcodebuild -list` parses clean, no orphan UUIDs remain
+(`grep -E '<uuid>|settings\.local\.json|\.claude'` → empty).
+
+**🔵 Refactor:** Re-ran `xcodebuild build` with the file still moved
+aside (full Itachi simulation): **BUILD SUCCEEDED**. Restored the local
+file afterward — it stays as Claude Code working state, just no longer
+wired into the app bundle.
+
+**Action on Itachi:** `git pull` and ⌘B; no other steps required.
+
+---
+
+### 13. Splash Screen (iOS) ✅
+**Status:** Complete — shipped a static iOS launch screen after a one-loop design pivot.
+**Date:** 2026-05-27
+**Spec:** `docs/superpowers/specs/2026-05-27-splash-screen-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-27-splash-screen.md`
+
+**Final shape:**
+- `LaunchScreen.storyboard` renders a vertical linear gradient (`#1F2030 → #15161D`, matching the icon's baked dark navy) full-bleed with the app icon centered at 200×200 pt.
+- Wired via `UILaunchStoryboardName: LaunchScreen` in `Info-Partial.plist`.
+- iOS only — excluded from the macOS build via `EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]` so the same dual-platform target keeps compiling for Mac.
+- No SwiftUI overlay, no animation: macOS launches directly into `ContentView`.
+
+**Design pivot:**
+The original plan was an animated SwiftUI splash that crossfaded into `ContentView` after a 1.1s pulse + fade. Built and shipped through TDD with seven tasks, code review, and visual verification. The visual verification surfaced two issues:
+1. `INFOPLIST_KEY_UILaunchScreen_Image` / `_BackgroundColor` build settings in Xcode 26 are recognized but produce an empty `UILaunchScreen` dict — confirmed by `PlistBuddy` on the compiled `Info.plist`. Fix: declare the dict explicitly in `Info-Partial.plist`.
+2. With the launch-screen wiring fixed, the system rendered the 1024 px `SplashLogo` PNG at near-full-screen size (iOS scales the centered image to its natural pixels), producing a visible "huge icon → 200 pt icon" jump at the handoff to the SwiftUI splash.
+
+Rather than resize the PNG or rework the handoff, the user pivoted to "no animation, just a clean static launch screen." Reverted the SwiftUI machinery, switched from `UILaunchScreen` plist dict to `UILaunchStoryboardName`, and authored `LaunchScreen.storyboard` by hand to host the gradient + centered icon at correct size.
+
+**Sub-fixes along the way:**
+- Each `make generate` was re-bundling `FenixKanban/.claude/settings.local.json` and `FenixKanban/Resources/AppIcon.icns` into the Resources build phase (via the recursive `sources: - path: FenixKanban` glob), undoing the earlier `9432cfc` fix. Added `**/.claude/**` and `Resources/AppIcon.icns` to the source-glob excludes.
+- Xcode 26 kept showing "Recommended Settings" validation on every project open because three settings (`STRING_CATALOG_GENERATE_SYMBOLS`, `ENABLE_USER_SCRIPT_SANDBOXING`, `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS`) weren't in `project.yml`. Added them to project-level `settings.base`.
+
+**Files (final shape):**
+- Added: `FenixKanban/Resources/LaunchScreen.storyboard`
+- Added: `FenixKanban/Resources/Assets.xcassets/SplashGradient.imageset/` (1290×2796 PNG)
+- Kept: `FenixKanban/Resources/Assets.xcassets/SplashLogo.imageset/` (reused for the storyboard's centered icon)
+- Kept: `FenixKanban/Resources/Assets.xcassets/SplashBackground.colorset/` (no longer referenced; left in place — harmless and could be useful for future UI)
+- Modified: `FenixKanban/Resources/Info-Partial.plist` (added `UILaunchStoryboardName`)
+- Modified: `project.yml` (resource entry for storyboard, macOS sdk exclusion, source-glob excludes, recommended Xcode settings)
+
+**Test coverage:** None — the launch screen is a static storyboard with no runtime behavior to verify. Visual cold-launch verification on iPhone 17 simulator confirmed the gradient renders full-bleed with the icon centered at the intended size. Test count returned to baseline (219).
+
+**Lessons:**
+- `test fixtures must match wire shape` applies here too: the original plan trusted `INFOPLIST_KEY_UILaunchScreen_*` would just work. Verifying on the compiled `Info.plist` (not just successful build) caught the no-op.
+- Visual verification is non-optional for launch-screen work. Build success only proves the assets compiled, not that they render the way the design assumed.
+- Plans that hinge on a "pixel-aligned invisible handoff" between system chrome and app code are fragile. A static launch screen with no app-side counterpart removes the whole class of timing/sizing/handoff failures.

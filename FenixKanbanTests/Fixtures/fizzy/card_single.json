@@ -1,0 +1,26 @@
+{
+  "id": "03f5vaeq985jlvwv3arl4srq2",
+  "number": 1,
+  "title": "First card",
+  "status": "published",
+  "description": "Hello, World!",
+  "description_html": "<div class=\"action-text-content\"><p>Hello, World!</p></div>",
+  "image_url": null,
+  "has_attachments": false,
+  "tags": ["programming"],
+  "closed": false,
+  "golden": false,
+  "last_active_at": "2025-12-05T19:38:48.553Z",
+  "created_at": "2025-12-05T19:38:48.540Z",
+  "url": "https://fizzy.bluefenix.net/897362094/cards/1",
+  "column": {
+    "id": "03f5v9zkft4hj9qq0lsn9ohco",
+    "name": "In Progress",
+    "color": { "name": "Lime", "value": "var(--color-card-4)" },
+    "created_at": "2025-12-05T19:36:35.534Z"
+  },
+  "steps": [
+    { "id": "03f8huu0sog76g3s975963b5e", "content": "Step one", "completed": false },
+    { "id": "03f8huu0sog76g3s975969734", "content": "Step two", "completed": true }
+  ]
+}

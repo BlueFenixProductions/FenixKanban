@@ -9,6 +9,7 @@ struct FenixKanbanApp: App {
     @StateObject private var authService = AuthenticationService()
     @StateObject private var syncMonitor: SyncMonitor
     @State private var navigator = NavigationModel()
+    @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
 
     init() {
         let launchArgs = ProcessInfo.processInfo.arguments
@@ -44,6 +45,18 @@ struct FenixKanbanApp: App {
 
         AppDependencyManager.shared.add(dependency: viewContext)
         AppDependencyManager.shared.add(dependency: navigatorValue)
+
+        // Register Fizzy as a BoardSyncProvider. The provider is constructed
+        // with the production singletons (Keychain-backed FizzyAuthState,
+        // standard UserDefaults-backed FizzyBoardMapping, the shared
+        // PersistenceController). It is registered before the first scene
+        // renders so SyncSettingsView's list is populated on cold launch.
+        let fizzyProvider = FizzySyncProvider(
+            authState: FizzyAuthState(),
+            mapping: FizzyBoardMapping(),
+            persistence: PersistenceController.shared
+        )
+        PluginRegistry.shared.register(fizzyProvider)
     }
 
     var body: some Scene {
@@ -52,7 +65,7 @@ struct FenixKanbanApp: App {
                 .environment(\.managedObjectContext, persistence.viewContext)
                 .environmentObject(authService)
                 .environmentObject(syncMonitor)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(AppearanceMode(rawValue: appearanceRaw)?.colorScheme)
                 .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
                     NotificationService.shared.refreshAllReminders(context: persistence.viewContext)
                 }

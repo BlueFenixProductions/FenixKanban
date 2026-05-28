@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sketch 003 — FizzyAuthPairView</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  .footer-button-area { padding: 24px 16px 32px 16px; }
+
+  .destructive-warning {
+    background: var(--color-danger-bg);
+    border: 0.5px solid var(--color-danger-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin: 8px 16px 12px 16px;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .destructive-warning .banner-icon { color: var(--color-danger); font-size: 18px; }
+
+  .state-cycler {
+    text-align: center;
+    padding: 12px;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    border-top: 0.5px solid var(--color-divider);
+  }
+  .state-cycler button {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin: 2px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--color-tint);
+  }
+  .state-cycler button.active {
+    background: var(--color-tint);
+    color: white;
+    border-color: var(--color-tint);
+  }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab" onclick="show('a', event)">A: Stacked, disclosure-on-destructive</button>
+  <button class="variant-tab" onclick="show('b', event)">B: Always-visible status banner</button>
+  <button class="variant-tab" onclick="show('c', event)">C: Dynamic warning + adaptive primary</button>
+  <button class="variant-tab active" onclick="show('d', event)">D ★ Synthesis (A stacked + C adaptive)</button>
+</div>
+
+<!-- ============================== Variant A — Stacked sections, disclosure on destructive ============================== -->
+<div id="variant-a" class="variant">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Board Sync</span>
+        <span class="nav-title">Fizzy</span>
+        <span class="nav-right">Cancel</span>
+      </div>
+
+      <div class="banner banner-info" id="backup-banner-a">
+        <span class="banner-icon">💾</span>
+        <div class="banner-content">
+          <strong>Export a backup first</strong>
+          Recommended before your first sync — recoverable in case anything looks wrong.
+          <a href="#" class="banner-cta">Open Backup</a>
+        </div>
+        <button class="banner-dismiss" onclick="this.closest('.banner').style.display='none'">×</button>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Account</div>
+        <div class="form-card">
+          <div class="row">
+            <div class="row-content">
+              <div class="row-title">Chris Pelatari</div>
+              <div class="row-subtitle">897362094 · chris@pelatari.com</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Local Board</div>
+        <div class="form-card">
+          <div class="picker-row">
+            <span class="picker-label">Board</span>
+            <span class="picker-value chevron">Roadmap</span>
+          </div>
+        </div>
+        <div class="form-section-footer">
+          Only this board syncs. Other local boards stay untouched.
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Fizzy Board</div>
+        <div class="form-card">
+          <div class="picker-row">
+            <span class="picker-label">Board</span>
+            <span class="picker-value chevron">Public Roadmap</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">First Sync</div>
+        <div class="form-card">
+          <div class="segmented" style="margin: 8px;">
+            <div class="segment active" onclick="setModeA('push', event)">Push</div>
+            <div class="segment" onclick="setModeA('replace', event)">Replace</div>
+            <div class="segment" onclick="setModeA('merge', event)">Merge</div>
+          </div>
+        </div>
+        <div class="form-section-footer" id="mode-help-a">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="destructive-warning" id="destructive-a" style="display:none;">
+        <span class="banner-icon">⚠</span>
+        <div>
+          <strong>This will delete all 47 cards on “Roadmap”.</strong><br>
+          Cannot be undone without restoring a backup. You'll confirm again on Pair &amp; Sync.
+        </div>
+      </div>
+
+      <div class="footer-button-area">
+        <button class="btn btn-primary" onclick="confirmA()">Pair &amp; Sync</button>
+      </div>
+
+      <div class="state-cycler">
+        Mode demo:
+        <button class="active" onclick="setModeA('push')">Push</button>
+        <button onclick="setModeA('replace')">Replace</button>
+        <button onclick="setModeA('merge')">Merge</button>
+      </div>
+
+      <div class="alert-backdrop" id="alert-a" style="display:none;">
+        <div class="alert">
+          <div class="alert-title">Delete and Replace?</div>
+          <div class="alert-message">
+            This will delete all <strong>47 cards</strong> on “Roadmap” and replace
+            them with cards pulled from Fizzy. This cannot be undone.
+          </div>
+          <div class="alert-actions">
+            <button class="alert-action" onclick="document.getElementById('alert-a').style.display='none'">Cancel</button>
+            <button class="alert-action destructive" onclick="document.getElementById('alert-a').style.display='none'">Delete &amp; Replace</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== Variant B — Always-visible status banner under mode picker ============================== -->
+<div id="variant-b" class="variant">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Board Sync</span>
+        <span class="nav-title">Fizzy</span>
+        <span class="nav-right">Cancel</span>
+      </div>
+
+      <div class="banner banner-info">
+        <span class="banner-icon">💾</span>
+        <div class="banner-content">
+          <strong>Export a backup first</strong>
+          Recommended before your first sync.
+          <a href="#" class="banner-cta">Open Backup</a>
+        </div>
+        <button class="banner-dismiss" onclick="this.closest('.banner').style.display='none'">×</button>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Pairing</div>
+        <div class="form-card">
+          <div class="picker-row">
+            <span class="picker-label">Account</span>
+            <span class="picker-value">Chris Pelatari</span>
+          </div>
+          <div class="picker-row">
+            <span class="picker-label">Local Board</span>
+            <span class="picker-value chevron">Roadmap</span>
+          </div>
+          <div class="picker-row">
+            <span class="picker-label">Fizzy Board</span>
+            <span class="picker-value chevron">Public Roadmap</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">First Sync Mode</div>
+        <div class="form-card">
+          <div class="segmented" style="margin: 8px;">
+            <div class="segment active" onclick="setModeB('push', event)">Push</div>
+            <div class="segment" onclick="setModeB('replace', event)">Replace</div>
+            <div class="segment" onclick="setModeB('merge', event)">Merge</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mode-status-b" class="banner banner-info" style="margin-top: 4px;">
+        <span class="banner-icon">✓</span>
+        <div class="banner-content">
+          <strong>Push — non-destructive</strong>
+          Uploads your 47 local cards. Existing Fizzy cards are kept.
+        </div>
+      </div>
+
+      <div class="footer-button-area">
+        <button class="btn btn-primary" onclick="confirmB()">Pair &amp; Sync</button>
+      </div>
+
+      <div class="state-cycler">
+        Mode demo:
+        <button class="active" onclick="setModeB('push')">Push</button>
+        <button onclick="setModeB('replace')">Replace</button>
+        <button onclick="setModeB('merge')">Merge</button>
+      </div>
+
+      <div class="alert-backdrop" id="alert-b" style="display:none;">
+        <div class="alert">
+          <div class="alert-title">Delete and Replace?</div>
+          <div class="alert-message">
+            This will delete all <strong>47 cards</strong> on “Roadmap”. Cannot be undone.
+          </div>
+          <div class="alert-actions">
+            <button class="alert-action" onclick="document.getElementById('alert-b').style.display='none'">Cancel</button>
+            <button class="alert-action destructive" onclick="document.getElementById('alert-b').style.display='none'">Delete &amp; Replace</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== Variant C — Dynamic warning + adaptive primary ============================== -->
+<div id="variant-c" class="variant">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Board Sync</span>
+        <span class="nav-title">Pair Board</span>
+        <span class="nav-right">Cancel</span>
+      </div>
+
+      <div class="banner banner-info" id="backup-banner-c">
+        <span class="banner-icon">💾</span>
+        <div class="banner-content">
+          <strong>Backup recommended</strong>
+          Export your data before your first sync.
+          <a href="#" class="banner-cta">Open Backup</a>
+        </div>
+        <button class="banner-dismiss" onclick="this.closest('.banner').style.display='none'">×</button>
+      </div>
+
+      <div class="form-section">
+        <div class="form-card">
+          <div class="picker-row">
+            <span class="picker-label">Account</span>
+            <span class="picker-value">Chris Pelatari</span>
+          </div>
+          <div class="picker-row">
+            <span class="picker-label">Local Board</span>
+            <span class="picker-value chevron">Roadmap (47 cards)</span>
+          </div>
+          <div class="picker-row">
+            <span class="picker-label">Fizzy Board</span>
+            <span class="picker-value chevron">Public Roadmap</span>
+          </div>
+          <div class="picker-row" style="flex-direction: column; align-items: stretch;">
+            <span class="picker-label" style="margin-bottom: 8px;">First Sync</span>
+            <div class="segmented" style="margin: 0;">
+              <div class="segment active" onclick="setModeC('push', event)">Push</div>
+              <div class="segment destructive" onclick="setModeC('replace', event)">Replace</div>
+              <div class="segment" onclick="setModeC('merge', event)">Merge</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-section-footer" id="mode-help-c">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="destructive-warning" id="destructive-c" style="display:none;">
+        <span class="banner-icon">⚠</span>
+        <div>
+          <strong>This deletes 47 local cards.</strong><br>
+          Replace mode wipes “Roadmap” and pulls Fizzy's state. Confirm again on Pair &amp; Sync.
+        </div>
+      </div>
+
+      <div class="footer-button-area">
+        <button class="btn btn-primary" id="primary-c" onclick="confirmC()">Pair &amp; Sync</button>
+      </div>
+
+      <div class="state-cycler">
+        Mode demo:
+        <button class="active" onclick="setModeC('push')">Push</button>
+        <button onclick="setModeC('replace')">Replace</button>
+        <button onclick="setModeC('merge')">Merge</button>
+      </div>
+
+      <div class="alert-backdrop" id="alert-c" style="display:none;">
+        <div class="alert">
+          <div class="alert-title">Replace 47 cards?</div>
+          <div class="alert-message">
+            “Roadmap” cards will be deleted and replaced with cards from Fizzy.
+            This cannot be undone without restoring a backup.
+          </div>
+          <div class="alert-actions">
+            <button class="alert-action" onclick="document.getElementById('alert-c').style.display='none'">Cancel</button>
+            <button class="alert-action destructive" onclick="document.getElementById('alert-c').style.display='none'">Delete &amp; Replace</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== Variant D — SYNTHESIS (A stacked + C adaptive) ============================== -->
+<div id="variant-d" class="variant active">
+  <div class="device">
+    <div class="device-screen">
+      <div class="nav-bar">
+        <span class="nav-back">‹ Board Sync</span>
+        <span class="nav-title">Fizzy</span>
+        <span class="nav-right">Cancel</span>
+      </div>
+
+      <div class="banner banner-info" id="backup-banner-d">
+        <span class="banner-icon">💾</span>
+        <div class="banner-content">
+          <strong>Export a backup first</strong>
+          Recommended before your first sync — recoverable in case anything looks wrong.
+          <a href="#" class="banner-cta">Open Backup</a>
+        </div>
+        <button class="banner-dismiss" onclick="this.closest('.banner').style.display='none'">×</button>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Account</div>
+        <div class="form-card">
+          <div class="row">
+            <div class="row-content">
+              <div class="row-title">Chris Pelatari</div>
+              <div class="row-subtitle">897362094 · chris@pelatari.com</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Local Board</div>
+        <div class="form-card">
+          <div class="picker-row">
+            <span class="picker-label">Board</span>
+            <span class="picker-value chevron">Roadmap (47 cards)</span>
+          </div>
+        </div>
+        <div class="form-section-footer">
+          Only this board syncs. Other local boards stay untouched.
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">Fizzy Board</div>
+        <div class="form-card">
+          <div class="picker-row">
+            <span class="picker-label">Board</span>
+            <span class="picker-value chevron">Public Roadmap</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-header">First Sync</div>
+        <div class="form-card">
+          <div class="segmented" style="margin: 8px;">
+            <div class="segment active" onclick="setModeD('push', event)">Push</div>
+            <div class="segment destructive" onclick="setModeD('replace', event)">Replace</div>
+            <div class="segment" onclick="setModeD('merge', event)">Merge</div>
+          </div>
+        </div>
+        <div class="form-section-footer" id="mode-help-d">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="destructive-warning" id="destructive-d" style="display:none;">
+        <span class="banner-icon">⚠</span>
+        <div>
+          <strong>This will delete all 47 cards on “Roadmap”.</strong><br>
+          Cannot be undone without restoring a backup. You'll confirm again on the next tap.
+        </div>
+      </div>
+
+      <div class="footer-button-area">
+        <button class="btn btn-primary" id="primary-d" onclick="confirmD()">Pair &amp; Sync</button>
+      </div>
+
+      <div class="state-cycler">
+        Mode demo:
+        <button class="active" onclick="setModeD('push')">Push</button>
+        <button onclick="setModeD('replace')">Replace</button>
+        <button onclick="setModeD('merge')">Merge</button>
+      </div>
+
+      <div class="alert-backdrop" id="alert-d" style="display:none;">
+        <div class="alert">
+          <div class="alert-title">Delete 47 cards on “Roadmap”?</div>
+          <div class="alert-message">
+            Cards on “Roadmap” will be replaced with cards from the Fizzy board
+            “Public Roadmap”. This cannot be undone without restoring a backup.
+          </div>
+          <div class="alert-actions">
+            <button class="alert-action" onclick="document.getElementById('alert-d').style.display='none'">Cancel</button>
+            <button class="alert-action destructive" onclick="document.getElementById('alert-d').style.display='none'">Delete &amp; Replace</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sketch-tools" style="position:fixed;bottom:12px;right:12px;z-index:9999;font-family:system-ui;font-size:12px;background:rgba(0,0,0,0.7);color:white;padding:8px 12px;border-radius:8px;opacity:0.4;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.4'">
+  Sketch 003 — FizzyAuthPairView
+</div>
+
+<script>
+  function show(id, ev) {
+    document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('variant-' + id).classList.add('active');
+    ev.currentTarget.classList.add('active');
+  }
+
+  const modeCopy = {
+    push: {
+      label: 'Push',
+      tag: 'non-destructive',
+      banner: 'Uploads your 47 local cards. Existing Fizzy cards are kept.',
+      help: 'upload every local card to Fizzy. Pre-existing Fizzy cards are kept.'
+    },
+    replace: {
+      label: 'Replace',
+      tag: 'destructive',
+      banner: 'Deletes all 47 local cards and replaces them with Fizzy’s.',
+      help: 'wipe local cards on this board and pull Fizzy’s state.'
+    },
+    merge: {
+      label: 'Merge',
+      tag: 'non-destructive (with collisions)',
+      banner: 'Pushes local-only, pulls Fizzy-only. Same-title collisions are skipped.',
+      help: 'pushes local-only cards, pulls Fizzy-only. Same-title collisions logged but skipped.'
+    },
+  };
+
+  function renderHelp(container, mode) {
+    const m = modeCopy[mode];
+    container.replaceChildren();
+    const strong = document.createElement('strong');
+    strong.textContent = m.label;
+    container.appendChild(strong);
+    container.appendChild(document.createTextNode(' — ' + m.help + ' '));
+    const em = document.createElement('em');
+    em.textContent = m.tag;
+    if (mode === 'replace') em.style.color = 'var(--color-danger)';
+    container.appendChild(em);
+    container.appendChild(document.createTextNode('.'));
+  }
+
+  function renderBannerStatus(container, mode) {
+    const m = modeCopy[mode];
+    container.replaceChildren();
+    const strong = document.createElement('strong');
+    strong.textContent = m.label + ' — ' + m.tag;
+    container.appendChild(strong);
+    container.appendChild(document.createTextNode(m.banner));
+  }
+
+  function applyMode(variant, mode) {
+    const segs = document.querySelectorAll('#variant-' + variant + ' .segment');
+    segs.forEach(s => s.classList.remove('active'));
+    const target = Array.from(segs).find(s => s.textContent.trim().toLowerCase() === mode);
+    if (target) target.classList.add('active');
+
+    const help = document.getElementById('mode-help-' + variant);
+    if (help) renderHelp(help, mode);
+
+    const status = document.getElementById('mode-status-' + variant);
+    if (status) {
+      status.classList.remove('banner-info', 'banner-warning', 'banner-danger');
+      const isDanger = mode === 'replace';
+      status.classList.add(isDanger ? 'banner-danger' : 'banner-info');
+      const icon = status.querySelector('.banner-icon');
+      icon.textContent = isDanger ? '⚠' : '✓';
+      const content = status.querySelector('.banner-content');
+      renderBannerStatus(content, mode);
+    }
+
+    const warn = document.getElementById('destructive-' + variant);
+    if (warn) warn.style.display = (mode === 'replace') ? 'flex' : 'none';
+
+    if (variant === 'c') {
+      const btn = document.getElementById('primary-c');
+      btn.classList.toggle('btn-destructive', mode === 'replace');
+      btn.classList.toggle('btn-primary', mode !== 'replace');
+      btn.textContent = mode === 'replace' ? 'Delete & Replace' : 'Pair & Sync';
+    }
+
+    const cyclers = document.querySelectorAll('#variant-' + variant + ' .state-cycler button');
+    cyclers.forEach(c => c.classList.toggle('active', c.textContent.trim().toLowerCase() === mode));
+  }
+
+  function setModeA(mode) { applyMode('a', mode); }
+  function setModeB(mode) { applyMode('b', mode); }
+  function setModeC(mode) { applyMode('c', mode); }
+  function setModeD(mode) { applyMode('d', mode); }
+
+  function confirmVariant(variant) {
+    const activeSeg = document.querySelector('#variant-' + variant + ' .segment.active');
+    const isReplace = activeSeg && activeSeg.textContent.trim().toLowerCase() === 'replace';
+    if (isReplace) {
+      document.getElementById('alert-' + variant).style.display = 'flex';
+    } else {
+      alert('Pair & Sync (' + activeSeg.textContent.trim() + ') — proceed');
+    }
+  }
+
+  function confirmA() { confirmVariant('a'); }
+  function confirmB() { confirmVariant('b'); }
+  function confirmC() { confirmVariant('c'); }
+  function confirmD() { confirmVariant('d'); }
+
+  // Variant D's primary button transforms in replace mode (like C)
+  function applyDPrimary(mode) {
+    const btn = document.getElementById('primary-d');
+    if (!btn) return;
+    btn.classList.toggle('btn-destructive', mode === 'replace');
+    btn.classList.toggle('btn-primary', mode !== 'replace');
+    btn.textContent = mode === 'replace' ? 'Delete & Replace' : 'Pair & Sync';
+  }
+
+  // Patch applyMode to handle D's adaptive primary too
+  const originalApplyMode = applyMode;
+  applyMode = function(variant, mode) {
+    originalApplyMode(variant, mode);
+    if (variant === 'd') applyDPrimary(mode);
+  };
+
+  // Initialize help text for variants that show it
+  ['a', 'c', 'd'].forEach(v => {
+    const help = document.getElementById('mode-help-' + v);
+    if (help) renderHelp(help, 'push');
+  });
+</script>
+</body>
+</html>

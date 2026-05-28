@@ -4,6 +4,7 @@ struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var context
+    @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
 
     init(authService: AuthenticationService, persistence: PersistenceController) {
         _viewModel = StateObject(wrappedValue: SettingsViewModel(
@@ -45,6 +46,19 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Appearance") {
+                    Picker("Appearance", selection: $appearanceRaw) {
+                        ForEach(AppearanceMode.allCases) { mode in
+                            Text(mode.label).tag(mode.rawValue)
+                        }
+                    }
+                    #if os(iOS)
+                    .pickerStyle(.segmented)
+                    #elseif os(macOS)
+                    .labelsHidden()
+                    #endif
+                }
+
                 Section("Notifications") {
                     NavigationLink("Notification Settings") {
                         NotificationSettingsView()
@@ -57,6 +71,15 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Data") {
+                    NavigationLink("Backup") {
+                        BackupSettingsView(persistence: viewModel.persistence)
+                    }
+                    Button("Delete All Data", role: .destructive) {
+                        viewModel.showDeleteConfirmation = true
+                    }
+                }
+
                 Section("Integrations") {
                     NavigationLink("Board Sync") {
                         SyncSettingsView()
@@ -66,12 +89,6 @@ struct SettingsView: View {
                 Section("Support") {
                     NavigationLink("Tip Jar") {
                         TipJarView()
-                    }
-                }
-
-                Section("Data") {
-                    Button("Delete All Data", role: .destructive) {
-                        viewModel.showDeleteConfirmation = true
                     }
                 }
             }

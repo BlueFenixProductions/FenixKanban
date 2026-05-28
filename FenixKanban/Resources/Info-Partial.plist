@@ -18,7 +18,14 @@
           screen."
         - UISupportedInterfaceOrientations: iPhone supports portrait and
           both landscapes (skip upside-down — modern iPhones don't use it).
+        - UILaunchStoryboardName: We use a LaunchScreen.storyboard for the
+          static launch screen (with a gradient bg image + centered icon).
+          INFOPLIST_KEY_UILaunchStoryboardName is recognized as a build
+          setting but kept here so the plist is the single source of truth
+          for launch-screen wiring.
     -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
     <key>UIBackgroundModes</key>
     <array>
         <string>remote-notification</string>

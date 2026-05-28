@@ -21,6 +21,12 @@ settings:
     SDKROOT: iphoneos
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator macosx"
     TARGETED_DEVICE_FAMILY: "1,2"
+    # Xcode 26 "Recommended Settings" dialog — set here so xcodegen
+    # stops reverting them on every `make generate`. Without these,
+    # Xcode nags on every project open.
+    STRING_CATALOG_GENERATE_SYMBOLS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
 
 targets:
   FenixKanban:
@@ -31,9 +37,12 @@ targets:
         excludes:
           - "**/.DS_Store"
           - "**/.remember/**"
+          - "**/.claude/**"
+          - "Resources/AppIcon.icns"
     resources:
       - path: FenixKanban/Resources/Assets.xcassets
       - path: FenixKanban/Core/Persistence/FenixKanban.xcdatamodeld
+      - path: FenixKanban/Resources/LaunchScreen.storyboard
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanban
@@ -47,11 +56,11 @@ targets:
         # plist." and background sync degrades to foreground-only.
         INFOPLIST_FILE: FenixKanban/Resources/Info-Partial.plist
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: FenixKanban
         CODE_SIGN_ENTITLEMENTS: FenixKanban/Resources/FenixKanban.entitlements
         SUPPORTS_MACCATALYST: NO
+        "EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]": "LaunchScreen.storyboard"
 
   FenixKanbanTests:
     type: bundle.unit-test
@@ -60,6 +69,10 @@ targets:
       - path: FenixKanbanTests
         excludes:
           - "**/.DS_Store"
+          - "Fixtures/**/*.json"
+          - "Fixtures/**/*.md"
+    resources:
+      - path: FenixKanbanTests/Fixtures
     dependencies:
       - target: FenixKanban
     settings:
@@ -73,3 +86,26 @@ targets:
         Release:
           "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/Contents/MacOS/FenixKanban"
           "BUNDLE_LOADER[sdk=macosx*]": "$(TEST_HOST)"
+
+# XcodeGen owns the shared FenixKanban scheme so `make generate` no longer
+# drops the tracked file. `scripts/add-ui-test-target.rb` overlays
+# FenixKanbanUITests on top — that target is dynamically materialized and
+# is not part of project.yml.
+schemes:
+  FenixKanban:
+    build:
+      targets:
+        FenixKanban: all
+        FenixKanbanTests: [test]
+    test:
+      config: Debug
+      targets:
+        - FenixKanbanTests
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
