@@ -3,7 +3,7 @@ import CoreData
 import Foundation
 @testable import FenixKanban
 
-@Suite("FizzySyncEngine — pairing precondition", .serialized)
+@Suite("FizzySyncEngine — pairing precondition", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEnginePairingTests {
 
@@ -38,7 +38,7 @@ struct FizzySyncEnginePairingTests {
     }
 }
 
-@Suite("FizzySyncEngine — first-sync mode 1 (push local)", .serialized)
+@Suite("FizzySyncEngine — first-sync mode 1 (push local)", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEnginePushLocalTests {
 
@@ -213,7 +213,7 @@ struct FizzySyncEnginePushLocalTests {
     }
 }
 
-@Suite("FizzySyncEngine — first-sync mode 2 (replace local)", .serialized)
+@Suite("FizzySyncEngine — first-sync mode 2 (replace local)", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineReplaceLocalTests {
 
@@ -359,7 +359,7 @@ struct FizzySyncEngineReplaceLocalTests {
     }
 }
 
-@Suite("FizzySyncEngine — first-sync mode 3 (merge)", .serialized)
+@Suite("FizzySyncEngine — first-sync mode 3 (merge)", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineMergeTests {
 
@@ -539,7 +539,7 @@ struct FizzySyncEngineMergeTests {
     }
 }
 
-@Suite("FizzySyncEngine — sync() pairing precondition", .serialized)
+@Suite("FizzySyncEngine — sync() pairing precondition", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineSyncPairingTests {
 
@@ -568,7 +568,7 @@ struct FizzySyncEngineSyncPairingTests {
     }
 }
 
-@Suite("FizzySyncEngine — steady-state pull", .serialized)
+@Suite("FizzySyncEngine — steady-state pull", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineSteadyPullTests {
 
@@ -691,7 +691,7 @@ struct FizzySyncEngineSteadyPullTests {
     }
 }
 
-@Suite("FizzySyncEngine — steady-state push", .serialized)
+@Suite("FizzySyncEngine — steady-state push", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineSteadyPushTests {
 
@@ -789,7 +789,7 @@ struct FizzySyncEngineSteadyPushTests {
     }
 }
 
-@Suite("FizzySyncEngine — LWW conflict resolution", .serialized)
+@Suite("FizzySyncEngine — LWW conflict resolution", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineLWWTests {
 
@@ -922,7 +922,7 @@ struct FizzySyncEngineLWWTests {
     }
 }
 
-@Suite("FizzySyncEngine — soft-delete on missing remote", .serialized)
+@Suite("FizzySyncEngine — soft-delete on missing remote", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineSoftDeleteTests {
 
@@ -986,7 +986,7 @@ struct FizzySyncEngineSoftDeleteTests {
     }
 }
 
-@Suite("FizzySyncEngine — crash-after-POST recovery", .serialized)
+@Suite("FizzySyncEngine — crash-after-POST recovery", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineCrashRecoveryTests {
 
@@ -1127,7 +1127,7 @@ struct FizzySyncEngineCrashRecoveryTests {
     }
 }
 
-@Suite("FizzySyncEngine — idempotence", .serialized)
+@Suite("FizzySyncEngine — idempotence", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngineIdempotenceTests {
 
@@ -1190,7 +1190,7 @@ struct FizzySyncEngineIdempotenceTests {
     }
 }
 
-@Suite("FizzySyncEngine — 401 handling", .serialized)
+@Suite("FizzySyncEngine — 401 handling", .serialized, .mockURLProtocolSerial)
 @MainActor
 struct FizzySyncEngine401Tests {
 

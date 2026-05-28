@@ -2,16 +2,7 @@ import Testing
 import Foundation
 @testable import FenixKanban
 
-// All FizzyClient sub-suites share `MockURLProtocol`'s static `handler` /
-// `requests` state. The per-suite `.serialized` only orders tests within a
-// suite — peers still ran in parallel on CI, racing `handler = nil` resets
-// against in-flight requests and producing `URLError(.badURL)` (-1000) or
-// stale-handler crosstalk. Wrapping all sub-suites in this parent with
-// `.serialized` forces sequential execution across them too. See PR #9.
-@Suite("FizzyClient (MockURLProtocol-shared)", .serialized)
-struct FizzyClientSerialContainer {
-
-@Suite("FizzyClient — auth + URL construction", .serialized)
+@Suite("FizzyClient — auth + URL construction", .serialized, .mockURLProtocolSerial)
 struct FizzyClientAuthTests {
 
     init() {
@@ -93,7 +84,7 @@ struct FizzyClientAuthTests {
     }
 }
 
-@Suite("FizzyClient — ETag", .serialized)
+@Suite("FizzyClient — ETag", .serialized, .mockURLProtocolSerial)
 struct FizzyClientETagTests {
 
     init() { MockURLProtocol.reset() }
@@ -156,7 +147,7 @@ struct FizzyClientETagTests {
     }
 }
 
-@Suite("FizzyClient — POST", .serialized)
+@Suite("FizzyClient — POST", .serialized, .mockURLProtocolSerial)
 struct FizzyClientPostTests {
 
     init() { MockURLProtocol.reset() }
@@ -262,7 +253,7 @@ struct FizzyClientPostTests {
 
 private final class FixtureLocatorPost {}
 
-@Suite("FizzyClient — PUT", .serialized)
+@Suite("FizzyClient — PUT", .serialized, .mockURLProtocolSerial)
 struct FizzyClientPutTests {
 
     init() { MockURLProtocol.reset() }
@@ -325,7 +316,7 @@ struct FizzyClientPutTests {
 
 private final class FixtureLocatorPut {}
 
-@Suite("FizzyClient — DELETE", .serialized)
+@Suite("FizzyClient — DELETE", .serialized, .mockURLProtocolSerial)
 struct FizzyClientDeleteTests {
 
     init() { MockURLProtocol.reset() }
@@ -368,7 +359,7 @@ struct FizzyClientDeleteTests {
     }
 }
 
-@Suite("FizzyClient — HTTP error mapping", .serialized)
+@Suite("FizzyClient — HTTP error mapping", .serialized, .mockURLProtocolSerial)
 struct FizzyClientErrorTests {
 
     init() { MockURLProtocol.reset() }
@@ -433,7 +424,7 @@ struct FizzyClientErrorTests {
     }
 }
 
-@Suite("FizzyClient — retry", .serialized)
+@Suite("FizzyClient — retry", .serialized, .mockURLProtocolSerial)
 struct FizzyClientRetryTests {
 
     init() { MockURLProtocol.reset() }
@@ -520,5 +511,3 @@ struct FizzyClientRetryTests {
         #expect(attempt == 3)
     }
 }
-
-} // FizzyClientSerialContainer

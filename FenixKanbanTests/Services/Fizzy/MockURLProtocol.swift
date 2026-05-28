@@ -1,4 +1,41 @@
 import Foundation
+import Testing
+
+// MARK: - MockURLProtocolSerial trait
+
+/// A `SuiteTrait` / `TestTrait` that serializes every test annotated with
+/// it against a single process-wide lock. Apply to ANY suite that reads or
+/// writes `MockURLProtocol.handler` / `requests` (directly or transitively
+/// via `FizzyClient` / `FizzySyncEngine` / `FizzySyncProvider`). Without
+/// this, CI's swift-testing parallelism races setup against in-flight
+/// requests and produces `URLError(.badURL)` or stale-handler crosstalk.
+///
+/// This is a bandaid for the static-state design of `MockURLProtocol`;
+/// see issue #10 for the proper instance-scoped refactor.
+struct MockURLProtocolSerial: SuiteTrait, TestTrait, TestScoping {
+
+    // NSLock is non-recursive, which is fine here: each test enters the
+    // scope exactly once (no nested mock-using tests).
+    nonisolated(unsafe) static let lock = NSLock()
+
+    var isRecursive: Bool { true }
+
+    func provideScope(
+        for test: Test,
+        testCase: Test.Case?,
+        performing: @Sendable () async throws -> Void
+    ) async throws {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        try await performing()
+    }
+}
+
+extension Trait where Self == MockURLProtocolSerial {
+    /// Serialize this suite/test against all other `MockURLProtocol`-using
+    /// suites via a process-wide lock. See `MockURLProtocolSerial`.
+    static var mockURLProtocolSerial: Self { MockURLProtocolSerial() }
+}
 
 // MARK: - ImmediateClock
 
