@@ -14,9 +14,14 @@ import Testing
 /// see issue #10 for the proper instance-scoped refactor.
 struct MockURLProtocolSerial: SuiteTrait, TestTrait, TestScoping {
 
-    // NSLock is non-recursive, which is fine here: each test enters the
-    // scope exactly once (no nested mock-using tests).
-    nonisolated(unsafe) static let lock = NSLock()
+    // DispatchSemaphore, not NSLock / NSRecursiveLock: those primitives are
+    // thread-affine, but `try await performing()` may resume on a different
+    // cooperative thread than the one that called `lock()`. The defer'd
+    // `unlock()` then runs on a non-owning thread and deadlocks every other
+    // waiter. DispatchSemaphore's count just decrements on wait() and
+    // increments on signal() — whichever thread calls them is fine. (Yes,
+    // wait() blocks a cooperative thread; acceptable in test infra.)
+    nonisolated(unsafe) static let semaphore = DispatchSemaphore(value: 1)
 
     var isRecursive: Bool { true }
 
@@ -25,8 +30,8 @@ struct MockURLProtocolSerial: SuiteTrait, TestTrait, TestScoping {
         testCase: Test.Case?,
         performing: @Sendable () async throws -> Void
     ) async throws {
-        Self.lock.lock()
-        defer { Self.lock.unlock() }
+        Self.semaphore.wait()
+        defer { Self.semaphore.signal() }
         try await performing()
     }
 }
