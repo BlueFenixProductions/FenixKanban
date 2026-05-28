@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import FenixKanban
 
-@Suite("FizzyClient — auth + URL construction", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — auth + URL construction", .serialized)
 struct FizzyClientAuthTests {
 
     init() {
@@ -84,7 +84,7 @@ struct FizzyClientAuthTests {
     }
 }
 
-@Suite("FizzyClient — ETag", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — ETag", .serialized)
 struct FizzyClientETagTests {
 
     init() { MockURLProtocol.reset() }
@@ -147,7 +147,7 @@ struct FizzyClientETagTests {
     }
 }
 
-@Suite("FizzyClient — POST", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — POST", .serialized)
 struct FizzyClientPostTests {
 
     init() { MockURLProtocol.reset() }
@@ -253,7 +253,7 @@ struct FizzyClientPostTests {
 
 private final class FixtureLocatorPost {}
 
-@Suite("FizzyClient — PUT", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — PUT", .serialized)
 struct FizzyClientPutTests {
 
     init() { MockURLProtocol.reset() }
@@ -316,7 +316,7 @@ struct FizzyClientPutTests {
 
 private final class FixtureLocatorPut {}
 
-@Suite("FizzyClient — DELETE", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — DELETE", .serialized)
 struct FizzyClientDeleteTests {
 
     init() { MockURLProtocol.reset() }
@@ -359,7 +359,7 @@ struct FizzyClientDeleteTests {
     }
 }
 
-@Suite("FizzyClient — HTTP error mapping", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — HTTP error mapping", .serialized)
 struct FizzyClientErrorTests {
 
     init() { MockURLProtocol.reset() }
@@ -424,7 +424,7 @@ struct FizzyClientErrorTests {
     }
 }
 
-@Suite("FizzyClient — retry", .serialized, .mockURLProtocolSerial)
+@Suite("FizzyClient — retry", .serialized)
 struct FizzyClientRetryTests {
 
     init() { MockURLProtocol.reset() }

@@ -3,7 +3,7 @@ import CoreData
 import Foundation
 @testable import FenixKanban
 
-@Suite("FizzySyncEngine — board isolation", .serialized, .mockURLProtocolSerial)
+@Suite("FizzySyncEngine — board isolation", .serialized)
 @MainActor
 struct FizzySyncEngineBoardIsolationTests {
 

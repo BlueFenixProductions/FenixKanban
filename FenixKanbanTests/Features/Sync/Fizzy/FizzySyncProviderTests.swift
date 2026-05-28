@@ -3,7 +3,7 @@ import CoreData
 import Foundation
 @testable import FenixKanban
 
-@Suite("FizzySyncProvider", .serialized, .mockURLProtocolSerial)
+@Suite("FizzySyncProvider", .serialized)
 @MainActor
 struct FizzySyncProviderTests {
 
