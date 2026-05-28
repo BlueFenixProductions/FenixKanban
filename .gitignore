@@ -35,3 +35,6 @@ Pods/
 
 # Local developer config (contains Team ID — copy from Config/Development.xcconfig.example)
 Config/Development.xcconfig
+
+# Local LM Studio tooling (PR summary harness output, etc.)
+.lmstudio/
