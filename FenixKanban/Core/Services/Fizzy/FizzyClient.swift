@@ -282,3 +282,76 @@ final class FizzyClient: Sendable {
         return baseURL.appending(path: combined)
     }
 }
+
+// MARK: - Card actions (low-level support)
+
+// These helpers live in this file (not FizzyClient+CardActions.swift) because
+// they need private members: `url(for:)`, `performWithRetry`, `accessToken`,
+// `baseURL`, `accountSlug`, and the shared encoder/decoder.
+extension FizzyClient {
+
+    /// POST that expects `204 No Content` and carries no body. Fizzy's card
+    /// action endpoints (closure, not_now, watch, goldness, pin) respond 204
+    /// rather than the `201 + Location` convention `post` implements.
+    func postNoContent(_ path: String) async throws {
+        try await postNoContent(path, bodyData: nil)
+    }
+
+    /// POST that expects `204 No Content` with a JSON body (triage, taggings,
+    /// assignments).
+    func postNoContent<Body: Encodable & Sendable>(_ path: String, body: Body) async throws {
+        try await postNoContent(path, bodyData: Self.encoder.encode(body))
+    }
+
+    private func postNoContent(_ path: String, bodyData: Data?) async throws {
+        var request = URLRequest(url: url(for: path))
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let bodyData {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = bodyData
+        }
+
+        let (data, http) = try await performWithRetry(request)
+
+        switch http.statusCode {
+        case 204:
+            return
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
+    /// GET an account-scoped `/my/…` path. `url(for:)` deliberately skips the
+    /// slug for `/my/` paths (`/my/identity` is unscoped), but a few endpoints
+    /// — `GET /:account_slug/my/pins` per docs/api/sections/pins.md — use the
+    /// `/my/` prefix *and* are account-scoped, so the slug is interpolated
+    /// here explicitly.
+    func getAccountScoped<T: Decodable & Sendable>(myPath path: String, as: T.Type) async throws -> T {
+        precondition(path.hasPrefix("/my/"), "use get(_:as:) for non-/my/ paths")
+        let normalizedSlug = accountSlug.hasPrefix("/") ? String(accountSlug.dropFirst()) : accountSlug
+        let scoped = "/\(normalizedSlug)\(path)"
+        guard let scopedURL = URL(string: scoped, relativeTo: baseURL)?.absoluteURL else {
+            throw FizzyError.unexpectedStatus(0)
+        }
+
+        var request = URLRequest(url: scopedURL)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, http) = try await performWithRetry(request)
+
+        switch http.statusCode {
+        case 200:
+            return try Self.decoder.decode(T.self, from: data)
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+}
