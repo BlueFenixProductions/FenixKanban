@@ -1422,3 +1422,34 @@ interleaves a successful second toggle, and asserts the failure neither
 flips membership nor redundantly re-saves (`card.modifiedAt`
 unchanged — the RED-phase failure point). 334 → **335 tests / 70 suites
 green**; iOS + macOS builds clean, 0 warnings.
+
+### 22. Issue #19 Task 4 — CardStepsViewModel (online-only steps CRUD) ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error:
+new `CardStepsViewModel` type — accepted repo bend).
+
+**Change:** New `FenixKanban/Features/Card/CardStepsViewModel.swift` —
+online-only steps (checklist) state for fizzy-paired cards per the
+Captain's ruling on #19: steps are NOT persisted in CoreData. `load()`
+fetches via the single-card endpoint (`client.card(number:).steps`),
+and every mutation goes straight to the API with optimistic UI +
+revert-on-failure: `addStep` (trims, skips whitespace-only without a
+network call), `toggleStep` (optimistic flip, PUT, revert on error),
+`deleteStep` (optimistic remove, DELETE, restore at original index on
+error), plus `deleteSteps(at:)` for SwiftUI `onDelete`. Exposes
+`progressText` ("Steps (done/total)") and `errorMessage`.
+
+**Tests (`CardStepsViewModelTests`, "CardSteps ViewModel" suite,
+`.serialized`, MockURLProtocol + ImmediateClock):**
+- `loadExposesSteps` — consumes `card_detail_doc.json` fixture
+  **verbatim**; asserts both steps surface + `progressText == "Steps (0/2)"`.
+- `addStepAppends` — 201 + Location follow to `step_doc.json`.
+- `addStepIgnoresEmpty` — whitespace-only content, zero requests.
+- `toggleStepPuts` — optimistic flip + PUT path assertion.
+- `toggleStepReverts` — 422 (never 5xx: client retries 3×) reverts
+  `completed` and sets `errorMessage`.
+- `deleteStepReverts` — two-phase: 422 restores at index 0 with error;
+  then 204 removes for good.
+
+**Verification:** 335 → **341 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.

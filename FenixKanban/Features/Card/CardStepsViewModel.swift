@@ -1,0 +1,81 @@
+import Foundation
+
+/// Online-only steps (checklist) state for a fizzy-paired card.
+///
+/// Captain's ruling on #19: steps are NOT persisted locally — they're fetched
+/// from the single-card endpoint when the detail view opens, and every
+/// mutation goes straight to the API with optimistic UI + revert-on-failure.
+/// The next pull is never involved (board pulls don't carry steps).
+@MainActor
+final class CardStepsViewModel: ObservableObject {
+    @Published private(set) var steps: [FizzyStep] = []
+    @Published private(set) var isLoading = false
+    @Published var errorMessage: String?
+
+    private let cardNumber: Int
+    private let client: FizzyClient
+
+    init(cardNumber: Int, client: FizzyClient) {
+        self.cardNumber = cardNumber
+        self.client = client
+    }
+
+    var progressText: String {
+        "Steps (\(steps.filter(\.completed).count)/\(steps.count))"
+    }
+
+    func load() async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            steps = try await client.card(number: cardNumber).steps ?? []
+        } catch {
+            errorMessage = "Couldn't load steps."
+        }
+    }
+
+    func addStep(content: String) async {
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            let created = try await client.createStep(cardNumber: cardNumber, content: trimmed)
+            steps.append(created)
+        } catch {
+            errorMessage = "Couldn't add the step."
+        }
+    }
+
+    func toggleStep(_ step: FizzyStep) async {
+        guard let index = steps.firstIndex(where: { $0.id == step.id }) else { return }
+        let flipped = FizzyStep(id: step.id, content: step.content, completed: !step.completed)
+        steps[index] = flipped  // optimistic
+        do {
+            let updated = try await client.updateStep(cardNumber: cardNumber, id: step.id, completed: flipped.completed)
+            if let i = steps.firstIndex(where: { $0.id == step.id }) {
+                steps[i] = updated
+            }
+        } catch {
+            if let i = steps.firstIndex(where: { $0.id == step.id }) {
+                steps[i] = step  // revert
+            }
+            errorMessage = "Couldn't update the step."
+        }
+    }
+
+    func deleteStep(_ step: FizzyStep) async {
+        guard let index = steps.firstIndex(where: { $0.id == step.id }) else { return }
+        steps.remove(at: index)  // optimistic
+        do {
+            try await client.deleteStep(cardNumber: cardNumber, id: step.id)
+        } catch {
+            steps.insert(step, at: min(index, steps.count))  // revert
+            errorMessage = "Couldn't delete the step."
+        }
+    }
+
+    func deleteSteps(at offsets: IndexSet) async {
+        for step in offsets.compactMap({ steps.indices.contains($0) ? steps[$0] : nil }) {
+            await deleteStep(step)
+        }
+    }
+}
