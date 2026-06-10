@@ -325,6 +325,63 @@ extension FizzyClient {
         }
     }
 
+    /// POST with no request body that expects `201 Created` (or `200 OK`)
+    /// with the resource in the response body — Fizzy's board publication
+    /// endpoint (docs/api/sections/boards.md) deviates from the usual
+    /// `201 + Location` convention and returns the board directly.
+    func postExpectingBody<T: Decodable & Sendable>(_ path: String, as: T.Type) async throws -> T {
+        var request = URLRequest(url: url(for: path))
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, http) = try await performWithRetry(request)
+
+        switch http.statusCode {
+        case 200, 201:
+            return try Self.decoder.decode(T.self, from: data)
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
+    /// GET a paginated *envelope* endpoint — an object that carries the
+    /// page's items inside it (e.g. board accesses:
+    /// `{ board_id, all_access, users: [...] }`) rather than a bare array.
+    /// Follows `Link: rel="next"` like `getAllPages`, merging successive
+    /// pages into one value via `combine`.
+    func getAllEnvelopePages<T: Decodable & Sendable>(
+        _ path: String,
+        as: T.Type,
+        combine: (T, T) -> T
+    ) async throws -> T {
+        var merged: T?
+        var nextURL: URL? = url(for: path)
+
+        while let pageURL = nextURL {
+            var request = URLRequest(url: pageURL)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            let (data, http) = try await performWithRetry(request)
+            switch http.statusCode {
+            case 200:
+                let page = try Self.decoder.decode(T.self, from: data)
+                merged = merged.map { combine($0, page) } ?? page
+                nextURL = nextPageURL(from: http.value(forHTTPHeaderField: "Link"))
+            case 429:
+                throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+            default:
+                throw FizzyError(httpStatus: http.statusCode, body: data)
+            }
+        }
+        guard let merged else { throw FizzyError.unexpectedStatus(0) }
+        return merged
+    }
+
     /// GET an account-scoped `/my/…` path. `url(for:)` deliberately skips the
     /// slug for `/my/` paths (`/my/identity` is unscoped), but a few endpoints
     /// — `GET /:account_slug/my/pins` per docs/api/sections/pins.md — use the

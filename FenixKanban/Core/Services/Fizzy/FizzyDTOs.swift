@@ -75,9 +75,31 @@ struct FizzyColumn: Codable, Equatable {
     }
 }
 
+/// Column color. The wire shape differs between docs/endpoints: cards.md
+/// nests `{ "name": "Lime", "value": "var(--color-card-4)" }`, while
+/// columns.md sends the bare CSS-variable string `"var(--color-card-4)"`.
+/// Decoding accepts both (bare strings get `name == ""`); encoding always
+/// writes the object form.
 struct FizzyColor: Codable, Equatable {
     let name: String
     let value: String
+
+    init(name: String, value: String) {
+        self.name = name
+        self.value = value
+    }
+
+    init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(),
+           let raw = try? single.decode(String.self) {
+            self.name = ""
+            self.value = raw
+        } else {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.name = try container.decode(String.self, forKey: .name)
+            self.value = try container.decode(String.self, forKey: .value)
+        }
+    }
 }
 
 // MARK: - Card
