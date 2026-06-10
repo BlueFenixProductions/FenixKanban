@@ -2025,3 +2025,17 @@ assertions unchanged).
 **Verification:** 374 → **379 tests / 77 suites green** (+1 suite from
 the new board push sub-suite) on pinned iPhone 17 sim (UDID
 `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fixes (M1/L1/L3, 2026-06-10):** M1 — new
+`boardTogglePushFailureReverts` test (422 handler, yield-await until
+the silent revert lands) locks the previously untested catch path in
+`BoardViewModel.pushGolden` (state-recheck + silent revert). L1 —
+`fizzyNumber` is now captured as `let number` BEFORE the
+fire-and-forget Task (alongside `isGolden`), and the revert guards
+`!card.isDeleted, card.managedObjectContext != nil` before touching
+the card — a deleted-and-saved NSManagedObject could otherwise throw
+"could not fulfill a fault" after arbitrary network delay. L3 —
+`boardTogglePushesGoldness` now also asserts `card.isGolden == true`
+after the push, locking that a successful push triggers no spurious
+revert. 379 → **380 tests / 77 suites green** on the pinned sim;
+macOS build clean, 0 warnings.

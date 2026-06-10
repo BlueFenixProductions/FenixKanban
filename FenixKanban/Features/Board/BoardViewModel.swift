@@ -126,16 +126,19 @@ final class BoardViewModel: ObservableObject {
     private func pushGolden(for card: Card) {
         guard card.fizzyNumber > 0, let client = fizzyClient else { return }
         let isGolden = card.isGolden
+        let number = Int(card.fizzyNumber)
         Task { @MainActor in
             do {
                 if isGolden {
-                    try await client.markCardGolden(number: Int(card.fizzyNumber))
+                    try await client.markCardGolden(number: number)
                 } else {
-                    try await client.unmarkCardGolden(number: Int(card.fizzyNumber))
+                    try await client.unmarkCardGolden(number: number)
                 }
             } catch {
-                // State-recheck: only revert if nothing changed it since.
-                if card.isGolden == isGolden {
+                // State-recheck: only revert if the card still exists and
+                // nothing changed it since.
+                if !card.isDeleted, card.managedObjectContext != nil,
+                   card.isGolden == isGolden {
                     card.isGolden = !isGolden
                     card.modifiedAt = Date()
                     try? self.context.save()

@@ -109,6 +109,21 @@ struct BoardViewModelGoldenPushTests {
         let req = MockURLProtocol.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/9/goldness") == true)
+        #expect(card.isGolden == true)  // successful push must not revert
+        MockURLProtocol.reset()
+    }
+
+    @Test("board golden push failure silently reverts the card")
+    func boardTogglePushFailureReverts() async throws {
+        MockURLProtocol.handler = { request in
+            (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+        }
+        viewModel.toggleGolden(for: card)
+        #expect(card.isGolden == true)
+        // Fire-and-forget push fails — wait for the silent revert to land.
+        var spins = 0
+        while card.isGolden && spins < 1000 { await Task.yield(); spins += 1 }
+        #expect(card.isGolden == false)
         MockURLProtocol.reset()
     }
 
