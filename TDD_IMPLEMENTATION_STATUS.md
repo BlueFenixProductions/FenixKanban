@@ -1409,3 +1409,16 @@ when unauthenticated → local-only behavior). Also deleted dead
 
 **Verification:** 331 → **334 tests / 70 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+**Review follow-up (2026-06-10):** Reentrancy fix — the catch-revert used
+the pre-await `wasSelected` snapshot unconditionally, so a failed push
+re-saved over state set by a toggle issued while it was in flight. Now
+state-rechecked: revert (and save) only if membership still matches what
+this call set; otherwise last writer wins locally and the next pull
+reconciles the server. Test `failedPushRespectsNewerState` gates the
+first 422 behind an `AsyncStream` signal via a new minimal
+`MockURLProtocol.delayedHandler` (async, checked before `handler`),
+interleaves a successful second toggle, and asserts the failure neither
+flips membership nor redundantly re-saves (`card.modifiedAt`
+unchanged — the RED-phase failure point). 334 → **335 tests / 70 suites
+green**; iOS + macOS builds clean, 0 warnings.

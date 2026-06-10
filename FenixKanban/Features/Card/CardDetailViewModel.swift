@@ -67,7 +67,8 @@ final class CardDetailViewModel: ObservableObject {
     /// card is paired (`fizzyNumber > 0`) and a client is available.
     /// Online-only by Captain's ruling on #19: a failed push reverts the
     /// local toggle and surfaces an error — the next sync pull is the
-    /// reconciler of last resort.
+    /// reconciler of last resort. Concurrent toggles of the same label are
+    /// last-writer-wins locally; the next pull reconciles the server.
     func toggleLabel(_ label: Label) async {
         let wasSelected = selectedLabels.contains(label)
         if wasSelected { selectedLabels.remove(label) } else { selectedLabels.insert(label) }
@@ -77,8 +78,13 @@ final class CardDetailViewModel: ObservableObject {
         do {
             try await client.toggleCardTag(number: Int(card.fizzyNumber), tagTitle: tagTitle)
         } catch {
-            if wasSelected { selectedLabels.insert(label) } else { selectedLabels.remove(label) }
-            save()
+            // Revert only if no later toggle changed this label's state while
+            // the push was in flight — otherwise leave the newer state alone
+            // (last writer wins locally; the next pull reconciles the server).
+            if selectedLabels.contains(label) != wasSelected {
+                if wasSelected { selectedLabels.insert(label) } else { selectedLabels.remove(label) }
+                save()
+            }
             errorMessage = "Couldn't update tag “\(tagTitle)” on Fizzy."
         }
     }

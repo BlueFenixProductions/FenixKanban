@@ -45,11 +45,17 @@ final class MockURLProtocol: URLProtocol {
     /// Test sets this before issuing requests; cleared in tearDown.
     static var handler: ((URLRequest) throws -> (Data, HTTPURLResponse))?
 
+    /// Async variant checked before `handler` — lets a test gate a response
+    /// on a signal it controls (e.g. hold one request in flight while a
+    /// second completes). Cleared by `reset()`.
+    static var delayedHandler: ((URLRequest) async throws -> (Data, HTTPURLResponse))?
+
     /// Record of every request the SUT issued during the test, in order.
     static var requests: [URLRequest] = []
 
     static func reset() {
         handler = nil
+        delayedHandler = nil
         requests = []
     }
 
@@ -58,6 +64,19 @@ final class MockURLProtocol: URLProtocol {
 
     override func startLoading() {
         Self.requests.append(request)
+        if let delayedHandler = Self.delayedHandler {
+            Task {
+                do {
+                    let (data, response) = try await delayedHandler(self.request)
+                    self.client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+                    self.client?.urlProtocol(self, didLoad: data)
+                    self.client?.urlProtocolDidFinishLoading(self)
+                } catch {
+                    self.client?.urlProtocol(self, didFailWithError: error)
+                }
+            }
+            return
+        }
         guard let handler = Self.handler else {
             client?.urlProtocol(self, didFailWithError: URLError(.badURL))
             return

@@ -162,6 +162,44 @@ struct CardDetailViewModelTagPushTests {
         MockURLProtocol.reset()
     }
 
+    @Test("failed push does not clobber a newer toggle of the same label")
+    func failedPushRespectsNewerState() async throws {
+        // First POST is held open by a gate, then fails (422); every later
+        // POST succeeds (204). A second toggle of the same label runs to
+        // completion while the first is in flight — the first's failure
+        // must leave the newer state alone (no revert, no redundant save).
+        let (gate, releaseFirstPush) = AsyncStream.makeStream(of: Void.self)
+        let calls = TagPushCallCounter()
+        MockURLProtocol.delayedHandler = { request in
+            if calls.next() == 1 {
+                var blocked = gate.makeAsyncIterator()
+                _ = await blocked.next()
+                return (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+            }
+            return (Data(), .response(for: request, status: 204))
+        }
+
+        // First toggle: ON — optimistic insert, then suspends on the gated POST.
+        async let firstToggle: Void = viewModel.toggleLabel(label)
+        while calls.count == 0 { await Task.yield() }
+
+        // Second toggle: OFF — completes (204) while the first is in flight.
+        await viewModel.toggleLabel(label)
+        #expect(viewModel.selectedLabels.isEmpty)
+        let stampAfterSecondToggle = card.modifiedAt
+
+        // Fail the first push. Its catch must see the newer (OFF) state and
+        // not clobber it back to pre-first-toggle state via a revert+save.
+        releaseFirstPush.yield()
+        await firstToggle
+
+        #expect(viewModel.selectedLabels.isEmpty)
+        #expect((card.labels as? Set<Label>)?.isEmpty == true)
+        #expect(card.modifiedAt == stampAfterSecondToggle)
+        #expect(viewModel.errorMessage != nil)
+        MockURLProtocol.reset()
+    }
+
     @Test("unpaired card toggles locally without any network call")
     func unpairedCardStaysLocal() async throws {
         card.fizzyNumber = 0
@@ -176,5 +214,25 @@ struct CardDetailViewModelTagPushTests {
         #expect(viewModel.selectedLabels == [label])
         #expect(MockURLProtocol.requests.isEmpty)
         MockURLProtocol.reset()
+    }
+}
+
+/// Thread-safe call counter for `MockURLProtocol.delayedHandler`, which is
+/// invoked off the main actor (URL loading threads).
+private final class TagPushCallCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+
+    func next() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        value += 1
+        return value
+    }
+
+    var count: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
     }
 }
