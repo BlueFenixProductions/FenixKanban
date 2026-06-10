@@ -2039,3 +2039,41 @@ the card — a deleted-and-saved NSManagedObject could otherwise throw
 after the push, locking that a successful push triggers no spurious
 revert. 379 → **380 tests / 77 suites green** on the pinned sim;
 macOS build clean, 0 warnings.
+
+---
+
+### 36. Issue #19 Wave 3 Task 5 — watch/pin toggles in card detail + card-face indicators ✅
+
+**Date:** 2026-06-10 · Gating tests pass immediately (no RED phase —
+`isFizzyPaired` shipped in Task 3; the tests lock the exposure gate
+rather than drive new logic).
+
+**CardDetailView:**
+- Watch + Pin `Toggle` rows after the Assignees row (same Section,
+  sibling rows), gated on `viewModel.isFizzyPaired` — watch is local
+  write-only state (server never reports it); pin reconciles from
+  GET /my/pins on sync. Each toggle uses a get/set `Binding` whose
+  setter fires `Task { await viewModel.toggleWatched()/togglePinned() }`,
+  so the displayed state always tracks the view model (failed pushes
+  revert and the binding snaps back). Labels spelled `SwiftUI.Label`
+  (CoreData `Label` entity collision); accessibility hints on both.
+  Toggle failures surface through the existing "Sync Error" alert
+  (`errorMessage`).
+
+**CardView:**
+- `pin.fill` / `eye.fill` indicators inline in the title HStack after
+  the `Spacer()` (NOT a top-trailing overlay — that corner collides
+  with two-line titles, and the golden ticket already owns
+  top-leading). `imageScale(.small)`, `.secondary` tint (content tint,
+  not chrome — Liquid Glass safe), accessibility labels "Pinned" /
+  "Watching". Reads the codegen'd v8 `card.isPinned`/`card.isWatched`
+  directly.
+
+**Tests (gating, pass-on-arrival by design):**
+- `CardDetailViewModelWatchPinPushTests.pairedCardIsFizzyPaired` —
+  paired card + client → `isFizzyPaired == true`.
+- `CardDetailViewModelTests.unpairedCardIsNotFizzyPaired` — unpaired,
+  no-client VM → `isFizzyPaired == false`.
+
+**Verification:** 380 → **382 tests / 77 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.

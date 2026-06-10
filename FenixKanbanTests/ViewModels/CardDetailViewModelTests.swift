@@ -125,6 +125,11 @@ struct CardDetailViewModelTests {
         #expect(MockURLProtocol.requests.isEmpty)
     }
 
+    @Test("unpaired card is not fizzy-paired")
+    func unpairedCardIsNotFizzyPaired() async throws {
+        #expect(viewModel.isFizzyPaired == false)
+    }
+
     @Test("toggleGolden flips isGolden and updates modifiedAt")
     func toggleGoldenFlips() async throws {
         #expect(card.isGolden == false)
@@ -417,6 +422,11 @@ struct CardDetailViewModelWatchPinPushTests {
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+    }
+
+    @Test("paired card with client is fizzy-paired")
+    func pairedCardIsFizzyPaired() async throws {
+        #expect(viewModel.isFizzyPaired == true)
     }
 
     @Test("toggleWatched POSTs /cards/7/watch and sets the flag")

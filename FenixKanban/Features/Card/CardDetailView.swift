@@ -104,6 +104,27 @@ struct CardDetailView: View {
                         }
                     }
 
+                    // Watch / Pin (fizzy-paired cards only — issue #19 wave 3).
+                    // Watch is local write-only state (server never reports it);
+                    // pin reconciles from GET /my/pins on sync.
+                    if viewModel.isFizzyPaired {
+                        Toggle(isOn: Binding(
+                            get: { viewModel.isWatched },
+                            set: { _ in Task { await viewModel.toggleWatched() } }
+                        )) {
+                            SwiftUI.Label("Watch", systemImage: "eye")
+                        }
+                        .accessibilityHint("Subscribes to activity on this card on Fizzy.")
+
+                        Toggle(isOn: Binding(
+                            get: { viewModel.isPinned },
+                            set: { _ in Task { await viewModel.togglePinned() } }
+                        )) {
+                            SwiftUI.Label("Pin", systemImage: "pin")
+                        }
+                        .accessibilityHint("Pins this card to your Fizzy pins.")
+                    }
+
                     // Due date
                     HStack {
                         Text("Due Date")

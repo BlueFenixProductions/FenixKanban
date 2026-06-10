@@ -47,6 +47,22 @@ struct CardView: View {
                     .foregroundStyle(card.isCompleted ? .secondary : .primary)
 
                 Spacer()
+
+                // Watch/pin indicators ride inline with the title (NOT a
+                // top-trailing overlay — that corner collides with two-line
+                // titles, and the golden ticket already owns top-leading).
+                if card.isPinned {
+                    Image(systemName: "pin.fill")
+                        .imageScale(.small)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Pinned")
+                }
+                if card.isWatched {
+                    Image(systemName: "eye.fill")
+                        .imageScale(.small)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Watching")
+                }
             }
 
             if !sortedLabels.isEmpty {
