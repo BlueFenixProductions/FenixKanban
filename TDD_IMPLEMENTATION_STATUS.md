@@ -1845,3 +1845,41 @@ checkmarks back instead of leaving stale local `@State`. Still **361 tests
 (+13 tests, +2 suites), all green on pinned iPhone 17 sim (UDID
 `1CCA4B1C…`); macOS build clean, 0 warnings. Every task went through
 spec + quality review; all mandated fixes landed and were re-approved.
+
+---
+
+### 32. Issue #19 Wave 3 Task 1 — CoreData v8: isWatched + isPinned flags on Card ✅
+
+**Date:** 2026-06-10 · TDD: RED (3 failing V8 tests — "FenixKanban 8"
+model version didn't exist) → GREEN (model created, `.xccurrentversion`
+bumped). Test + impl in one commit since RED was a missing model
+version, not code.
+
+**Model (v8):** copy of v7 with two additive non-optional Booleans on
+`Card` — `isPinned` and `isWatched` (`defaultValueString="NO"`,
+`usesScalarValueType="YES"`, inserted alphabetically after `isGolden`).
+Additive-only, so v7→v8 is a pure lightweight migration;
+`usedWithCloudKit="YES"` untouched. No on-disk survival test — same
+rationale as v7 (nothing renames, nothing moves).
+
+**Refactor (wave-2 holistic-review follow-up):** the private
+`model(named:)` helper duplicated verbatim between
+`CoreDataMigrationV6Tests` and `CoreDataMigrationV7Tests` is now the
+internal free function `migrationTestModel(named:)` in
+`FenixKanbanTests/Persistence/MigrationModelLoading.swift` (same body:
+loads versioned `.mom`s from the compiled `.momd` via
+`Bundle(for: PluginRegistry.self)`, `nil` → current model, strips
+`managedObjectClassName` to avoid dual-registration warnings). Both
+suites switched over, zero behavior change — V6/V7 assertions untouched
+and green throughout.
+
+**Tests:** new suite `CoreDataMigrationV8Tests` (3 tests):
+- `v8ModelShape` — Card gains both Booleans (non-optional, default
+  `false`); `assigneesData` still present.
+- `v7ToV8Inferable` — `NSMappingModel.inferredMappingModel` succeeds.
+- `currentModelHasWatchPinFlags` — current compiled model carries both
+  flags (mirrors the wave-2 M1 review fix: catches a pbxproj
+  `currentVersion` regression).
+
+**Verification:** 361 → **364 tests / 74 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.

@@ -13,19 +13,9 @@ import Foundation
 @Suite("CoreData v5→v6 migration", .serialized)
 struct CoreDataMigrationV6Tests {
 
-    private func model(named name: String?) throws -> NSManagedObjectModel {
-        let bundle = Bundle(for: PluginRegistry.self)
-        let momd = try #require(bundle.url(forResource: "FenixKanban", withExtension: "momd"))
-        let url = name.map { momd.appendingPathComponent("\($0).mom") } ?? momd
-        let model = try #require(NSManagedObjectModel(contentsOf: url))
-        let stripped = model.copy() as! NSManagedObjectModel
-        for entity in stripped.entities { entity.managedObjectClassName = "NSManagedObject" }
-        return stripped
-    }
-
     @Test("current model exposes Card.labels as a to-many relationship")
     func currentModelHasToManyLabels() throws {
-        let current = try model(named: nil)
+        let current = try migrationTestModel(named: nil)
         let card = try #require(current.entitiesByName["Card"])
         let labels = try #require(card.relationshipsByName["labels"],
                                   "Card has no 'labels' relationship — model still at v5")
@@ -46,7 +36,7 @@ struct CoreDataMigrationV6Tests {
         }
 
         // 1. Seed an on-disk store using the OLD v5 model, pure KVC.
-        let v5 = try model(named: "FenixKanban 5")
+        let v5 = try migrationTestModel(named: "FenixKanban 5")
         let oldContainer = NSPersistentContainer(name: "MigV5", managedObjectModel: v5)
         let oldDesc = NSPersistentStoreDescription(url: storeURL)
         oldDesc.shouldAddStoreAsynchronously = false
@@ -70,7 +60,7 @@ struct CoreDataMigrationV6Tests {
         }
 
         // 2. Re-open with the CURRENT model; lightweight migration must run.
-        let current = try model(named: nil)
+        let current = try migrationTestModel(named: nil)
         let newContainer = NSPersistentContainer(name: "MigV6", managedObjectModel: current)
         let newDesc = NSPersistentStoreDescription(url: storeURL)
         newDesc.shouldAddStoreAsynchronously = false

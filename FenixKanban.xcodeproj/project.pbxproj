@@ -83,6 +83,7 @@
 		7B489206B8BFF570139BFC5E /* BoardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F6E147784B7158A6DF4A4D /* BoardEntity.swift */; };
 		7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */; };
 		7E2A5B97A7C05FC5C74DAA07 /* LabelManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */; };
+		7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
 		83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */; };
 		857344412226E98D29897FCA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
@@ -105,6 +106,7 @@
 		A94FB2127558BBF22138921D /* CoreDataMigrationV6Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */; };
 		AC1E3E87B7CD67F0035D7505 /* FizzyClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF14922C6549BC2260540129 /* FizzyClient.swift */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
+		AD4DAC969973666BD0A6DADC /* CoreDataMigrationV8Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A81AFE70D5624FFC49D0D56 /* CoreDataMigrationV8Tests.swift */; };
 		AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */; };
 		AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22CB144486430B2801DB56B /* FizzyDTOTests.swift */; };
 		B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */; };
@@ -266,6 +268,7 @@
 		98505E6C18C3691F83519972 /* FizzyAuthPairView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthPairView.swift; sourceTree = "<group>"; };
 		99D93FD1E573B49C12DC2C27 /* Development.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
 		9A78B1699150F1C5A72D387C /* LabelRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepository.swift; sourceTree = "<group>"; };
+		9A81AFE70D5624FFC49D0D56 /* CoreDataMigrationV8Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV8Tests.swift; sourceTree = "<group>"; };
 		9C48C9144B3593287090B842 /* FizzyClientCommentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientCommentsTests.swift; sourceTree = "<group>"; };
 		9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		9D4887005A9D6F6667E16776 /* FenixKanban 7.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 7.xcdatamodel"; sourceTree = "<group>"; };
@@ -282,7 +285,9 @@
 		B4F592F755DD0739220B0604 /* CardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardQuery.swift; sourceTree = "<group>"; };
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
+		B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationModelLoading.swift; sourceTree = "<group>"; };
 		B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		B7B208793EC15D6679B2543D /* FenixKanban 8.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 8.xcdatamodel"; sourceTree = "<group>"; };
 		BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV6Tests.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
 		C5675C125FA0A0508D8E6A50 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -430,6 +435,8 @@
 			children = (
 				BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */,
 				65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */,
+				9A81AFE70D5624FFC49D0D56 /* CoreDataMigrationV8Tests.swift */,
+				B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -1067,6 +1074,7 @@
 				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
 				A94FB2127558BBF22138921D /* CoreDataMigrationV6Tests.swift in Sources */,
 				9493F64109A56D42E9AC52E8 /* CoreDataMigrationV7Tests.swift in Sources */,
+				AD4DAC969973666BD0A6DADC /* CoreDataMigrationV8Tests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,
 				1CB04CF828EEDBD05FD6D100 /* FirstSyncModeTests.swift in Sources */,
@@ -1087,6 +1095,7 @@
 				D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */,
 				BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
+				7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */,
 				DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */,
 				43CF64EA2977EEE9323333DB /* NavigationModelTests.swift in Sources */,
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
@@ -1374,9 +1383,10 @@
 				80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */,
 				47370391180279CF8506A463 /* FenixKanban 6.xcdatamodel */,
 				9D4887005A9D6F6667E16776 /* FenixKanban 7.xcdatamodel */,
+				B7B208793EC15D6679B2543D /* FenixKanban 8.xcdatamodel */,
 				86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */,
 			);
-			currentVersion = 9D4887005A9D6F6667E16776 /* FenixKanban 7.xcdatamodel */;
+			currentVersion = B7B208793EC15D6679B2543D /* FenixKanban 8.xcdatamodel */;
 			path = FenixKanban.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
