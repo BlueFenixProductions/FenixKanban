@@ -1186,3 +1186,69 @@ pass unchanged — the engine was right, the synthetic mock was wrong.
 **Residual hypotheses** (not reproduced, filed as GH issues): CloudKit
 fizzy-attribute clobber; save-failure → re-POST; orphan-claim ±60s
 window weakness.
+
+### 15. Fizzy Pagination + Same-Origin Link Guard ✅
+
+**Date:** 2026-06-09 · **Commits:** `085e7d1` (RED), `36ad68f` (GREEN), `3854aa3` (security)
+
+All fizzy list endpoints paginate via `Link: <url>; rel="next"` headers
+with dynamic page size. `FizzyClient.getAllPages(_:as:)` follows the
+chain, accumulating decoded pages; `FizzySyncEngine` column/card pulls
+switched to it.
+
+**Security:** the `Link` header is server-controlled input. A
+cross-origin `rel="next"` URL would have exfiltrated the Bearer token.
+`nextPageURL(from:)` now enforces same scheme + host (case-insensitive)
++ port against `baseURL`; the verbatim doc fixture (host
+`app.fizzy.localhost`) doubles as the rejection test — flagged by
+automated security review, fixed TDD-first.
+
+**Tests:** +6 (`FizzyClientPaginationTests` ×5 incl. cross-origin
+rejection, engine `cardPullFollowsPagination`). 230 total green.
+
+### 16. Fizzy API Parity — Batches B1–B4 (Client Surface Complete) ✅
+
+**Date:** 2026-06-09/10 · Mission: near-complete FKUI↔fizzy API parity.
+Implemented by background agents (B1–B4) under strict TDD, each batch
+independently verified (full sim test run) then committed RED→GREEN.
+
+| Batch | Scope | Endpoints | Tests | Commits |
+|---|---|---|---|---|
+| B1 | Card actions: detail/delete, closure, not_now, triage, board move, watch, goldness, pins (+ account-scoped `/my/pins`), taggings, assignments, image delete | 15 | 249/249 | `55db283` + `278dc05` |
+| B2 | Boards CRUD, accesses (envelope pagination), publication, columns CRUD + column cards | 13 | 264/264 | `10ca6db` + `64f00e1` |
+| B3 | Comments CRUD, card reactions (boosts), comment reactions, steps CRUD | 15 | 282/282 | `b65323f` + `20d9f0f` |
+| B4 | Tags, users (read-only), identity, timezone PATCH, notifications (read/unread/bulk/settings), activities (filtered, polymorphic eventable) | 12 | 300/300 | `2595ed8` + `7b338ae` |
+
+**New client files:** `FizzyClient+CardActions/Boards/Comments/Directory.swift`
++ matching `FizzyDTOs+*.swift`. **New transport helpers** (driven by real
+wire deviations, each doc-cited): `postNoContent` (204 actions),
+`postExpectingBody` (publication 201+body), `postCreated` (reactions bare
+201), `putNoContent` (settings PUT 204), `patchNoContent` (timezone
+PATCH 204 on the *second* account-scoped `/my/` path),
+`getAccountScoped` (my/pins), `getAllEnvelopePages` (accesses object
+envelope).
+
+**Wire-shape findings:** request bodies are wrapped for
+comments/steps/reactions/settings (`{"comment":{…}}`) but flat for card
+actions/timezone; columns.md sends `color` as a bare CSS-variable string
+while cards.md uses `{name,value}` — `FizzyColor` now decodes both;
+activity `board` omits `creator` (separate `FizzyActivityBoard` DTO);
+polymorphic `eventable` keyed on `eventable_type`, unknown → nil.
+
+**Fixtures:** 18 byte-for-byte doc fixtures, each consumed verbatim in a
+cited test (project rule from the slug-`/` bug).
+
+**Deliberately skipped** (destructive/admin, little client value —
+documented judgment call): user deactivation/deletion, avatar
+upload/delete, email-change flow, role management, join-code rotation,
+danger-zone ops, multipart uploads. Exports + webhooks docs not in
+scope this mission.
+
+**Verification:** 300 tests / 63 suites green on iOS sim, macOS build
+clean, 0 warnings in all touched files (2 pre-existing elsewhere).
+Sim-flake note: two "iPhone 17" simulators exist; name-based
+destinations can pick the shutdown one ("Busy / preflight checks") —
+boot UDID `1CCA4B1C…` and wait for `bootstatus` first.
+
+**Not yet wired:** these are client-surface methods; engine/UI adoption
+tracked in GH issues #11–#19 (incl. needs-captain UI questions).
