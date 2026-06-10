@@ -188,6 +188,7 @@
 		55C24E1E16D4DABFE2B4EDD2 /* FontCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontCrossPlatformTests.swift; sourceTree = "<group>"; };
 		58682DDB41C2C955C5ABD519 /* CardRepositoryGoldenSortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryGoldenSortTests.swift; sourceTree = "<group>"; };
 		5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Board+CoreDataClass.swift"; sourceTree = "<group>"; };
+		5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 4.xcdatamodel"; sourceTree = "<group>"; };
 		5F8BA67918984E11FD14D58F /* SyncMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMonitorTests.swift; sourceTree = "<group>"; };
 		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
@@ -1262,9 +1263,10 @@
 			children = (
 				1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */,
 				0BFC2630360516F47B333AA9 /* FenixKanban 3.xcdatamodel */,
+				5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */,
 				86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */,
 			);
-			currentVersion = 0BFC2630360516F47B333AA9 /* FenixKanban 3.xcdatamodel */;
+			currentVersion = 5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */;
 			path = FenixKanban.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

@@ -1246,3 +1246,219 @@ struct FizzySyncEngine401Tests {
         #expect(authState.accessToken == nil)
     }
 }
+
+@Suite("FizzySyncEngine — card-number addressing + reentrancy", .serialized)
+@MainActor
+struct FizzySyncEngineNumberReentrancyTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.numre.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.numre.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t", accountSlug: "ACCT",
+                urlSession: session, clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client, authState: authState, mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+    }
+
+    private static func cardJSON(id: String, number: Int, title: String, iso: String) -> String {
+        """
+        {"id":"\(id)","number":\(number),"title":"\(title)","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(iso)","created_at":"2026-01-01T00:00:00Z","url":"https://x/\(number)"}
+        """
+    }
+
+    @Test("LWW push PUTs to /cards/<number> (backfilled from list), never the ULID id")
+    func putUsesCardNumber() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let baseline = Date(timeIntervalSince1970: 1_000_000)
+        let card = h.cardRepo.createCard(in: h.column, title: "Local edit")
+        card.fizzyID = "03f5vaeq985jlvwv3arl4srq2"   // ULID, not a number
+        card.fizzyUpdatedAt = baseline
+        card.modifiedAt = Date(timeIntervalSince1970: 1_001_500)
+        try h.persistence.viewContext.save()
+
+        var putPaths: [String] = []
+        let iso = ISO8601DateFormatter().string(from: baseline)
+        let listJSON = "[\(Self.cardJSON(id: "03f5vaeq985jlvwv3arl4srq2", number: 7, title: "Stale", iso: iso))]"
+        let showJSON = Self.cardJSON(id: "03f5vaeq985jlvwv3arl4srq2", number: 7, title: "Local edit", iso: iso)
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (listJSON.data(using: .utf8)!, .ok(for: req))
+            case ("PUT", let p?):
+                putPaths.append(p)
+                return (showJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        _ = try await h.engine.sync()
+        #expect(putPaths == ["/ACCT/cards/7"])
+        #expect(card.fizzyNumber == 7)
+    }
+
+    @Test("steady push stores created card's number for future PUTs")
+    func postStoresNumber() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let card = h.cardRepo.createCard(in: h.column, title: "Fresh local")
+        try h.persistence.viewContext.save()
+
+        let iso = "2026-06-01T00:00:00Z"
+        let created = Self.cardJSON(id: "fzNEW", number: 12, title: "Fresh local", iso: iso)
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.contains("/cards/"):
+                // Location-follow after POST
+                return (created.data(using: .utf8)!, .ok(for: req))
+            case ("POST", _):
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/12"]
+                )!
+                return (Data(), response)
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        _ = try await h.engine.sync()
+        #expect(card.fizzyID == "fzNEW")
+        #expect(card.fizzyNumber == 12)
+    }
+
+    @Test("double sync with a pushed card: second sync issues zero POSTs")
+    func sequentialDoubleSyncDoesNotDuplicate() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        _ = h.cardRepo.createCard(in: h.column, title: "Once only")
+        try h.persistence.viewContext.save()
+
+        let iso = "2026-06-01T00:00:00Z"
+        var postCount = 0
+        var remoteList: [String] = []   // stateful: POSTed cards join the list
+        let created = Self.cardJSON(id: "fzX", number: 3, title: "Once only", iso: iso)
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[\(remoteList.joined(separator: ","))]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.contains("/cards/"):
+                // Location-follow after POST
+                return (created.data(using: .utf8)!, .ok(for: req))
+            case ("POST", _):
+                postCount += 1
+                remoteList.append(created)
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/3"]
+                )!
+                return (Data(), response)
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let first = try await h.engine.sync()
+        let second = try await h.engine.sync()
+
+        #expect(postCount == 1)
+        #expect(first.itemsCreated == 1)
+        #expect(second.itemsCreated == 0)
+        #expect(second.errors.isEmpty)
+    }
+
+    @Test("overlapping sync() calls: in-flight guard prevents duplicate POSTs")
+    func overlappingSyncsDoNotDuplicate() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        _ = h.cardRepo.createCard(in: h.column, title: "Once only")
+        try h.persistence.viewContext.save()
+
+        let iso = "2026-06-01T00:00:00Z"
+        var postCount = 0
+        let created = Self.cardJSON(id: "fzY", number: 4, title: "Once only", iso: iso)
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.contains("/cards/"):
+                // Location-follow after POST
+                return (created.data(using: .utf8)!, .ok(for: req))
+            case ("POST", _):
+                postCount += 1
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/4"]
+                )!
+                return (Data(), response)
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        async let a = h.engine.sync()
+        async let b = h.engine.sync()
+        let (ra, rb) = try await (a, b)
+
+        #expect(postCount == 1)
+        #expect(ra.itemsCreated + rb.itemsCreated == 1)
+    }
+}
