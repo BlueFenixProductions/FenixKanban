@@ -324,6 +324,46 @@ struct CardDetailViewModelAssignmentPushTests {
         #expect(viewModel.errorMessage != nil)
         MockURLProtocol.reset()
     }
+
+    @Test("failed POST does not clobber a newer toggle of the same user")
+    func failedToggleRespectsNewerState() async throws {
+        // First POST is held open by a gate, then fails (422); every later
+        // POST succeeds (204). A second toggle of the same user runs to
+        // completion while the first is in flight — the first's failure
+        // must leave the newer state alone (no revert, no redundant save).
+        let (gate, releaseFirstPush) = AsyncStream.makeStream(of: Void.self)
+        let calls = TagPushCallCounter()
+        MockURLProtocol.delayedHandler = { request in
+            if calls.next() == 1 {
+                var blocked = gate.makeAsyncIterator()
+                _ = await blocked.next()
+                return (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+            }
+            return (Data(), .response(for: request, status: 204))
+        }
+        let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
+                             emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
+
+        // First toggle: ON — optimistic append, then suspends on the gated POST.
+        async let firstToggle: Void = viewModel.toggleAssignment(user)
+        while calls.count == 0 { await Task.yield() }
+
+        // Second toggle: OFF — completes (204) while the first is in flight.
+        await viewModel.toggleAssignment(user)
+        #expect(viewModel.assignees.isEmpty)
+        let stampAfterSecondToggle = card.modifiedAt
+
+        // Fail the first push. Its catch must see the newer (OFF) state and
+        // not clobber it back to pre-first-toggle state via a revert+save.
+        releaseFirstPush.yield()
+        await firstToggle
+
+        #expect(!viewModel.assignees.contains { $0.id == "u9" })
+        #expect(card.assignees.isEmpty)
+        #expect(card.modifiedAt == stampAfterSecondToggle)
+        #expect(viewModel.errorMessage != nil)
+        MockURLProtocol.reset()
+    }
 }
 
 /// Thread-safe call counter for `MockURLProtocol.delayedHandler`, which is

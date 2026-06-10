@@ -1716,3 +1716,11 @@ blob, bumps `modifiedAt`, saves. Not added to the protocol (matches
 
 **Verification:** 354 → **358 tests / 73 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fix (M1, 2026-06-10):** added
+`failedToggleRespectsNewerState` to
+`CardDetailViewModelAssignmentPushTests` — gated-first-POST analogue
+of the tag suite's `failedPushRespectsNewerState`, covering the
+non-revert arm of the state-recheck (mutation-checked: an
+unconditional revert now fails via the `modifiedAt` no-re-save
+assertion). 358 → **359 tests / 73 suites green** on the pinned sim.
