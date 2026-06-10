@@ -6,7 +6,12 @@ struct CardDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(card: Card, context: NSManagedObjectContext) {
-        _viewModel = StateObject(wrappedValue: CardDetailViewModel(card: card, context: context))
+        let provider = PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider
+        _viewModel = StateObject(wrappedValue: CardDetailViewModel(
+            card: card,
+            context: context,
+            fizzyClient: provider?.makeClient()
+        ))
     }
 
     var body: some View {
@@ -142,7 +147,7 @@ struct CardDetailView: View {
                     selectedLabels: viewModel.selectedLabels,
                     context: viewModel.card.managedObjectContext!
                 ) { label in
-                    viewModel.toggleLabel(label)
+                    Task { await viewModel.toggleLabel(label) }
                 }
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
@@ -150,6 +155,14 @@ struct CardDetailView: View {
             }
             .onChange(of: viewModel.isCompleted) {
                 viewModel.save()
+            }
+            .alert("Sync Error", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
             }
         }
     }

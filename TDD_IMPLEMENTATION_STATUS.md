@@ -1379,3 +1379,33 @@ pull (LWW): `card.labels = NSSet(array: remote.tags.map { … })`.
 
 **Verification:** 329 → **331 tests / 69 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); 0 warnings.
+
+### 21. Issue #19 Task 3 — Tag toggles push to Fizzy (online-only) ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error:
+new `fizzyClient:` init param + `toggleLabel` became `async` — accepted
+repo bend, noted in the commit body).
+
+**Change:** `CardDetailViewModel` is now `@MainActor`, takes an optional
+`FizzyClient` (default nil — existing call sites unaffected), and
+`toggleLabel(_:)` is `async`: it toggles locally + saves, then for
+fizzy-paired cards (`fizzyNumber > 0`) POSTs
+`toggleCardTag(number:tagTitle:)`. On failure the local toggle is
+reverted (both `selectedLabels` and persisted `card.labels` via
+`save()`) and `errorMessage` is set; `CardDetailView` shows a
+"Sync Error" alert. The client is resolved in `CardDetailView.init`
+via `PluginRegistry.shared` → `FizzySyncProvider.makeClient()` (nil
+when unauthenticated → local-only behavior). Also deleted dead
+`CardRepository.toggleLabel(_:on:)` per Task 1 review.
+
+**Tests (`CardDetailViewModelTagPushTests`, MockURLProtocol + ImmediateClock):**
+- `toggleOnPairedCardPosts` — 204 handler; asserts POST to
+  `/cards/7/taggings` and label selected.
+- `failedPushReverts` — 422 handler (never 5xx: client retries 3×);
+  asserts `selectedLabels` empty, `card.labels` empty, `errorMessage`
+  set.
+- `unpairedCardStaysLocal` — `fizzyNumber = 0`; asserts zero requests
+  recorded and the toggle sticks locally.
+
+**Verification:** 331 → **334 tests / 70 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.

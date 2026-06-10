@@ -79,16 +79,6 @@ final class CardRepository: CardRepositoryProtocol {
         save()
     }
 
-    func toggleLabel(_ label: Label, on card: Card) {
-        if let current = card.labels as? Set<Label>, current.contains(label) {
-            card.removeFromLabels(label)
-        } else {
-            card.addToLabels(label)
-        }
-        card.modifiedAt = Date()
-        save()
-    }
-
     func deleteCard(_ card: Card) {
         let now = Date()
         card.column?.modifiedAt = now
