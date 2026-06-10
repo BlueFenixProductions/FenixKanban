@@ -12,6 +12,7 @@
 		0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0435462C469D8222A55798D /* CardEntity.swift */; };
 		098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */; };
 		12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */; };
+		17275D2E744DB68AE345032D /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
 		17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10A143D4EF691E4A0436C89 /* NotificationService.swift */; };
 		18A304663770D25F082F2E2C /* FizzyBoardMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F61A847D1870E4D02FFCCEA /* FizzyBoardMappingTests.swift */; };
 		1A8A7DADB70C45BD073693AC /* FizzyClient+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */; };
@@ -61,6 +62,7 @@
 		5795522A430FAB8B0D9E3425 /* FizzyAuthPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24019D9090EA00DA9C7D193 /* FizzyAuthPhase.swift */; };
 		58F792A039D26E85E170C0A6 /* NavigationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9864DD5AE3F9D3B1B6B2348 /* NavigationModel.swift */; };
 		5B7B07F280A4511744AF3E83 /* FizzyClientDirectoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A472D8FA16F1EB9A071E6E64 /* FizzyClientDirectoryTests.swift */; };
+		5C4881582D1DB4AF315EC0E4 /* CardTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */; };
 		5E7BDD56C001FD9FF4B9C87C /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */; };
 		63D0C71A1CC4E212A545376F /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */; };
 		6721B436DE044A5FB471EA5C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C5675C125FA0A0508D8E6A50 /* LaunchScreen.storyboard */; };
@@ -138,6 +140,7 @@
 		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
 		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
 		F1D35060BF2A659F14333EAD /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC0555AA6318151E788C7B4 /* BackupSettingsView.swift */; };
+		F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */; };
 		F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */; };
 		F8CFCB9761DFDE1E3B27990B /* FizzySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */; };
 		FBE1E15BE388FCB6CC58D7FF /* BackupExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0838D934889E230674EF4DE4 /* BackupExporter.swift */; };
@@ -158,6 +161,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardTombstone+CoreDataClass.swift"; sourceTree = "<group>"; };
 		068A3D4E105877CD3E5E375D /* FizzyAuthVerifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthVerifyView.swift; sourceTree = "<group>"; };
 		0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModelTests.swift; sourceTree = "<group>"; };
 		07DBC99D1D8C73344332292A /* FizzyDTOs+CardActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyDTOs+CardActions.swift"; sourceTree = "<group>"; };
@@ -219,6 +223,7 @@
 		78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryTests.swift; sourceTree = "<group>"; };
 		7DAD2ED2D2F5D199581543B6 /* FizzyClient+Comments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Comments.swift"; sourceTree = "<group>"; };
+		80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 5.xcdatamodel"; sourceTree = "<group>"; };
 		81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Directory.swift"; sourceTree = "<group>"; };
 		81F6E147784B7158A6DF4A4D /* BoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardEntity.swift; sourceTree = "<group>"; };
 		821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientTests.swift; sourceTree = "<group>"; };
@@ -226,6 +231,7 @@
 		8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewColumnSheet.swift; sourceTree = "<group>"; };
 		85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanApp.swift; sourceTree = "<group>"; };
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
+		86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColumnTombstone+CoreDataClass.swift"; sourceTree = "<group>"; };
 		86FBA9DD9858555EF014B034 /* ToggleGoldenIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntent.swift; sourceTree = "<group>"; };
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
 		8A25B0D029F52671883DC255 /* FizzyDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyDTOs.swift; sourceTree = "<group>"; };
@@ -240,6 +246,7 @@
 		9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Column+CoreDataClass.swift"; sourceTree = "<group>"; };
 		9408D41208AD8931538011B8 /* LabelEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelEditorSheet.swift; sourceTree = "<group>"; };
 		961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntentTests.swift; sourceTree = "<group>"; };
+		97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TombstoneEntitiesTests.swift; sourceTree = "<group>"; };
 		9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindGoldenCardsIntentTests.swift; sourceTree = "<group>"; };
 		98505E6C18C3691F83519972 /* FizzyAuthPairView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthPairView.swift; sourceTree = "<group>"; };
 		99D93FD1E573B49C12DC2C27 /* Development.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
@@ -501,7 +508,9 @@
 			children = (
 				5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */,
 				8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */,
+				00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */,
 				9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */,
+				86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */,
 				B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */,
 				E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */,
 				E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */,
@@ -733,6 +742,7 @@
 			children = (
 				4320EF6E55D4289D8090AF3A /* CardFizzyAttributesTests.swift */,
 				F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */,
+				97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -920,10 +930,12 @@
 				0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */,
 				6C8C404DB12E296DC35C51F5 /* CardQuery.swift in Sources */,
 				69BF266ADD30F1A28470A779 /* CardRepository.swift in Sources */,
+				5C4881582D1DB4AF315EC0E4 /* CardTombstone+CoreDataClass.swift in Sources */,
 				2AAF549C9C77BBDEE6A9DAA6 /* CardView.swift in Sources */,
 				36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */,
 				49E731B3D3082D79E09013C6 /* Color+Hex.swift in Sources */,
 				C4AA7AF76E843E21FD235E1C /* Column+CoreDataClass.swift in Sources */,
+				17275D2E744DB68AE345032D /* ColumnTombstone+CoreDataClass.swift in Sources */,
 				32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */,
 				4D66DB2B5491D5E5DC10E614 /* Date+Relative.swift in Sources */,
 				F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */,
@@ -1038,6 +1050,7 @@
 				C3476FFC4259355BF0F3555D /* SyncResultTests.swift in Sources */,
 				73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */,
 				EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */,
+				F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1312,9 +1325,10 @@
 				1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */,
 				0BFC2630360516F47B333AA9 /* FenixKanban 3.xcdatamodel */,
 				5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */,
+				80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */,
 				86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */,
 			);
-			currentVersion = 5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */;
+			currentVersion = 80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */;
 			path = FenixKanban.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

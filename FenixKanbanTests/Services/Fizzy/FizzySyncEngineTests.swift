@@ -675,7 +675,7 @@ struct FizzySyncEngineSteadyPullTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 let body = """
                 [{"id":"fz1","number":1,"title":"Existing","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/1"}]
@@ -759,7 +759,7 @@ struct FizzySyncEngineSteadyPushTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
             case ("POST", let p?) where p.hasSuffix("/cards"):
@@ -863,7 +863,7 @@ struct FizzySyncEngineLWWTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 let body = """
                 [{"id":"fz1","number":1,"title":"New title","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(iso)","created_at":"2026-01-01T00:00:00Z","url":"https://x/1"}]
@@ -899,7 +899,7 @@ struct FizzySyncEngineLWWTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 let body = """
                 [{"id":"fz1","number":1,"title":"Stale remote","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(isoBaseline)","created_at":"2026-01-01T00:00:00Z","url":"https://x/1"}]
@@ -965,7 +965,7 @@ struct FizzySyncEngineSoftDeleteTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
             default:
@@ -1022,7 +1022,7 @@ struct FizzySyncEngineCrashRecoveryTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 let body = """
                 [{"id":"fz-orphan","number":1,"title":"Orphan-prone","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(iso)","created_at":"\(iso)","url":"https://x/1"}]
@@ -1088,7 +1088,7 @@ struct FizzySyncEngineCrashRecoveryTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 let body = """
                 [{"id":"fz-orphan","number":1,"title":"Orphan-prone","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(iso)","created_at":"\(iso)","url":"https://x/1"}]
@@ -1155,7 +1155,7 @@ struct FizzySyncEngineIdempotenceTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 let body = """
                 [{"id":"fz1","number":1,"title":"R","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"\(stableISO)","created_at":"\(stableISO)","url":"https://x/1"}]
@@ -1328,7 +1328,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (listJSON.data(using: .utf8)!, .ok(for: req))
             case ("PUT", let p?):
@@ -1357,7 +1357,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.contains("/cards/"):
@@ -1394,7 +1394,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return ("[\(remoteList.joined(separator: ","))]".data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.contains("/cards/"):
@@ -1436,7 +1436,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.contains("/cards/"):
@@ -1473,7 +1473,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
-                return ("[]".data(using: .utf8)!, .ok(for: req))
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 if req.url?.query?.contains("page=2") == true {
                     return (page2.data(using: .utf8)!, .ok(for: req))
@@ -1491,5 +1491,466 @@ struct FizzySyncEngineNumberReentrancyTests {
         let fetch = Card.fetchRequest()
         let cards = try h.persistence.viewContext.fetch(fetch)
         #expect(Set(cards.compactMap(\.fizzyID)) == ["fzPG1", "fzPG2"])
+    }
+}
+
+@Suite("FizzySyncEngine — local card delete propagation", .serialized)
+@MainActor
+struct FizzySyncEngineDeletePropagationTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.delprop.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.delprop.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t", accountSlug: "ACCT",
+                urlSession: session, clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client, authState: authState, mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+
+        func cardTombstones() throws -> [CardTombstone] {
+            let request: NSFetchRequest<CardTombstone> = CardTombstone.fetchRequest()
+            return try persistence.viewContext.fetch(request)
+        }
+    }
+
+    @Test("deleted paired card → tombstone → DELETE /cards/<number> before any pull, then purged")
+    func deletePropagatesAndPurgesTombstone() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let card = h.cardRepo.createCard(in: h.column, title: "Doomed")
+        card.fizzyID = "fz7"
+        card.fizzyNumber = 7
+        try h.persistence.viewContext.save()
+
+        // Local delete via the repository writes the tombstone.
+        h.cardRepo.deleteCard(card)
+        #expect(try h.cardTombstones().count == 1)
+
+        var requestLog: [String] = []
+        MockURLProtocol.handler = { req in
+            requestLog.append("\(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", let p?) where p.hasSuffix("/cards/7"):
+                return (Data(), .response(for: req, status: 204))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(requestLog.first == "DELETE /ACCT/cards/7", "deletions push BEFORE pulls")
+        #expect(requestLog.filter { $0.hasPrefix("DELETE") } == ["DELETE /ACCT/cards/7"])
+        #expect(result.itemsDeleted == 1)
+        #expect(result.errors.isEmpty)
+        #expect(try h.cardTombstones().isEmpty, "tombstone purged after successful DELETE")
+    }
+
+    @Test("DELETE answering 404 → tombstone purged, no error recorded")
+    func delete404PurgesTombstone() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let tombstone = CardTombstone(context: h.persistence.viewContext)
+        tombstone.fizzyNumber = 9
+        tombstone.deletedAt = Date()
+        try h.persistence.viewContext.save()
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", let p?) where p.hasSuffix("/cards/9"):
+                return (Data(), .response(for: req, status: 404))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.isEmpty, "404 means already deleted remotely — not an error")
+        #expect(try h.cardTombstones().isEmpty, "tombstone purged on 404")
+    }
+
+    @Test("DELETE answering 500 → tombstone retained, error recorded, sync continues")
+    func delete500RetainsTombstone() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let tombstone = CardTombstone(context: h.persistence.viewContext)
+        tombstone.fizzyNumber = 9
+        tombstone.deletedAt = Date()
+        try h.persistence.viewContext.save()
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", let p?) where p.hasSuffix("/cards/9"):
+                return (Data(), .response(for: req, status: 500))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.count == 1)
+        #expect(result.itemsDeleted == 0)
+        #expect(try h.cardTombstones().count == 1, "tombstone retained for retry next sync")
+    }
+
+    @Test("live tombstone blocks pull resurrection of the same card number")
+    func tombstoneBlocksResurrection() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let tombstone = CardTombstone(context: h.persistence.viewContext)
+        tombstone.fizzyNumber = 7
+        tombstone.deletedAt = Date()
+        try h.persistence.viewContext.save()
+
+        // DELETE fails (500) so the tombstone stays live; the remote list
+        // still contains card number 7 — it must NOT be re-created locally.
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", let p?) where p.hasSuffix("/cards/7"):
+                return (Data(), .response(for: req, status: 500))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                let body = """
+                [{"id":"fz7","number":7,"title":"Zombie","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-01T00:00:00Z","created_at":"2026-06-01T00:00:00Z","url":"https://x/7"}]
+                """
+                return (body.data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.itemsCreated == 0, "tombstoned card must not resurrect")
+        let cards = try h.persistence.viewContext.fetch(Card.fetchRequest())
+        #expect(cards.isEmpty)
+        #expect(try h.cardTombstones().count == 1)
+    }
+
+    @Test("tombstone older than 30 days → purged without issuing a DELETE")
+    func staleTombstonePurgedWithoutDelete() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let tombstone = CardTombstone(context: h.persistence.viewContext)
+        tombstone.fizzyNumber = 9
+        tombstone.deletedAt = Date().addingTimeInterval(-31 * 24 * 3600)
+        try h.persistence.viewContext.save()
+
+        var deleteCount = 0
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", _):
+                deleteCount += 1
+                return (Data(), .response(for: req, status: 204))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(deleteCount == 0, "stale tombstones are abandoned, not retried")
+        #expect(result.errors.isEmpty)
+        #expect(try h.cardTombstones().isEmpty, "30-day safety cap purges the tombstone")
+    }
+}
+
+@Suite("FizzySyncEngine — column push (create/rename/delete)", .serialized)
+@MainActor
+struct FizzySyncEngineColumnPushTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.colpush.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.colpush.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t", accountSlug: "ACCT",
+                urlSession: session, clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client, authState: authState, mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+
+        func columnTombstones() throws -> [ColumnTombstone] {
+            let request: NSFetchRequest<ColumnTombstone> = ColumnTombstone.fetchRequest()
+            return try persistence.viewContext.fetch(request)
+        }
+    }
+
+    private static func columnJSON(id: String, name: String) -> String {
+        """
+        {"id":"\(id)","name":"\(name)","color":{"name":"Slate","value":"var(--color-card-4)"},"created_at":"2026-06-01T00:00:00Z"}
+        """
+    }
+
+    @Test("local column without fizzyColumnID → POST /boards/:id/columns, returned ID claimed")
+    func createPushesPostAndClaimsID() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        var postPaths: [String] = []
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("POST", let p?) where p.hasSuffix("/columns"):
+                postPaths.append(p)
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/boards/FB1/columns/FCNEW"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/columns/FCNEW"):
+                return (Self.columnJSON(id: "FCNEW", name: "Triage").data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(postPaths == ["/ACCT/boards/FB1/columns"])
+        #expect(result.errors.isEmpty)
+        h.persistence.viewContext.refresh(h.column, mergeChanges: false)
+        #expect(h.column.fizzyColumnID == "FCNEW")
+    }
+
+    @Test("backfill: local column matching a remote name claims the remote ID, no POST")
+    func backfillClaimsExistingRemoteID() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[\(Self.columnJSON(id: "FC1", name: "Triage"))]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("POST", _):
+                Issue.record("name-matched column must not be re-POSTed")
+                return (Data(), .response(for: req, status: 500))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.isEmpty)
+        h.persistence.viewContext.refresh(h.column, mergeChanges: false)
+        #expect(h.column.fizzyColumnID == "FC1")
+    }
+
+    @Test("locally renamed paired column → PUT /boards/:id/columns/:column_id")
+    func renamePushesPut() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        h.column.fizzyColumnID = "FC1"
+        h.column.name = "Doing"
+        h.column.modifiedAt = Date()
+        try h.persistence.viewContext.save()
+
+        var putPaths: [String] = []
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[\(Self.columnJSON(id: "FC1", name: "Old name"))]".data(using: .utf8)!, .ok(for: req))
+            case ("PUT", let p?) where p.contains("/columns/"):
+                putPaths.append(p)
+                return (Self.columnJSON(id: "FC1", name: "Doing").data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(putPaths == ["/ACCT/boards/FB1/columns/FC1"])
+        #expect(result.errors.isEmpty)
+        #expect(h.column.name == "Doing", "local rename wins")
+
+        // The ID-paired remote column must not be duplicated locally under
+        // its stale remote name.
+        let columns = (h.board.columns as? Set<Column>) ?? []
+        #expect(columns.count == 1)
+    }
+
+    @Test("deleted paired column → tombstone → DELETE /boards/:id/columns/:column_id, tombstone purged")
+    func columnDeletePropagates() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        h.column.fizzyColumnID = "FC1"
+        try h.persistence.viewContext.save()
+        h.boardRepo.deleteColumn(h.column)
+        #expect(try h.columnTombstones().count == 1)
+
+        var deletePaths: [String] = []
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", let p?) where p.contains("/columns/"):
+                deletePaths.append(p)
+                return (Data(), .response(for: req, status: 204))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(deletePaths == ["/ACCT/boards/FB1/columns/FC1"])
+        #expect(result.itemsDeleted == 1)
+        #expect(result.errors.isEmpty)
+        #expect(try h.columnTombstones().isEmpty, "tombstone purged after successful DELETE")
+    }
+
+    @Test("live column tombstone blocks pull resurrection of the remote column")
+    func columnTombstoneBlocksResurrection() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        h.column.fizzyColumnID = "FC1"
+        try h.persistence.viewContext.save()
+        h.boardRepo.deleteColumn(h.column)
+
+        // DELETE fails (500) so the tombstone stays live; the remote list
+        // still contains FC1 — it must NOT be re-created locally.
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("DELETE", let p?) where p.contains("/columns/"):
+                return (Data(), .response(for: req, status: 500))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[\(Self.columnJSON(id: "FC1", name: "Triage"))]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.count == 1)
+        let columns = (h.board.columns as? Set<Column>) ?? []
+        #expect(columns.isEmpty, "tombstoned column must not resurrect")
+        #expect(try h.columnTombstones().count == 1, "tombstone retained for retry")
     }
 }
