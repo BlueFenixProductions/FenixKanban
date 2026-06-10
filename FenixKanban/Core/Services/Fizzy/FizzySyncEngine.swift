@@ -699,6 +699,16 @@ final class FizzySyncEngine {
         // first-tag-only limitation). Remote is authoritative on pull (LWW).
         let remoteLabels = remote.tags.map { findOrCreateLabel(name: $0) }
         card.labels = NSSet(array: remoteLabels)
+
+        // Assignees ride the column-cards list payload (not the single-card
+        // doc). Remote-authoritative on pull, like tags. A nil array means
+        // the payload doesn't carry the field — leave the local blob alone.
+        if let remoteAssignees = remote.assignees {
+            let mapped = remoteAssignees.map { CardAssignee(id: $0.id, name: $0.name) }
+            if card.assignees != mapped {
+                card.assignees = mapped
+            }
+        }
     }
 
     /// Finds a `Label` by case-insensitive name or creates one with a

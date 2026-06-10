@@ -1647,3 +1647,32 @@ the CURRENT compiled model (`model(named: nil)`, V6Tests precedent)
 and asserts `Card.assigneesData` exists, so a pbxproj
 `currentVersion` regression to v6 fails tests instead of crashing at
 runtime. 351 → **352 tests / 72 suites green** on the pinned sim.
+
+### 28. Issue #19 Wave 2 Task 3 — sync pull persists card assignees ✅
+
+**Date:** 2026-06-10 · Red → Green (RED commit `a9786fe`; failure was an
+assertion failure — DTO + blob accessor already existed from Tasks 1–2).
+
+**Sync engine** (`FizzySyncEngine.applyRemote`):
+- After the tags→labels block, `remote.assignees` (when non-nil) maps to
+  `[CardAssignee(id:name:)]` and writes `card.assignees`.
+- CRITICAL semantic: `nil` means the payload didn't carry the key (e.g.
+  single-card doc) — the local blob is left ALONE. Empty array means
+  "no assignees" — the blob is cleared. Remote-authoritative, like tags.
+- Equality guard (`card.assignees != mapped`) avoids dirtying the
+  managed object / re-encoding the blob on every no-change pull cycle
+  (Task 2 quality-review advisory).
+
+**Tests** (`FizzySyncEngineSteadyPullTests`):
+- `pullMapsAssignees` — list payload carries the full wire-shape
+  assignee object (role/active/email_address/created_at/url/avatar_url
+  all present); after sync the paired card's blob holds
+  `[CardAssignee(id:"u1", name:"Ada Lovelace")]`.
+- `pullClearsOrPreservesAssignees` — two-round LWW test: round 1 remote
+  sends `"assignees":[]` against a pre-seeded blob → cleared; blob is
+  re-seeded, round 2 remote OMITS the key with a newer `last_active_at`
+  (pull branch confirmed via `fizzyUpdatedAt`) → blob preserved verbatim,
+  genuinely distinguishing left-alone from cleared.
+
+**Verification:** 352 → **354 tests / 72 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
