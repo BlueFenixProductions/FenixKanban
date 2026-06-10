@@ -1964,3 +1964,11 @@ suite — both toggles on an unpaired card are no-ops with zero network.
 
 **Verification:** 367 → **374 tests / 76 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fix (M1, 2026-06-10):** `watchPostsToWatchEndpoint`/
+`pinPostsToPinEndpoint` now snapshot `card.modifiedAt` and assert it's
+unchanged after the toggle — locks in the no-`modifiedAt`-bump contract
+on `setWatched`/`setPinned` (a re-added bump = echo-PUT regression
+previously left all tests green; mutation-checked: temporary bump in
+`setWatched` failed the test). Still **374 tests / 76 suites green** on
+the pinned sim.

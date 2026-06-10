@@ -422,9 +422,14 @@ struct CardDetailViewModelWatchPinPushTests {
     @Test("toggleWatched POSTs /cards/7/watch and sets the flag")
     func watchPostsToWatchEndpoint() async throws {
         MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        let stampBeforeToggle = card.modifiedAt
         await viewModel.toggleWatched()
         #expect(viewModel.isWatched == true)
         #expect(card.isWatched == true)
+        // Watch flag must NOT bump modifiedAt: it's outside the card-content
+        // LWW contract, and a bump makes the card look newer than
+        // fizzyUpdatedAt — triggering a spurious echo-PUT on the next sync.
+        #expect(card.modifiedAt == stampBeforeToggle)
         let req = MockURLProtocol.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/7/watch") == true)
@@ -449,9 +454,12 @@ struct CardDetailViewModelWatchPinPushTests {
     @Test("togglePinned POSTs /cards/7/pin and sets the flag")
     func pinPostsToPinEndpoint() async throws {
         MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        let stampBeforeToggle = card.modifiedAt
         await viewModel.togglePinned()
         #expect(viewModel.isPinned == true)
         #expect(card.isPinned == true)
+        // Pin flag must NOT bump modifiedAt (echo-PUT guard, same as watch).
+        #expect(card.modifiedAt == stampBeforeToggle)
         let req = MockURLProtocol.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/7/pin") == true)
