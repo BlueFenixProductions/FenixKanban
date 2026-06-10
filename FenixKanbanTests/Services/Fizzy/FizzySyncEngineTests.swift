@@ -689,6 +689,77 @@ struct FizzySyncEngineSteadyPullTests {
         let result = try await h.engine.sync()
         #expect(result.itemsCreated == 0, "no new cards — fz1 already paired")
     }
+
+    @Test("pull: card with three tags maps all three to labels")
+    func pullMapsAllTags() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [{"id":"fzT1","number":11,"title":"Tagged","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":["bug","urgent","backend"],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/11"}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+
+        let card = h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 11 }
+        let names = card?.sortedLabels.compactMap(\.name)
+        #expect(names == ["backend", "bug", "urgent"])
+    }
+
+    @Test("pull: tags removed remotely clears local labels")
+    func pullClearsRemovedTags() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        // Seed a paired local card that already has two labels. Timestamps
+        // force the remote-newer LWW branch (remote last_active_at is newer
+        // than fizzyUpdatedAt; local untouched since last sync).
+        let baseline = Date(timeIntervalSince1970: 1_000_000)
+        let card = h.cardRepo.createCard(in: h.column, title: "Was tagged")
+        card.fizzyID = "fzT2"
+        card.fizzyNumber = 12
+        card.fizzyUpdatedAt = baseline
+        card.modifiedAt = baseline
+        let repo = LabelRepository(context: h.persistence.viewContext)
+        card.addToLabels(repo.createLabel(name: "bug", colorHex: "#FF0000"))
+        card.addToLabels(repo.createLabel(name: "urgent", colorHex: "#00FF00"))
+        try h.persistence.viewContext.save()
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [{"id":"fzT2","number":12,"title":"Was tagged","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-11T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/12"}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+        #expect(card.sortedLabels.isEmpty)
+    }
 }
 
 @Suite("FizzySyncEngine — steady-state push", .serialized)
