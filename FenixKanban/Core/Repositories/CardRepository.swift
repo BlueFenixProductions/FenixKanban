@@ -79,6 +79,12 @@ final class CardRepository: CardRepositoryProtocol {
         save()
     }
 
+    func updateAssignees(for card: Card, to assignees: [CardAssignee]) {
+        card.assignees = assignees
+        card.modifiedAt = Date()
+        save()
+    }
+
     func deleteCard(_ card: Card) {
         let now = Date()
         card.column?.modifiedAt = now

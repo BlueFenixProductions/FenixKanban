@@ -98,6 +98,17 @@ struct CardDetailViewModelTests {
         #expect(vm.stepsViewModel == nil)
     }
 
+    @Test("unpaired card: toggleAssignment is a no-op with zero network")
+    func unpairedToggleAssignmentNoOp() async throws {
+        MockURLProtocol.reset()
+        defer { MockURLProtocol.reset() }
+        let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
+                             emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
+        await viewModel.toggleAssignment(user)
+        #expect(viewModel.assignees.isEmpty)
+        #expect(MockURLProtocol.requests.isEmpty)
+    }
+
     @Test("toggleGolden flips isGolden and updates modifiedAt")
     func toggleGoldenFlips() async throws {
         #expect(card.isGolden == false)
@@ -231,6 +242,86 @@ struct CardDetailViewModelTagPushTests {
 
         #expect(viewModel.selectedLabels == [label])
         #expect(MockURLProtocol.requests.isEmpty)
+        MockURLProtocol.reset()
+    }
+}
+
+@Suite("CardDetailViewModel assignment push", .serialized)
+@MainActor
+struct CardDetailViewModelAssignmentPushTests {
+    let persistence: PersistenceController
+    let card: Card
+    let client: FizzyClient
+    let viewModel: CardDetailViewModel
+
+    init() {
+        MockURLProtocol.reset()
+        persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "Board")
+        let column = boardRepo.createColumn(in: board, name: "Col")
+        card = cardRepo.createCard(in: column, title: "Paired Card")
+        card.fizzyID = "fz7"
+        card.fizzyNumber = 7
+        try! persistence.viewContext.save()
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: URLSession(configuration: config),
+            clock: ImmediateClock()
+        )
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+    }
+
+    @Test("toggle POSTs /cards/7/assignments with assignee_id and updates the blob")
+    func togglePostsAssignment() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
+                             emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
+
+        await viewModel.toggleAssignment(user)
+
+        #expect(viewModel.assignees.map(\.id) == ["u9"])
+        #expect(card.assignees.map(\.id) == ["u9"])
+        let post = MockURLProtocol.requests.first { $0.httpMethod == "POST" }
+        #expect(post?.url?.path.hasSuffix("/cards/7/assignments") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("toggle on an already-assigned user removes them")
+    func toggleRemovesAssigned() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        // Seed the blob, then build a fresh view model so init picks it up.
+        card.assignees = [CardAssignee(id: "u9", name: "Grace Hopper")]
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
+                             emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
+
+        await vm.toggleAssignment(user)
+
+        #expect(vm.assignees.isEmpty)
+        #expect(card.assignees.isEmpty)
+        MockURLProtocol.reset()
+    }
+
+    @Test("failed POST (422) reverts the optimistic change and surfaces an error")
+    func failedToggleReverts() async throws {
+        MockURLProtocol.handler = { request in
+            (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+        }
+        let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
+                             emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
+
+        await viewModel.toggleAssignment(user)
+
+        #expect(viewModel.assignees.isEmpty)
+        #expect(card.assignees.isEmpty)
+        #expect(viewModel.errorMessage != nil)
         MockURLProtocol.reset()
     }
 }

@@ -1676,3 +1676,43 @@ assertion failure — DTO + blob accessor already existed from Tasks 1–2).
 
 **Verification:** 352 → **354 tests / 72 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+### 29. Issue #19 Wave 2 Task 4 — assignment toggles push to Fizzy ✅
+
+**Date:** 2026-06-10 · Red → Green in ONE commit (repo bend: RED state
+was a compile error — `toggleAssignment`/`assignees` didn't exist on
+`CardDetailViewModel` — verified via `build-for-testing` before
+implementing).
+
+**ViewModel** (`CardDetailViewModel`):
+- `@Published var assignees: [CardAssignee]` (seeded from the blob in
+  `init`) + `@Published var showAssigneePicker` (Task 5 hook).
+- `fizzyClient` access widened `private let` → `let` (Task 5's picker
+  sheet needs it to fetch users).
+- `canEditAssignments` — true only for paired cards
+  (`fizzyNumber > 0`) with a live client; the row renders fizzy-only.
+- `toggleAssignment(_ user: FizzyUser)` — mirrors `toggleLabel`:
+  unpaired/no-client guard is a FULL no-op (zero network, zero state
+  change — assignments are remote-authoritative, no local-only mode);
+  optimistic blob flip persisted via the repository; POST
+  `/cards/:number/assignments` (server-side toggle); on failure,
+  state-recheck revert (only if no later toggle changed this user's
+  state while the POST was in flight) + `errorMessage`.
+
+**Repository** (`CardRepository.updateAssignees(for:to:)`): writes the
+blob, bumps `modifiedAt`, saves. Not added to the protocol (matches
+`clearLabels`/`clearDueDate` precedent).
+
+**Tests:**
+- New suite `CardDetailViewModelAssignmentPushTests` (`.serialized`,
+  MockURLProtocol harness cloned from the tag-push suite, paired card
+  `fizzyNumber=7`): 204 toggle adds to VM + blob and POSTs
+  `/cards/7/assignments`; toggle on an already-assigned user (fresh VM
+  built after seeding the blob) removes them; 422 reverts the
+  optimistic change and surfaces `errorMessage`.
+- `CardDetailViewModelTests.unpairedToggleAssignmentNoOp` — unpaired,
+  no-client VM: toggle leaves `assignees` empty and
+  `MockURLProtocol.requests` empty.
+
+**Verification:** 354 → **358 tests / 73 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.

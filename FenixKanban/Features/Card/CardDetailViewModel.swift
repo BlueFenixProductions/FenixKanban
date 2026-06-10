@@ -9,13 +9,15 @@ final class CardDetailViewModel: ObservableObject {
     @Published var dueDate: Date?
     @Published var isCompleted: Bool
     @Published var selectedLabels: Set<Label>
+    @Published var assignees: [CardAssignee]
     @Published var showLabelPicker = false
+    @Published var showAssigneePicker = false
     @Published var showDatePicker = false
     @Published var errorMessage: String?
 
     private let cardRepository: CardRepository
     private let labelRepository: LabelRepository
-    private let fizzyClient: FizzyClient?
+    let fizzyClient: FizzyClient?
 
     /// Present only for fizzy-paired cards with a live client — drives the
     /// steps checklist section (issue #19, online-only).
@@ -36,6 +38,7 @@ final class CardDetailViewModel: ObservableObject {
         self.dueDate = card.dueDate
         self.isCompleted = card.isCompleted
         self.selectedLabels = card.labels as? Set<Label> ?? []
+        self.assignees = card.assignees
         self.cardRepository = CardRepository(context: context)
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
@@ -95,6 +98,42 @@ final class CardDetailViewModel: ObservableObject {
                 save()
             }
             errorMessage = "Couldn't update tag “\(tagTitle)” on Fizzy."
+        }
+    }
+
+    /// Assignments are fizzy-only: the row renders (and toggles run) only
+    /// for paired cards with a live client (issue #19 wave 2).
+    var canEditAssignments: Bool {
+        card.fizzyNumber > 0 && fizzyClient != nil
+    }
+
+    /// Toggles a user's assignment: optimistic blob update, POST toggle,
+    /// state-recheck revert on failure (same pattern as `toggleLabel` —
+    /// last writer wins locally; the next pull reconciles the server).
+    func toggleAssignment(_ user: FizzyUser) async {
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        let wasAssigned = assignees.contains { $0.id == user.id }
+        if wasAssigned {
+            assignees.removeAll { $0.id == user.id }
+        } else {
+            assignees.append(CardAssignee(id: user.id, name: user.name))
+        }
+        cardRepository.updateAssignees(for: card, to: assignees)
+
+        do {
+            try await client.toggleCardAssignment(number: Int(card.fizzyNumber), assigneeID: user.id)
+        } catch {
+            // Revert only if no later toggle changed this user's state while
+            // the POST was in flight.
+            if assignees.contains(where: { $0.id == user.id }) != wasAssigned {
+                if wasAssigned {
+                    assignees.append(CardAssignee(id: user.id, name: user.name))
+                } else {
+                    assignees.removeAll { $0.id == user.id }
+                }
+                cardRepository.updateAssignees(for: card, to: assignees)
+            }
+            errorMessage = "Couldn't update assignment for \(user.name) on Fizzy."
         }
     }
 
