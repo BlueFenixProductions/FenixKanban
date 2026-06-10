@@ -679,8 +679,8 @@ final class FizzySyncEngine {
     // MARK: - Apply remote → local
 
     /// Writes the synced fields from a `FizzyCard` onto a local `Card`.
-    /// Phase 4a maps only the first remote tag to `Card.labels`; remaining
-    /// tags are dropped (documented limitation).
+    /// Maps every remote tag to a local `Label` (find-or-create by
+    /// case-insensitive name).
     ///
     /// `modifiedAt` is reset to `fizzyUpdatedAt` so the next steady-state LWW
     /// check sees "local untouched since last sync" and doesn't spuriously
@@ -695,12 +695,10 @@ final class FizzySyncEngine {
         card.fizzyUpdatedAt = remote.lastActiveAt
         card.modifiedAt = remote.lastActiveAt
 
-        // Still first-tag-only here; Task 2 widens this to ALL tags (RED first).
-        if let firstTag = remote.tags.first {
-            card.labels = NSSet(object: findOrCreateLabel(name: firstTag))
-        } else {
-            card.labels = NSSet()
-        }
+        // All remote tags map to local Labels (issue #19 lifts the Phase 4a
+        // first-tag-only limitation). Remote is authoritative on pull (LWW).
+        let remoteLabels = remote.tags.map { findOrCreateLabel(name: $0) }
+        card.labels = NSSet(array: remoteLabels)
     }
 
     /// Finds a `Label` by case-insensitive name or creates one with a

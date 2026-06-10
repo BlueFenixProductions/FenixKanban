@@ -1357,3 +1357,25 @@ preview seeds use `addToLabels`.
 
 **Verification:** 326 → **329 tests / 69 suites green** (2 migration +
 1 net-new viewmodel test); iOS + macOS builds clean, 0 warnings.
+
+### 20. Issue #19 Task 2 — Sync engine maps ALL tags ⇄ labels (pull) ✅
+
+**Date:** 2026-06-10 · RED `8023f92` → GREEN (this commit)
+
+**Change:** `FizzySyncEngine.applyRemote` now maps every remote tag to a
+local `Label` via `findOrCreateLabel` (case-insensitive find-or-create),
+replacing the Phase 4a first-tag-only block. Remote is authoritative on
+pull (LWW): `card.labels = NSSet(array: remote.tags.map { … })`.
+
+**Tests (steady-state pull suite):**
+- `pullMapsAllTags` — card with `tags:["bug","urgent","backend"]` pulls
+  to three labels (asserted via `sortedLabels`, name-sorted). RED
+  failure was `["bug"]` as expected.
+- `pullClearsRemovedTags` — paired card with two local labels +
+  remote `tags:[]` and newer `last_active_at` (remote-newer LWW branch,
+  baseline `fizzyUpdatedAt == modifiedAt` seeding) clears all labels.
+  Already passed pre-impl (`card.labels = NSSet()` empty branch); kept
+  as a regression guard.
+
+**Verification:** 329 → **331 tests / 69 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); 0 warnings.
