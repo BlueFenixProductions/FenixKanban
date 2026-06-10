@@ -128,9 +128,51 @@ final class FizzySyncEngine {
         let localCards: [Card] = localColumns.flatMap { col -> [Card] in
             (col.cards as? Set<Card>).map { Array($0) } ?? []
         }
-        let pairedByFizzyID: [String: Card] = Dictionary(
+        var pairedByFizzyID: [String: Card] = Dictionary(
             uniqueKeysWithValues: localCards.compactMap { card in card.fizzyID.map { ($0, card) } }
         )
+
+        // Clobber recovery (issue #15): a CloudKit merge can null out
+        // `fizzyID` while `fizzyNumber` survives. Re-pair by number instead
+        // of treating the card as new (which would duplicate it both ways).
+        let remoteByNumber: [Int64: FizzyCard] = Dictionary(
+            remoteCards.map { (Int64($0.number), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        for card in localCards where card.fizzyID == nil && card.fizzyNumber != 0 {
+            guard let remote = remoteByNumber[card.fizzyNumber],
+                  pairedByFizzyID[remote.id] == nil else { continue }
+            card.fizzyID = remote.id
+            pairedByFizzyID[remote.id] = card
+            result.itemsUpdated += 1
+        }
+
+        // Marker-based deterministic adoption (issue #14): every POSTed
+        // description carries a hidden `<!--fk:LOCAL_UUID-->` marker. If a
+        // remote card's marker names a local unpaired card, that card is the
+        // owner — adopt it BEFORE the fuzzy title±60s heuristic gets a say.
+        // The remote marker is stripped via PUT in the LWW loop below.
+        let unpairedByLocalUUID: [UUID: Card] = Dictionary(
+            localCards.compactMap { card -> (UUID, Card)? in
+                guard card.fizzyID == nil, let id = card.id else { return nil }
+                return (id, card)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        for remote in remoteCards
+        where pairedByFizzyID[remote.id] == nil
+            && !blockedCardNumbers.contains(Int64(remote.number)) {
+            guard let ownerID = Self.adoptionMarkerUUID(in: remote.description),
+                  let owner = unpairedByLocalUUID[ownerID],
+                  owner.fizzyID == nil
+            else { continue }
+            owner.fizzyID = remote.id
+            owner.fizzyNumber = Int64(remote.number)
+            owner.fizzyUpdatedAt = remote.lastActiveAt
+            owner.modifiedAt = remote.lastActiveAt
+            pairedByFizzyID[remote.id] = owner
+            result.itemsUpdated += 1
+        }
 
         // Crash-after-POST recovery: precompute orphan claims so the pull loop
         // doesn't also create a duplicate from the same remote. For each local
@@ -183,10 +225,20 @@ final class FizzySyncEngine {
             let localModified = card.modifiedAt ?? .distantPast
             let remoteTimestamp = remote.lastActiveAt
 
+            // The remote description still carries this card's adoption
+            // marker (just adopted this cycle, or a previous strip-PUT
+            // failed). PUT the local marker-free state to scrub it.
+            // Idempotent: retried every sync until the PUT sticks.
+            let needsMarkerStrip = card.id != nil
+                && Self.adoptionMarkerUUID(in: remote.description) == card.id
+
             if remoteTimestamp > localFizzyTimestamp && localModified <= localFizzyTimestamp {
                 // Remote newer, local untouched → pull.
                 applyRemote(remote, to: card)
                 result.itemsUpdated += 1
+                if needsMarkerStrip {
+                    await stripMarkerRemotely(for: card, into: &result)
+                }
             } else if localModified > localFizzyTimestamp {
                 // Local edited since last sync → push.
                 do {
@@ -197,6 +249,10 @@ final class FizzySyncEngine {
                 } catch let error as FizzyError {
                     result.errors.append("Push update '\(card.title ?? "(untitled)")': \(error)")
                 }
+                // The PUT payload is the local (marker-free) description, so
+                // a successful push also strips any lingering marker.
+            } else if needsMarkerStrip {
+                await stripMarkerRemotely(for: card, into: &result)
             }
             // else: both equal or remote stale → no-op.
         }
@@ -235,10 +291,68 @@ final class FizzySyncEngine {
         // Persist lastSyncAt.
         mapping.setLastSync(.now)
 
+        // A failed save must surface — not throw away the whole result and
+        // not pass silently (issue #15). The next sync re-pairs any cards
+        // whose POSTed pairing was lost via the #14 adoption marker, so a
+        // save failure here cannot cause duplicate POSTs.
         if context.hasChanges {
-            try context.save()
+            do {
+                try context.save()
+            } catch {
+                result.errors.append("Save: \(error.localizedDescription)")
+            }
         }
         return result
+    }
+
+    // MARK: - Adoption marker (issue #14)
+
+    /// Hidden HTML-comment marker appended to every POSTed description:
+    /// `<!--fk:LOCAL_UUID-->`. Fizzy renders HTML comments invisibly, and the
+    /// marker survives crash-after-POST / save failures, letting the next
+    /// pull adopt the remote card deterministically instead of relying on the
+    /// title±60s heuristic (or worse, re-POSTing a duplicate).
+    nonisolated static func adoptionMarker(for localID: UUID) -> String {
+        "<!--fk:\(localID.uuidString)-->"
+    }
+
+    private nonisolated static let adoptionMarkerPattern =
+        #"<!--fk:[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}-->"#
+
+    /// Extracts the local-card UUID from the first adoption marker in a
+    /// remote description, if any.
+    nonisolated static func adoptionMarkerUUID(in description: String?) -> UUID? {
+        guard let description,
+              let range = description.range(of: adoptionMarkerPattern, options: .regularExpression)
+        else { return nil }
+        let uuidString = description[range].dropFirst("<!--fk:".count).dropLast("-->".count)
+        return UUID(uuidString: String(uuidString))
+    }
+
+    /// Removes all adoption markers (and the `\n\n` separator that precedes
+    /// them when appended to a non-empty description). Local copies never
+    /// contain markers — applied in every pull path.
+    nonisolated static func strippingAdoptionMarker(from description: String?) -> String? {
+        guard let description else { return nil }
+        let stripped = description.replacingOccurrences(
+            of: #"(?:\n\n)?"# + adoptionMarkerPattern,
+            with: "",
+            options: .regularExpression
+        )
+        return stripped.isEmpty ? nil : stripped
+    }
+
+    /// PUTs the card's local (marker-free) state to scrub a lingering
+    /// adoption marker from the remote description. Failure is recorded and
+    /// retried on the next sync — the marker is harmless meanwhile.
+    private func stripMarkerRemotely(for card: Card, into result: inout FizzySyncResult) async {
+        do {
+            let updated = try await putCard(card, number: card.fizzyNumber)
+            card.fizzyUpdatedAt = updated.lastActiveAt
+            card.modifiedAt = updated.lastActiveAt
+        } catch {
+            result.errors.append("Strip adoption marker '\(card.title ?? "(untitled)")': \(error)")
+        }
     }
 
     // MARK: - Mode implementations (skeleton — return empty in this task; filled by Tasks 4-6)
@@ -573,7 +687,8 @@ final class FizzySyncEngine {
     /// re-push. Steady-state convergence depends on this.
     private func applyRemote(_ remote: FizzyCard, to card: Card) {
         card.title = remote.title
-        card.cardDescription = remote.description
+        // Local copies never contain adoption markers (issue #14).
+        card.cardDescription = Self.strippingAdoptionMarker(from: remote.description)
         card.isGolden = remote.golden
         card.fizzyID = remote.id
         card.fizzyNumber = Int64(remote.number)
@@ -627,10 +742,21 @@ final class FizzySyncEngine {
     /// in the plan. The Fizzy API treats `tag_ids` as optional; omitting it
     /// preserves whatever tags the server defaults to (none, for new cards).
     private func postCard(_ card: Card, toBoardID fizzyBoardID: String) async throws -> FizzyCard {
+        // Append the hidden adoption marker (issue #14) so the card can be
+        // re-claimed deterministically if the pairing save is lost (crash
+        // after POST, save failure, CloudKit clobber). Stripped from the
+        // remote on the next sync after pairing persists.
+        let outgoingDescription: String?
+        if let localID = card.id {
+            let marker = Self.adoptionMarker(for: localID)
+            outgoingDescription = card.cardDescription.map { "\($0)\n\n\(marker)" } ?? marker
+        } else {
+            outgoingDescription = card.cardDescription
+        }
         let payload = FizzyCardWritePayload(
             card: FizzyCardWrite(
                 title: card.title ?? "",
-                description: card.cardDescription,
+                description: outgoingDescription,
                 status: nil,
                 tagIds: nil
             )
