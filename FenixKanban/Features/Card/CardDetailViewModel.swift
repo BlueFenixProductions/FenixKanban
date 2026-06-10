@@ -17,6 +17,10 @@ final class CardDetailViewModel: ObservableObject {
     private let labelRepository: LabelRepository
     private let fizzyClient: FizzyClient?
 
+    /// Present only for fizzy-paired cards with a live client — drives the
+    /// steps checklist section (issue #19, online-only).
+    let stepsViewModel: CardStepsViewModel?
+
     var availableColumns: [Column] {
         card.column?.board?.sortedColumns ?? []
     }
@@ -35,6 +39,11 @@ final class CardDetailViewModel: ObservableObject {
         self.cardRepository = CardRepository(context: context)
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
+        if card.fizzyNumber > 0, let client = fizzyClient {
+            self.stepsViewModel = CardStepsViewModel(cardNumber: Int(card.fizzyNumber), client: client)
+        } else {
+            self.stepsViewModel = nil
+        }
     }
 
     func save() {

@@ -106,6 +106,10 @@ struct CardDetailView: View {
                     // Completed toggle
                     Toggle("Completed", isOn: $viewModel.isCompleted)
                 }
+
+                if let stepsVM = viewModel.stepsViewModel {
+                    CardStepsSection(viewModel: stepsVM)
+                }
             }
             .navigationTitle("Card Detail")
             #if os(iOS)

@@ -85,6 +85,10 @@ struct CardDetailViewModelTests {
         #expect((card.labels as? Set<Label>)?.isEmpty == true)
     }
 
+    @Test func unpairedCardHasNoStepsVM() {
+        #expect(viewModel.stepsViewModel == nil)
+    }
+
     @Test("toggleGolden flips isGolden and updates modifiedAt")
     func toggleGoldenFlips() async throws {
         #expect(card.isGolden == false)
@@ -131,6 +135,11 @@ struct CardDetailViewModelTagPushTests {
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+    }
+
+    @Test("paired card with a client exposes a steps view model")
+    func pairedCardExposesStepsVM() {
+        #expect(viewModel.stepsViewModel != nil)
     }
 
     @Test("toggle on a paired card POSTs the tagging toggle")

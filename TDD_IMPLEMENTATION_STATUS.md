@@ -1453,3 +1453,33 @@ error), plus `deleteSteps(at:)` for SwiftUI `onDelete`. Exposes
 
 **Verification:** 335 → **341 tests / 71 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+### 23. Issue #19 Task 5 — Steps checklist UI in card detail ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error:
+new `stepsViewModel` property — accepted repo bend).
+
+**Change:** `CardDetailViewModel` now exposes
+`let stepsViewModel: CardStepsViewModel?` — built in `init` only when
+the card is fizzy-paired (`fizzyNumber > 0`) AND a live `FizzyClient`
+was injected; `nil` otherwise (online-only per the Captain's ruling on
+#19). New `FenixKanban/Features/Card/CardStepsSection.swift` renders
+the checklist as a Form `Section`: tap-to-toggle rows (circle /
+checkmark.circle.fill with strikethrough on completed, full a11y
+label/value/hint), swipe-to-delete via `onDelete` →
+`deleteSteps(at:)`, an "Add a step" `TextField` that submits via
+`addStep(content:)`, and a header showing `progressText` plus a small
+`ProgressView` while loading. Steps load lazily via `.task { await
+viewModel.load() }`. `CardDetailView` renders the section after the
+metadata/Completed section, only when `stepsViewModel` is non-nil. No
+custom `.background` anywhere — Form rows keep their system Liquid
+Glass surfaces.
+
+**Tests (in `CardDetailViewModelTests.swift`):**
+- `pairedCardExposesStepsVM` (tag-push suite: fizzyNumber=7 + mock
+  client) — `stepsViewModel != nil`.
+- `unpairedCardHasNoStepsVM` (original suite: no client) —
+  `stepsViewModel == nil`.
+
+**Verification:** 341 → **343 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
