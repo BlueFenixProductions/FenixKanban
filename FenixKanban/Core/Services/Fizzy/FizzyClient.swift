@@ -407,6 +407,65 @@ extension FizzyClient {
         return merged
     }
 
+    /// PUT a JSON body that expects `204 No Content`. Fizzy's notification
+    /// settings update (docs/api/sections/notifications.md) responds 204
+    /// rather than the `200 + body` convention `put` implements.
+    func putNoContent<Body: Encodable & Sendable>(_ path: String, body: Body) async throws {
+        var request = URLRequest(url: url(for: path))
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try Self.encoder.encode(body)
+
+        let (data, http) = try await performWithRetry(request)
+
+        switch http.statusCode {
+        case 204:
+            return
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
+    /// PATCH a JSON body to an *account-scoped* `/my/…` path, expecting
+    /// `204 No Content`. The timezone endpoint
+    /// (`PATCH /:account_slug/my/timezone`, docs/api/sections/identity.md)
+    /// uses the `/my/` prefix *and* is account-scoped — like `/my/pins` — so
+    /// the slug is interpolated here explicitly, bypassing `url(for:)`'s
+    /// `/my/` exemption.
+    func patchNoContent<Body: Encodable & Sendable>(
+        accountScopedMyPath path: String,
+        body: Body
+    ) async throws {
+        precondition(path.hasPrefix("/my/"), "use a plain path helper for non-/my/ paths")
+        let normalizedSlug = accountSlug.hasPrefix("/") ? String(accountSlug.dropFirst()) : accountSlug
+        let scoped = "/\(normalizedSlug)\(path)"
+        guard let scopedURL = URL(string: scoped, relativeTo: baseURL)?.absoluteURL else {
+            throw FizzyError.unexpectedStatus(0)
+        }
+
+        var request = URLRequest(url: scopedURL)
+        request.httpMethod = "PATCH"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try Self.encoder.encode(body)
+
+        let (data, http) = try await performWithRetry(request)
+
+        switch http.statusCode {
+        case 204:
+            return
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
     /// GET an account-scoped `/my/…` path. `url(for:)` deliberately skips the
     /// slug for `/my/` paths (`/my/identity` is unscoped), but a few endpoints
     /// — `GET /:account_slug/my/pins` per docs/api/sections/pins.md — use the
