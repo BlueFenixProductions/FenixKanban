@@ -1461,4 +1461,35 @@ struct FizzySyncEngineNumberReentrancyTests {
         #expect(postCount == 1)
         #expect(ra.itemsCreated + rb.itemsCreated == 1)
     }
+
+    @Test("card pull follows Link rel=\"next\" so multi-page boards sync fully")
+    func cardPullFollowsPagination() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let iso = "2026-06-01T00:00:00Z"
+        let page1 = "[\(Self.cardJSON(id: "fzPG1", number: 21, title: "Page one card", iso: iso))]"
+        let page2 = "[\(Self.cardJSON(id: "fzPG2", number: 22, title: "Page two card", iso: iso))]"
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                if req.url?.query?.contains("page=2") == true {
+                    return (page2.data(using: .utf8)!, .ok(for: req))
+                }
+                let headers = ["Link": "<https://fizzy.bluefenix.net/ACCT/cards?board_ids%5B%5D=FB1&page=2>; rel=\"next\""]
+                return (page1.data(using: .utf8)!, .ok(for: req, headers: headers))
+            default:
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+        #expect(result.itemsCreated == 2)
+
+        let fetch = Card.fetchRequest()
+        let cards = try h.persistence.viewContext.fetch(fetch)
+        #expect(Set(cards.compactMap(\.fizzyID)) == ["fzPG1", "fzPG2"])
+    }
 }

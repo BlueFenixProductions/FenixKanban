@@ -511,3 +511,94 @@ struct FizzyClientRetryTests {
         #expect(attempt == 3)
     }
 }
+
+@Suite("FizzyClient — Link-header pagination", .serialized)
+struct FizzyClientPaginationTests {
+
+    init() {
+        MockURLProtocol.reset()
+    }
+
+    private struct Item: Decodable, Equatable, Sendable {
+        let id: Int
+    }
+
+    private func makeClient() -> FizzyClient {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "test-token",
+            accountSlug: "897362094",
+            urlSession: session,
+            clock: ImmediateClock()
+        )
+    }
+
+    @Test("follows rel=\"next\" across pages and concatenates results")
+    func followsNextAcrossPages() async throws {
+        MockURLProtocol.handler = { req in
+            let url = req.url!.absoluteString
+            if url.contains("page=3") {
+                return (#"[{"id":5}]"#.data(using: .utf8)!, .ok(for: req))
+            } else if url.contains("page=2") {
+                let headers = ["Link": "<https://fizzy.bluefenix.net/897362094/cards?page=3>; rel=\"next\""]
+                return (#"[{"id":3},{"id":4}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
+            } else {
+                let headers = ["Link": "<https://fizzy.bluefenix.net/897362094/cards?page=2>; rel=\"next\""]
+                return (#"[{"id":1},{"id":2}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
+            }
+        }
+
+        let items = try await makeClient().getAllPages("/cards", as: [Item].self)
+        #expect(items == [Item(id: 1), Item(id: 2), Item(id: 3), Item(id: 4), Item(id: 5)])
+        #expect(MockURLProtocol.requests.count == 3)
+        // Pages 2+ are requested at the exact URL from the Link header.
+        #expect(MockURLProtocol.requests[1].url?.absoluteString
+            == "https://fizzy.bluefenix.net/897362094/cards?page=2")
+        // Auth carries across page follows.
+        #expect(MockURLProtocol.requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
+    }
+
+    @Test("verbatim doc wire shape: lowercase `link:` header, doc-format URL")
+    func docWireShapeLinkHeader() async throws {
+        // Header exactly as printed in fizzy docs/api/README.md ("Pagination"):
+        //   < link: <http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel="next"
+        MockURLProtocol.handler = { req in
+            if req.url!.absoluteString.contains("page=2") {
+                return (#"[{"id":2}]"#.data(using: .utf8)!, .ok(for: req))
+            }
+            let headers = ["link": "<http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel=\"next\""]
+            return (#"[{"id":1}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
+        }
+
+        let items = try await makeClient().getAllPages("/cards", as: [Item].self)
+        #expect(items == [Item(id: 1), Item(id: 2)])
+        #expect(MockURLProtocol.requests[1].url?.absoluteString
+            == "http://app.fizzy.localhost:3006/686465299/cards?page=2")
+    }
+
+    @Test("single page without Link header returns just that page")
+    func singlePageNoLink() async throws {
+        MockURLProtocol.handler = { req in
+            (#"[{"id":1}]"#.data(using: .utf8)!, .ok(for: req))
+        }
+
+        let items = try await makeClient().getAllPages("/cards", as: [Item].self)
+        #expect(items == [Item(id: 1)])
+        #expect(MockURLProtocol.requests.count == 1)
+    }
+
+    @Test("Link header with only rel=\"prev\" does not loop")
+    func linkWithoutNextStops() async throws {
+        MockURLProtocol.handler = { req in
+            let headers = ["Link": "<https://fizzy.bluefenix.net/897362094/cards?page=1>; rel=\"prev\""]
+            return (#"[{"id":9}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
+        }
+
+        let items = try await makeClient().getAllPages("/cards", as: [Item].self)
+        #expect(items == [Item(id: 9)])
+        #expect(MockURLProtocol.requests.count == 1)
+    }
+}
