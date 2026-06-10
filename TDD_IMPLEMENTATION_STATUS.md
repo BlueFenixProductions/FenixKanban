@@ -1773,3 +1773,75 @@ illegible on light fills); `AssigneePickerView` takes `assignedIDs` as a
 plain `let` (LabelPickerView pattern) so failed-toggle reverts visibly flip
 checkmarks back instead of leaving stale local `@State`. Still **361 tests
 / 73 suites green** on the pinned sim; macOS build clean, 0 warnings.
+
+---
+
+### 31. Issue #19 Wave 2 — CLOSE-OUT SUMMARY: Assignments ✅
+
+**Date:** 2026-06-10 · Plan: `docs/superpowers/plans/2026-06-10-19-assignments-wave.md`
+· Commits `1b52b7c..2f2a54b` (10) · Entries 26–30 above cover the per-task detail.
+
+**What shipped:**
+- **Wire decode**: `FizzyCard.assignees: [FizzyUser]?` +
+  `FizzyUser.avatarURL` (`avatar_url`), proven against the verbatim
+  `column_cards_doc.json` fixture.
+- **CoreData v7**: additive optional Binary `assigneesData` blob on Card
+  + `CardAssignee` struct accessor (Captain's ruling: JSON blob, no
+  dedicated entity — assignees are remote-authoritative like tags);
+  inferred v6→v7 lightweight migration proven, plus a current-model pin
+  test guarding against a pbxproj `currentVersion` regression.
+- **Sync pull** persists card assignees with key-presence semantics:
+  `nil` (key absent, e.g. single-card doc) leaves the blob alone, `[]`
+  clears it; equality guard avoids dirtying the object on no-change pulls.
+- **Assignment toggles push** `POST /cards/:n/assignments` from the
+  detail view for paired cards — optimistic blob flip, revert-on-failure
+  with state-recheck so a newer concurrent toggle is never clobbered;
+  unpaired/no-client is a full no-op.
+- **Assignee UI**: `InitialsAvatar` (FNV-colored circle,
+  luminance-picked black/white initials) in an overlapping strip on the
+  card detail, plus `AssigneePickerView` multi-select sheet (live
+  `client.users()` fetch filtered to active, checkmarks driven by VM
+  state so failed-toggle reverts flip back visibly). Row gated on
+  `canEditAssignments` (fizzy-paired + live client only).
+
+**Commits (in order):**
+- `1b52b7c` docs(19): implementation plan — assignments wave
+- `34d97c2` feat(19): decode card assignees + user avatar_url from wire (TDD #26)
+- `f10efdd` feat(19): CoreData v7 — assigneesData blob on Card + CardAssignee (TDD #27)
+- `a6fd78a` test(19): pin current CoreData model version carries assigneesData (review fix M1)
+- `a9786fe` test(19): sync pull maps assignees to Card blob (RED)
+- `05dafc9` feat(19): sync pull persists card assignees (GREEN) (TDD #28)
+- `7815328` feat(19): assignment toggles push to Fizzy, optimistic w/ revert (TDD #29)
+- `4c0640a` test(19): stale assignment-toggle failure must not revert newer state (review fix M1)
+- `1d260fe` feat(19): assignee avatar row + picker in card detail (TDD #30)
+- `2f2a54b` fix(19): legible initials on light avatar colors; live picker checkmarks (review fixes)
+
+**Review fixes (all mandated fixes landed and re-approved):**
+- Task 2 M1: current-model pin test for `assigneesData` (`a6fd78a`).
+- Task 4 M1: `failedToggleRespectsNewerState` — non-revert arm of the
+  state-recheck, mutation-checked (`4c0640a`).
+- Task 5: luminance-based initials contrast + picker checkmarks driven
+  by reverted VM state instead of stale `@State` (`2f2a54b`).
+
+**Known gray areas (documented, by design):**
+- Assignees are list-payload-only: a card freshly opened via detail
+  (never pulled) shows the last-pulled blob; reconciliation happens on
+  the next pull.
+- `has_more_assignees` is NOT decoded — cards with truncated assignee
+  lists show only the embedded page (MVP limitation).
+- Avatar images deferred (avatar_url requires the bearer token;
+  AsyncImage can't send headers) — initials only. `avatarURL` IS
+  decoded, so a future authenticated image loader needs no wire change.
+- Echo-PUT after a successful toggle (`modifiedAt` bump → next sync
+  pushes; assignees aren't in the PUT payload so nothing is clobbered)
+  — same known minor as tags (tracked in the #20 family).
+- Alert-under-sheet: the toggle-failure alert can't present while the
+  picker sheet is up — shared debt with `LabelPickerView`, noted by
+  review.
+- Avatar strip + label strip use `onTapGesture`, not `Button` (macOS
+  keyboard access / VoiceOver trait) — shared debt, follow-up candidate.
+
+**Verification:** 348/71 (wave-1 baseline) → **361 tests / 73 suites**
+(+13 tests, +2 suites), all green on pinned iPhone 17 sim (UDID
+`1CCA4B1C…`); macOS build clean, 0 warnings. Every task went through
+spec + quality review; all mandated fixes landed and were re-approved.
