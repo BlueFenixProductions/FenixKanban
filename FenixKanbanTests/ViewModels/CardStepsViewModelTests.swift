@@ -177,10 +177,59 @@ struct CardStepsViewModelTests {
             }
             return (detail, .ok(for: request))
         }
-        vm.errorMessage = nil
+        // deleteStep clears the stale phase-1 error at operation start.
         await vm.deleteStep(try #require(vm.steps.first))
         #expect(vm.steps.map(\.content) == ["This is the second step"])
         #expect(vm.errorMessage == nil)
+    }
+
+    @Test("stale toggle response does not clobber a newer toggle of the same step")
+    func staleToggleRespectsNewerState() async throws {
+        // First PUT is held open by a gate and returns a stale completed:true;
+        // a second toggle of the same step completes (back to false) while the
+        // first is in flight. When the gate opens, the first toggle's success
+        // path must see the newer local state and NOT apply its stale response.
+        MockURLProtocol.reset()
+        defer { MockURLProtocol.reset() }
+        let detail = try loadFixture("card_detail_doc")
+        let staleTrue = Data("""
+        {"id":"03f8huu0sog76g3s975963b5e","content":"This is the first step","completed":true}
+        """.utf8)
+        let freshFalse = Data("""
+        {"id":"03f8huu0sog76g3s975963b5e","content":"This is the first step","completed":false}
+        """.utf8)
+        let (gate, releaseFirstPut) = AsyncStream.makeStream(of: Void.self)
+        let puts = StepPutCallCounter()
+        MockURLProtocol.delayedHandler = { request in
+            guard request.httpMethod == "PUT" else {
+                return (detail, .ok(for: request))
+            }
+            if puts.next() == 1 {
+                var blocked = gate.makeAsyncIterator()
+                _ = await blocked.next()
+                return (staleTrue, .ok(for: request))
+            }
+            return (freshFalse, .ok(for: request))
+        }
+
+        let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
+        await vm.load()
+        let first = try #require(vm.steps.first)
+        #expect(first.completed == false)
+
+        // Toggle 1: false -> true optimistically, then suspends on the gated PUT.
+        async let firstToggle: Void = vm.toggleStep(first)
+        while puts.count == 0 { await Task.yield() }
+
+        // Toggle 2: true -> false, completes while toggle 1 is in flight.
+        await vm.toggleStep(try #require(vm.steps.first))
+        #expect(try #require(vm.steps.first).completed == false)
+
+        // Release toggle 1. Its stale completed:true response must be dropped.
+        releaseFirstPut.yield()
+        await firstToggle
+
+        #expect(try #require(vm.steps.first).completed == false)
     }
 
     @Test("deleteSteps(at:) snapshots steps before awaiting — both rows go")
@@ -208,5 +257,26 @@ struct CardStepsViewModelTests {
         #expect(vm.steps.isEmpty)
         #expect(vm.errorMessage == nil)
         #expect(MockURLProtocol.requests.filter { $0.httpMethod == "DELETE" }.count == 2)
+    }
+}
+
+/// Thread-safe call counter for `MockURLProtocol.delayedHandler`, which is
+/// invoked off the main actor (URL loading threads). Mirrors the counter in
+/// `CardDetailViewModelTests`.
+private final class StepPutCallCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+
+    func next() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        value += 1
+        return value
+    }
+
+    var count: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
     }
 }

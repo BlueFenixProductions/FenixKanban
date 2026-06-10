@@ -25,6 +25,7 @@ final class CardStepsViewModel: ObservableObject {
     }
 
     func load() async {
+        errorMessage = nil
         isLoading = true
         defer { isLoading = false }
         do {
@@ -35,6 +36,7 @@ final class CardStepsViewModel: ObservableObject {
     }
 
     func addStep(content: String) async {
+        errorMessage = nil
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         do {
@@ -45,17 +47,26 @@ final class CardStepsViewModel: ObservableObject {
         }
     }
 
+    /// Flips a step optimistically, then PUTs the new completed state.
+    /// Concurrent toggles of the same step are last-writer-wins locally
+    /// (mirrors `CardDetailViewModel.toggleLabel`): before applying the
+    /// server response — and before reverting on failure — we re-check that
+    /// the step's local `completed` still matches our optimistic flip; if a
+    /// newer toggle already moved it on, we leave that state alone.
     func toggleStep(_ step: FizzyStep) async {
+        errorMessage = nil
         guard let index = steps.firstIndex(where: { $0.id == step.id }) else { return }
         let flipped = FizzyStep(id: step.id, content: step.content, completed: !step.completed)
         steps[index] = flipped  // optimistic
         do {
             let updated = try await client.updateStep(cardNumber: cardNumber, id: step.id, completed: flipped.completed)
-            if let i = steps.firstIndex(where: { $0.id == step.id }) {
+            if let i = steps.firstIndex(where: { $0.id == step.id }),
+               steps[i].completed == flipped.completed {
                 steps[i] = updated
             }
         } catch {
-            if let i = steps.firstIndex(where: { $0.id == step.id }) {
+            if let i = steps.firstIndex(where: { $0.id == step.id }),
+               steps[i].completed == flipped.completed {
                 steps[i] = step  // revert
             }
             errorMessage = "Couldn't update the step."
@@ -63,6 +74,7 @@ final class CardStepsViewModel: ObservableObject {
     }
 
     func deleteStep(_ step: FizzyStep) async {
+        errorMessage = nil
         guard let index = steps.firstIndex(where: { $0.id == step.id }) else { return }
         steps.remove(at: index)  // optimistic
         do {
