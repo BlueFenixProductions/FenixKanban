@@ -2077,3 +2077,108 @@ rather than drive new logic).
 
 **Verification:** 380 → **382 tests / 77 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+---
+
+### 37. Issue #19 Wave 3 — CLOSE-OUT SUMMARY: Watch / Pin / Golden ✅
+
+**Date:** 2026-06-10 · Plan:
+`docs/superpowers/plans/2026-06-10-19-watch-pin-golden-wave.md`
+· Commits `2c33c4b..450d746` (9) · Entries 32–36 above cover the
+per-task detail.
+
+**What shipped:**
+- **CoreData v8**: two additive non-optional Booleans on `Card` —
+  `isWatched` + `isPinned` (`defaultValueString="NO"`, scalar);
+  v7→v8 inferred lightweight migration proven, current-model pin test
+  guards the pbxproj `currentVersion`. Plus the wave-2 holistic-review
+  refactor: shared `migrationTestModel(named:)` loader replaces the
+  V6/V7 duplicated helper.
+- **Pin reconciliation**: `steadyStateSync` ends with
+  `reconcilePins(localBoard:)` — `GET /my/pins` is the only source of
+  truth (card wire shape never carries pinned state); best-effort
+  (`try?`, a failed fetch leaves local state alone), remote-
+  authoritative (clears local pins absent from the response), no
+  `modifiedAt` bump. Fixture `pins_doc.json` consumed verbatim.
+- **Watch + pin toggles push**: `toggleWatched()`/`togglePinned()` on
+  `CardDetailViewModel` — paired+client guard (unpaired = full no-op,
+  zero network), optimistic flip, POST/DELETE `/cards/:n/watch` /
+  `/pin`, state-recheck revert + `errorMessage` on failure. Repository
+  `setWatched`/`setPinned` deliberately skip the `modifiedAt` bump
+  (not card content; bump = echo-PUT). New `isFizzyPaired` gate;
+  `canEditAssignments` kept as delegating alias.
+- **Golden push (latent bug fix)**: golden toggles were local-only,
+  but sync pull is remote-authoritative on `golden` — a flip on a
+  paired card silently reverted on the next pull. Now BOTH golden
+  surfaces push via the goldness endpoints (POST/DELETE
+  `/cards/:n/goldness`): `CardDetailViewModel.toggleGolden()` (async,
+  revert + alert on failure) and `BoardViewModel.toggleGolden(for:)`
+  (fire-and-forget `pushGolden`, silent state-recheck revert — board
+  has no alert affordance). Golden KEEPS its `modifiedAt` bump (LWW
+  pull-block protection for pulled content — test-locked).
+- **UI**: Watch + Pin `Toggle` rows in card detail (gated on
+  `isFizzyPaired`, `Binding` setters fire the async VM toggles so
+  failed pushes snap the switch back; failures surface via the
+  existing Sync Error alert) + `pin.fill`/`eye.fill` indicators inline
+  in the card-face title HStack (`.secondary` content tint — Liquid
+  Glass safe; accessibility labels "Pinned"/"Watching").
+
+**Commits (in order):**
+- `2c33c4b` docs(19): implementation plan — watch/pin/golden wave
+- `e022477` feat(19): CoreData v8 — isWatched + isPinned flags on Card (TDD #32)
+- `a8b28ed` test(19): sync reconciles isPinned from GET /my/pins (RED)
+- `6d522cb` feat(19): sync reconciles isPinned from GET /my/pins (GREEN) (TDD #33)
+- `bce4d9b` feat(19): watch + pin toggles push to Fizzy, optimistic w/ revert (TDD #34)
+- `24c67dd` test(19): pin the no-modifiedAt-bump contract on watch/pin setters (review fix M1)
+- `05e107a` feat(19): golden toggles push goldness to Fizzy from all surfaces (TDD #35)
+- `0eb1242` fix(19): board golden push — failure-path test, deleted-card guard (review fixes M1/L1/L3)
+- `450d746` feat(19): watch/pin toggles in card detail + card-face indicators (TDD #36)
+
+**Review fixes (all mandated fixes landed and re-approved):**
+- Task 3 M1: `modifiedAt`-unchanged assertions on the watch/pin push
+  tests — locks the no-bump contract, mutation-verified (`24c67dd`).
+- Task 4 M1/L1/L3: `boardTogglePushFailureReverts` locks the
+  previously untested `pushGolden` catch path (mutation-verified);
+  `fizzyNumber` captured before the fire-and-forget Task + deleted-card
+  guard (`!card.isDeleted`, non-nil context) on the revert; success
+  path now asserts no spurious revert (`0eb1242`).
+
+**Known gray areas (documented, by design):**
+- Watch state is write-only/local-best-guess — drifts if toggled from
+  another client; no server read API exists. Rapid out-of-order watch
+  requests can also desync (no reconciler) — same family.
+- Pin reconcile can race a just-toggled pin if the sync's pins fetch
+  predates the toggle's POST — next cycle self-heals. Window widens
+  when Phase 6's polling timer lands (mitigation candidate: skip
+  reconcile while a pin op is in flight).
+- `GET /my/pins` is unpaginated, capped at 100 pins — silent
+  truncation could unpin local cards beyond the cap (irrelevant at MVP
+  scale; comment-worthy when multi-board lands).
+- Pins-fetch failures are silently swallowed (`try?`) — the only
+  best-effort engine path not recorded in `result.errors`; persistent
+  failure is invisible (noted by review, deferred).
+- Board-surface golden push failures revert silently (board has no
+  alert affordance; detail surface shows the Sync Error alert).
+- Watch/pin flags skip the `modifiedAt` bump (no echo-PUT —
+  mutation-test locked); golden keeps it (LWW pull-block protection
+  for pulled content — also test-locked).
+- Detail VM's `isWatched`/`isPinned` are init-time snapshots — a sync
+  landing while detail is open can leave the Toggle stale while the
+  card face (live `@ObservedObject`) is correct; same snapshot family
+  as labels/assignees (#20).
+- `BoardViewModel` resolves its `FizzyClient` at view init — pairing
+  mid-session leaves an alive board VM with a nil client until view
+  identity changes.
+- CloudKit: v8's two Boolean attrs join the #20 schema-deploy
+  checklist (schema-additive; defaults satisfy CloudKit's
+  optional-or-default rule).
+- Test-infra debt: ~10th duplicated sync-test Harness and ~8th fixture
+  loader — extraction is a standalone follow-up candidate.
+
+**Verification:** 361/73 (wave-2 close-out baseline) → **382 tests /
+77 suites** (+21 tests, +4 suites), all green on pinned iPhone 17 sim
+(UDID `1CCA4B1C…`); macOS build clean, 0 warnings. Final full pass
+re-run at close-out: `Test run with 382 tests in 77 suites passed`,
+macOS `BUILD SUCCEEDED` with zero warnings. Every task went through
+spec + quality review; 3 review-fix commits landed, two of them
+mutation-verified.
