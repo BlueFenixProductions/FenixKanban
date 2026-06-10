@@ -1766,3 +1766,10 @@ gate rather than drive new logic).
 
 **Verification:** 359 → **361 tests / 73 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fixes (2026-06-10):** `InitialsAvatar` picks black/white initials
+by relative luminance (FNV colors span the full RGB space — white text was
+illegible on light fills); `AssigneePickerView` takes `assignedIDs` as a
+plain `let` (LabelPickerView pattern) so failed-toggle reverts visibly flip
+checkmarks back instead of leaving stale local `@State`. Still **361 tests
+/ 73 suites green** on the pinned sim; macOS build clean, 0 warnings.

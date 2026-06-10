@@ -2,21 +2,18 @@ import SwiftUI
 
 /// Multi-select assignee picker for a fizzy-paired card (issue #19 wave 2).
 /// The user list is fetched live from `GET /users`; assignment state is the
-/// card's persisted blob, toggled through the parent view model. Local
-/// checkmark state flips immediately (same optimistic feel as the toggle).
+/// card's persisted blob, toggled through the parent view model. `assignedIDs`
+/// is a plain `let` re-derived from the view model on every body evaluation
+/// (same pattern as LabelPickerView): the optimistic flip in
+/// `toggleAssignment` updates checkmarks within a frame, and a failed-toggle
+/// revert visibly flips them back instead of leaving stale local state.
 struct AssigneePickerView: View {
     let client: FizzyClient
+    let assignedIDs: Set<String>
     let onToggle: (FizzyUser) -> Void
-    @State private var assignedIDs: Set<String>
     @State private var users: [FizzyUser] = []
     @State private var loadFailed = false
     @Environment(\.dismiss) private var dismiss
-
-    init(client: FizzyClient, assignedIDs: Set<String>, onToggle: @escaping (FizzyUser) -> Void) {
-        self.client = client
-        self.onToggle = onToggle
-        self._assignedIDs = State(initialValue: assignedIDs)
-    }
 
     var body: some View {
         NavigationStack {
@@ -28,11 +25,6 @@ struct AssigneePickerView: View {
                 } else {
                     List(users, id: \.id) { user in
                         Button {
-                            if assignedIDs.contains(user.id) {
-                                assignedIDs.remove(user.id)
-                            } else {
-                                assignedIDs.insert(user.id)
-                            }
                             onToggle(user)
                         } label: {
                             HStack(spacing: 10) {
