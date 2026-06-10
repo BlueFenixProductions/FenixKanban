@@ -97,6 +97,7 @@
 		A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */; };
 		A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */ = {isa = PBXBuildFile; fileRef = B36134843F5683038443D750 /* TipJarProducts.storekit */; };
 		A8BA33B4E95C7DC1B5BCB89F /* BackupManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8B6A25376C60961725E8B /* BackupManifest.swift */; };
+		A94FB2127558BBF22138921D /* CoreDataMigrationV6Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */; };
 		AC1E3E87B7CD67F0035D7505 /* FizzyClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF14922C6549BC2260540129 /* FizzyClient.swift */; };
 		ACDC1A0770CC952A0A5FD5F1 /* BoardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */; };
 		AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */; };
@@ -268,6 +269,7 @@
 		B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Label+CoreDataClass.swift"; sourceTree = "<group>"; };
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV6Tests.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
 		C5675C125FA0A0508D8E6A50 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyResponse.swift; sourceTree = "<group>"; };
@@ -402,6 +404,14 @@
 				DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */,
 			);
 			path = Fizzy;
+			sourceTree = "<group>";
+		};
+		2ADAD06F0584C897CBB97668 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */,
+			);
+			path = Persistence;
 			sourceTree = "<group>";
 		};
 		2E22745F4F482FA3823879D8 /* Sync */ = {
@@ -781,6 +791,7 @@
 				C324BCF806B80C2A14FFB431 /* Fixtures */,
 				2E96249D89F978A03046C06B /* Intents */,
 				ED92A51CF99AD7208A720C96 /* Models */,
+				2ADAD06F0584C897CBB97668 /* Persistence */,
 				CEB25DA70C666F89336E18F6 /* Repositories */,
 				74EE9E89E5F457BABDDF039C /* Services */,
 				7F68A8D5B1BEE2A3B176B872 /* ViewModels */,
@@ -1025,6 +1036,7 @@
 				48B42F3CCACF3FBA3E7F8922 /* CardRepositoryGoldenSortTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
 				3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */,
+				A94FB2127558BBF22138921D /* CoreDataMigrationV6Tests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,
 				1CB04CF828EEDBD05FD6D100 /* FirstSyncModeTests.swift in Sources */,
