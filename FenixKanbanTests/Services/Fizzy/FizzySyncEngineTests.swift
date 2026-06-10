@@ -797,6 +797,105 @@ struct FizzySyncEngineSteadyPullTests {
         _ = try await h.engine.sync()
         #expect(card.sortedLabels.isEmpty)
     }
+
+    @Test("pull: card assignees land in the persisted blob")
+    func pullMapsAssignees() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [{"id":"fzA1","number":21,"title":"Assigned","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/21","assignees":[{"id":"u1","name":"Ada Lovelace","role":"member","active":true,"email_address":"ada@example.com","created_at":"2025-12-05T19:36:35.401Z","url":"https://fizzy.bluefenix.net/ACCT/users/u1","avatar_url":"https://fizzy.bluefenix.net/ACCT/users/u1/avatar"}],"has_more_assignees":false}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+
+        let card = h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 21 }
+        #expect(card?.assignees == [CardAssignee(id: "u1", name: "Ada Lovelace")])
+    }
+
+    @Test("pull: empty assignees array clears the blob; absent key preserves it")
+    func pullClearsOrPreservesAssignees() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        // Seed a paired local card with an assignee already in the blob.
+        // Timestamps force the remote-newer LWW branch (remote last_active_at
+        // newer than fizzyUpdatedAt; local untouched since last sync).
+        let baseline = Date(timeIntervalSince1970: 1_000_000)
+        let card = h.cardRepo.createCard(in: h.column, title: "Assigned once")
+        card.fizzyID = "fzA2"
+        card.fizzyNumber = 22
+        card.fizzyUpdatedAt = baseline
+        card.modifiedAt = baseline
+        card.assignees = [CardAssignee(id: "u9", name: "Stale Person")]
+        try h.persistence.viewContext.save()
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+
+        // Round 1: remote carries an EMPTY assignees array → clear the blob.
+        let round1CardsJSON = """
+        [{"id":"fzA2","number":22,"title":"Assigned once","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-11T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/22","assignees":[],"has_more_assignees":false}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (round1CardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+        #expect(card.assignees == [], "empty remote array clears the blob")
+
+        // Re-seed the blob so round 2 genuinely distinguishes "left alone"
+        // from "cleared". Touching only assigneesData keeps modifiedAt ==
+        // fizzyUpdatedAt, so the pull branch still runs.
+        let seeded = [CardAssignee(id: "u1", name: "Ada Lovelace")]
+        card.assignees = seeded
+        try h.persistence.viewContext.save()
+
+        // Round 2: remote payload has NO assignees key at all (single-card-doc
+        // shape) and a newer last_active_at → blob must be PRESERVED.
+        let round2CardsJSON = """
+        [{"id":"fzA2","number":22,"title":"Assigned once","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-12T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/22"}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (round2CardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+        #expect(card.fizzyUpdatedAt == ISO8601DateFormatter().date(from: "2026-06-12T00:00:00Z"),
+                "round 2 pull branch ran")
+        #expect(card.assignees == seeded, "absent assignees key leaves the blob alone")
+    }
 }
 
 @Suite("FizzySyncEngine — steady-state push", .serialized)
