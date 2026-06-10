@@ -288,6 +288,12 @@ final class FizzySyncEngine {
             }
         }
 
+        // Pin reconciliation (issue #19 wave 3): pins are user-scoped and
+        // account-wide; the card wire shape never carries pinned state, so
+        // GET /my/pins is the only source of truth. Best-effort — a failed
+        // fetch leaves local pin state alone rather than failing the sync.
+        await reconcilePins(localBoard: localBoard)
+
         // Persist lastSyncAt.
         mapping.setLastSync(.now)
 
@@ -303,6 +309,26 @@ final class FizzySyncEngine {
             }
         }
         return result
+    }
+
+    // MARK: - Pin reconciliation (issue #19 wave 3)
+
+    /// Sets `isPinned` on every paired card to match `GET /my/pins`
+    /// (remote-authoritative, Captain's ruling #19 wave 3). Deliberately
+    /// does NOT bump modifiedAt: pin state is not part of the card-content
+    /// LWW contract and must not trigger echo-PUTs.
+    private func reconcilePins(localBoard: Board) async {
+        guard let pins = try? await client.myPins() else { return }
+        let pinnedIDs = Set(pins.map(\.id))
+        for column in localBoard.sortedColumns {
+            for card in column.sortedCards {
+                guard let fizzyID = card.fizzyID else { continue }
+                let shouldPin = pinnedIDs.contains(fizzyID)
+                if card.isPinned != shouldPin {
+                    card.isPinned = shouldPin
+                }
+            }
+        }
     }
 
     // MARK: - Adoption marker (issue #14)

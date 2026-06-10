@@ -171,6 +171,8 @@ struct FizzySyncProviderTests {
         // through rather than being mapped from the wrong source.
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 let body = """
                 [{"id":"FC1","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]

@@ -189,6 +189,8 @@ struct FizzySyncEngineBoardIsolationTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):

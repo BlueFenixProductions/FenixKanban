@@ -1883,3 +1883,43 @@ and green throughout.
 
 **Verification:** 361 → **364 tests / 74 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+---
+
+### 33. Issue #19 Wave 3 Task 2 — sync engine reconciles isPinned from GET /my/pins ✅
+
+**Date:** 2026-06-10 · TDD: RED (`a8b28ed`, 3 failing tests — `isPinned`
+never set by sync) → GREEN (this commit).
+
+**Engine:** `steadyStateSync` now ends with `reconcilePins(localBoard:)`
+(after all push/pull reconciliation, before `setLastSync`/save, so the
+cycle's single save covers pin changes). Pins are user-scoped and
+account-wide; the card wire shape never carries pinned state, so
+`GET /my/pins` (`FizzyClient.myPins()`, unpaginated) is the only source
+of truth — remote-authoritative per the Captain's ruling. Two deliberate
+properties:
+- **Best-effort:** `try? await client.myPins()` — a failed fetch leaves
+  local pin state alone and never fails (or errors) the sync.
+- **No `modifiedAt` bump:** pin state is not part of the card-content
+  LWW contract; bumping would cause echo-PUTs on the next cycle.
+
+**Tests:** new suite `FizzySyncEnginePinReconciliationTests` (3 tests):
+- `syncReconcilesPinsFromMyPins` — serves
+  `Fixtures/fizzy/pins_doc.json` VERBATIM (wire-shape rule); the synced
+  card whose id matches the fixture's pin gets `isPinned == true`, the
+  other stays `false`.
+- `syncClearsUnpinnedCards` — locally-pinned card + empty remote pin
+  set → unpinned (remote-authoritative clear).
+- `pinsFetchFailureLeavesPinStateAlone` — `/my/pins` answering 422:
+  `sync()` does not throw and the pre-sync `isPinned == true` survives.
+
+**Side effect handled:** every steady-sync mock handler now sees an
+extra `GET …/my/pins` — routed (`[]`, 200) as the first GET case in all
+40 handlers that drive `sync()` across `FizzySyncEngineTests`,
+`FizzySyncEngineAdoptionResilienceTests` (8),
+`FizzySyncEngineBoardIsolationTests` (steady-state only) and
+`FizzySyncProviderTests` (sync-translation test). `syncFirst`-only
+handlers untouched — first-sync modes don't reconcile pins.
+
+**Verification:** 364 → **367 tests / 75 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.

@@ -134,6 +134,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
         var nextNumber = 40
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -190,6 +192,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
         var putDescriptions: [String?] = []
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -239,6 +243,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
         var putShouldFail = true
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -290,6 +296,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
         )
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -334,6 +342,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
         var postCount = 0
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -389,6 +399,8 @@ struct FizzySyncEngineResilienceTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -423,6 +435,8 @@ struct FizzySyncEngineResilienceTests {
         var storedRemote: [String: Any]?
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -508,6 +522,8 @@ struct FizzySyncEngineResilienceTests {
         var putPaths: [String] = []
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):

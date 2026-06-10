@@ -643,6 +643,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -674,6 +676,8 @@ struct FizzySyncEngineSteadyPullTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -703,6 +707,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -736,6 +742,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -784,6 +792,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -811,6 +821,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -854,6 +866,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -881,6 +895,8 @@ struct FizzySyncEngineSteadyPullTests {
         """
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -965,6 +981,8 @@ struct FizzySyncEngineSteadyPushTests {
         var postCount = 0
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1069,6 +1087,8 @@ struct FizzySyncEngineLWWTests {
         let iso = ISO8601DateFormatter().string(from: newerRemote)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1105,6 +1125,8 @@ struct FizzySyncEngineLWWTests {
         let isoBaseline = ISO8601DateFormatter().string(from: baseline)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1171,6 +1193,8 @@ struct FizzySyncEngineSoftDeleteTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1228,6 +1252,8 @@ struct FizzySyncEngineCrashRecoveryTests {
         let iso = ISO8601DateFormatter().string(from: withinWindow)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1294,6 +1320,8 @@ struct FizzySyncEngineCrashRecoveryTests {
         let iso = ISO8601DateFormatter().string(from: withinWindow)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1361,6 +1389,8 @@ struct FizzySyncEngineIdempotenceTests {
         MockURLProtocol.reset()
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1534,6 +1564,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         let showJSON = Self.cardJSON(id: "03f5vaeq985jlvwv3arl4srq2", number: 7, title: "Local edit", iso: iso)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1563,6 +1595,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         let created = Self.cardJSON(id: "fzNEW", number: 12, title: "Fresh local", iso: iso)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1600,6 +1634,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         let created = Self.cardJSON(id: "fzX", number: 3, title: "Once only", iso: iso)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1642,6 +1678,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         let created = Self.cardJSON(id: "fzY", number: 4, title: "Once only", iso: iso)
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1679,6 +1717,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         let page2 = "[\(Self.cardJSON(id: "fzPG2", number: 22, title: "Page two card", iso: iso))]"
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (#"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -1780,6 +1820,8 @@ struct FizzySyncEngineDeletePropagationTests {
         MockURLProtocol.handler = { req in
             requestLog.append("\(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", let p?) where p.hasSuffix("/cards/7"):
                 return (Data(), .response(for: req, status: 204))
             case ("GET", let p?) where p.hasSuffix("/columns"):
@@ -1813,6 +1855,8 @@ struct FizzySyncEngineDeletePropagationTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", let p?) where p.hasSuffix("/cards/9"):
                 return (Data(), .response(for: req, status: 404))
             case ("GET", let p?) where p.hasSuffix("/columns"):
@@ -1842,6 +1886,8 @@ struct FizzySyncEngineDeletePropagationTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", let p?) where p.hasSuffix("/cards/9"):
                 return (Data(), .response(for: req, status: 500))
             case ("GET", let p?) where p.hasSuffix("/columns"):
@@ -1874,6 +1920,8 @@ struct FizzySyncEngineDeletePropagationTests {
         // still contains card number 7 — it must NOT be re-created locally.
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", let p?) where p.hasSuffix("/cards/7"):
                 return (Data(), .response(for: req, status: 500))
             case ("GET", let p?) where p.hasSuffix("/columns"):
@@ -1909,6 +1957,8 @@ struct FizzySyncEngineDeletePropagationTests {
         var deleteCount = 0
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", _):
                 deleteCount += 1
                 return (Data(), .response(for: req, status: 204))
@@ -2004,6 +2054,8 @@ struct FizzySyncEngineColumnPushTests {
         var postPaths: [String] = []
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
             case ("POST", let p?) where p.hasSuffix("/columns"):
@@ -2038,6 +2090,8 @@ struct FizzySyncEngineColumnPushTests {
 
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return ("[\(Self.columnJSON(id: "FC1", name: "Triage"))]".data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
@@ -2070,6 +2124,8 @@ struct FizzySyncEngineColumnPushTests {
         var putPaths: [String] = []
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return ("[\(Self.columnJSON(id: "FC1", name: "Old name"))]".data(using: .utf8)!, .ok(for: req))
             case ("PUT", let p?) where p.contains("/columns/"):
@@ -2108,6 +2164,8 @@ struct FizzySyncEngineColumnPushTests {
         var deletePaths: [String] = []
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", let p?) where p.contains("/columns/"):
                 deletePaths.append(p)
                 return (Data(), .response(for: req, status: 204))
@@ -2142,6 +2200,8 @@ struct FizzySyncEngineColumnPushTests {
         // still contains FC1 — it must NOT be re-created locally.
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("DELETE", let p?) where p.contains("/columns/"):
                 return (Data(), .response(for: req, status: 500))
             case ("GET", let p?) where p.hasSuffix("/columns"):
