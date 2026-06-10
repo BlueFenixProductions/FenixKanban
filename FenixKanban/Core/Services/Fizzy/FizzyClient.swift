@@ -71,7 +71,7 @@ final class FizzyClient: Sendable {
             switch http.statusCode {
             case 200:
                 items += try Self.decoder.decode([Element].self, from: data)
-                nextURL = Self.nextPageURL(from: http.value(forHTTPHeaderField: "Link"))
+                nextURL = nextPageURL(from: http.value(forHTTPHeaderField: "Link"))
             case 429:
                 throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
             default:
@@ -82,9 +82,11 @@ final class FizzyClient: Sendable {
     }
 
     /// Parses `<https://…?page=2>; rel="next"` out of a `Link` header.
-    /// Returns nil when the header is absent or carries no rel="next"
-    /// segment (e.g. only rel="prev" on the last page).
-    private static func nextPageURL(from linkHeader: String?) -> URL? {
+    /// Returns nil when the header is absent, carries no rel="next" segment
+    /// (e.g. only rel="prev" on the last page), or the next URL is not
+    /// same-origin with `baseURL` — following a cross-origin link would hand
+    /// the Bearer token to whatever host the header names.
+    private func nextPageURL(from linkHeader: String?) -> URL? {
         guard let linkHeader else { return nil }
         for segment in linkHeader.split(separator: ",") {
             let parts = segment.split(separator: ";")
@@ -93,7 +95,13 @@ final class FizzyClient: Sendable {
             let isNext = parts.dropFirst().contains {
                 $0.trimmingCharacters(in: .whitespaces) == "rel=\"next\""
             }
-            if isNext { return URL(string: String(target.dropFirst().dropLast())) }
+            guard isNext, let next = URL(string: String(target.dropFirst().dropLast())) else { continue }
+            guard next.scheme == baseURL.scheme,
+                  next.host?.lowercased() == baseURL.host?.lowercased(),
+                  next.port == baseURL.port else {
+                return nil
+            }
+            return next
         }
         return nil
     }

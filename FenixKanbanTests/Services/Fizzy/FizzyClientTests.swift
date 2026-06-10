@@ -561,22 +561,38 @@ struct FizzyClientPaginationTests {
         #expect(MockURLProtocol.requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
     }
 
-    @Test("verbatim doc wire shape: lowercase `link:` header, doc-format URL")
+    @Test("lowercase `link:` header (doc wire shape) is honored on same-origin follows")
     func docWireShapeLinkHeader() async throws {
-        // Header exactly as printed in fizzy docs/api/README.md ("Pagination"):
+        // fizzy docs/api/README.md ("Pagination") prints the header lowercase:
         //   < link: <http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel="next"
         MockURLProtocol.handler = { req in
             if req.url!.absoluteString.contains("page=2") {
                 return (#"[{"id":2}]"#.data(using: .utf8)!, .ok(for: req))
             }
-            let headers = ["link": "<http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel=\"next\""]
+            let headers = ["link": "<https://fizzy.bluefenix.net/897362094/cards?page=2>; rel=\"next\""]
             return (#"[{"id":1}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
         }
 
         let items = try await makeClient().getAllPages("/cards", as: [Item].self)
         #expect(items == [Item(id: 1), Item(id: 2)])
         #expect(MockURLProtocol.requests[1].url?.absoluteString
-            == "http://app.fizzy.localhost:3006/686465299/cards?page=2")
+            == "https://fizzy.bluefenix.net/897362094/cards?page=2")
+    }
+
+    @Test("cross-origin rel=\"next\" is NOT followed — Bearer token stays on baseURL's origin")
+    func crossOriginNextIsRejected() async throws {
+        // Verbatim header from fizzy docs/api/README.md ("Pagination") — its host
+        // (app.fizzy.localhost:3006) differs from this client's baseURL, exactly
+        // the shape a hostile/misconfigured server could use to exfiltrate the
+        // Authorization header. Pagination must stop, not follow.
+        MockURLProtocol.handler = { req in
+            let headers = ["link": "<http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel=\"next\""]
+            return (#"[{"id":1}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
+        }
+
+        let items = try await makeClient().getAllPages("/cards", as: [Item].self)
+        #expect(items == [Item(id: 1)])
+        #expect(MockURLProtocol.requests.count == 1)
     }
 
     @Test("single page without Link header returns just that page")
