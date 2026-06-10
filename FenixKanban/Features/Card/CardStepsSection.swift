@@ -27,6 +27,11 @@ struct CardStepsSection: View {
                 .accessibilityLabel(step.content)
                 .accessibilityValue(step.completed ? "Completed" : "Not completed")
                 .accessibilityHint("Toggles completion on Fizzy.")
+                .contextMenu {
+                    Button("Delete Step", role: .destructive) {
+                        Task { await viewModel.deleteStep(step) }
+                    }
+                }
             }
             .onDelete { offsets in
                 Task { await viewModel.deleteSteps(at: offsets) }
@@ -46,7 +51,15 @@ struct CardStepsSection: View {
                     ProgressView().controlSize(.small)
                 }
             }
+            .task { await viewModel.load() }
         }
-        .task { await viewModel.load() }
+        .alert("Steps Error", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 }

@@ -1483,3 +1483,10 @@ Glass surfaces.
 
 **Verification:** 341 → **343 tests / 71 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+**Addendum (review fixes, same day):** "Steps Error" alert now surfaces
+`errorMessage` (mirrors CardDetailView's Sync Error pattern); per-row
+`.contextMenu` "Delete Step" adds a macOS delete affordance alongside
+iOS swipe; `.task` moved off the `Section` onto the header `HStack`.
+View-layer wiring only — no new tests; 343/71 still green, macOS build
+clean.
