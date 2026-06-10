@@ -1252,3 +1252,52 @@ boot UDID `1CCA4B1C…` and wait for `bootstatus` first.
 
 **Not yet wired:** these are client-surface methods; engine/UI adoption
 tracked in GH issues #11–#19 (incl. needs-captain UI questions).
+
+### 17. Fizzy Engine Wave — Delete Propagation, Column Push, Marker Adoption, Resilience ✅
+
+**Date:** 2026-06-10 · Issues #11 #12 #14 #15 · Commits: `38da296`+`816b5bb` (E1), `33b2483`+`75c065f` (E2)
+
+**CoreData v5** (lightweight from v4): `CardTombstone` {fizzyNumber,
+deletedAt}, `ColumnTombstone` {fizzyColumnID, boardID, deletedAt},
+`Column.fizzyColumnID` (optional String). Same version-bump pitfall as
+v4: `.xccurrentversion` → v5 *then* `make generate`.
+
+**#11 — card delete propagation:** `CardRepository.deleteCard` writes a
+tombstone for fizzy-paired cards; sync pushes `DELETE /cards/:number`
+*before* pulls; purge on 204/404/410, retain+report other errors,
+30-day cap; surviving tombstones block pull resurrection (delete wins).
+
+**#12 — column push:** identity = `Column.fizzyColumnID` with one-time
+name-based backfill (reuses `normalizedColumnName`); `reconcileColumns`
+creates remote-only columns pre-paired, POSTs unpaired local columns and
+claims the Location-followed ID, PUTs renames (local wins — no
+per-column LWW timestamp), pushes deletions with cascaded card
+tombstones. Reordering deliberately out of scope.
+
+**#14 — deterministic adoption:** outgoing card POSTs embed
+`<!--fk:Card.id-->` in the description; pulls adopt by marker *before*
+the legacy exact-title ±60s heuristic (now fallback only), strip the
+marker in every pull path, and PUT the strip remotely with natural
+per-sync retry (mock lesson: use 422 not 500 for PUT-failure tests —
+the client retries 5xx 3×, making request counts nondeterministic).
+No fuzzy matching, no manual-review surface, no schema change.
+
+**#15 — resilience:** steady-state `context.save()` errors now surface
+in `FizzySyncResult.errors` (engine had no other silent catches); new
+re-pair pass restores a clobbered `fizzyID` from an unclaimed remote by
+number; marker adoption covers POST-success/save-failure (proven
+end-to-end: 0 re-POSTs after simulated crash) and number-also-lost
+clobber. `NSMergePolicy` was already `objectTrump` on both contexts
+(PersistenceController:127/168) — no change. "Pending upload" state
+skipped: marker makes it redundant.
+
+**Verification:** 300 → **326 tests / 68 suites green**; macOS build
+clean; 0 new warnings. Each batch RED-confirmed before GREEN
+(13 + 8 behavior tests failed for the right reasons first).
+
+**Known gray areas (left on the issues):** remote-only column rename
+reverts (no per-column timestamp); legacy fizzyID-paired cards with
+fizzyNumber==0 can't be remote-deleted until a pull backfills;
+`deleteBoard` cascade writes no tombstones; `syncFirst*` saves throw
+rather than error-collect; first-sync-POSTed markers strip on the next
+steady sync.
