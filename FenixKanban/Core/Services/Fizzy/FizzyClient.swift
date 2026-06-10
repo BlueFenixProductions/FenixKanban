@@ -49,6 +49,55 @@ final class FizzyClient: Sendable {
         return body
     }
 
+    /// GET a paginated collection, following the `Link: <url>; rel="next"`
+    /// response header until exhausted. Fizzy paginates every list endpoint
+    /// (dynamic page size — early pages are smaller); pages 2+ are requested
+    /// at the exact absolute URL from the header, which is already
+    /// account-scoped, so no slug interpolation happens on follows.
+    func getAllPages<Element: Decodable & Sendable>(
+        _ path: String,
+        as: [Element].Type
+    ) async throws -> [Element] {
+        var items: [Element] = []
+        var nextURL: URL? = url(for: path)
+
+        while let pageURL = nextURL {
+            var request = URLRequest(url: pageURL)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            let (data, http) = try await performWithRetry(request)
+            switch http.statusCode {
+            case 200:
+                items += try Self.decoder.decode([Element].self, from: data)
+                nextURL = Self.nextPageURL(from: http.value(forHTTPHeaderField: "Link"))
+            case 429:
+                throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+            default:
+                throw FizzyError(httpStatus: http.statusCode, body: data)
+            }
+        }
+        return items
+    }
+
+    /// Parses `<https://…?page=2>; rel="next"` out of a `Link` header.
+    /// Returns nil when the header is absent or carries no rel="next"
+    /// segment (e.g. only rel="prev" on the last page).
+    private static func nextPageURL(from linkHeader: String?) -> URL? {
+        guard let linkHeader else { return nil }
+        for segment in linkHeader.split(separator: ",") {
+            let parts = segment.split(separator: ";")
+            guard let target = parts.first?.trimmingCharacters(in: .whitespaces),
+                  target.hasPrefix("<"), target.hasSuffix(">") else { continue }
+            let isNext = parts.dropFirst().contains {
+                $0.trimmingCharacters(in: .whitespaces) == "rel=\"next\""
+            }
+            if isNext { return URL(string: String(target.dropFirst().dropLast())) }
+        }
+        return nil
+    }
+
     /// GET with explicit ETag handling. Used by the sync engine; sends
     /// `If-None-Match` if `etag != nil`, returns `body == nil` on 304.
     func getWithETag<T: Decodable & Sendable>(

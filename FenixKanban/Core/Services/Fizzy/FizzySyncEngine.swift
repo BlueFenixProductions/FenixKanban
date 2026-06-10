@@ -390,7 +390,7 @@ final class FizzySyncEngine {
     // MARK: - Remote fetches
 
     private func fetchRemoteColumns(boardID: String) async throws -> [FizzyColumn] {
-        try await client.get("/boards/\(boardID)/columns", as: [FizzyColumn].self)
+        try await client.getAllPages("/boards/\(boardID)/columns", as: [FizzyColumn].self)
     }
 
     /// Fetches all cards for a remote board via the per-board list endpoint
@@ -400,7 +400,7 @@ final class FizzySyncEngine {
     /// For the first-sync modes we accept "no column" → drop into the
     /// first available column.
     private func fetchRemoteCards(boardID: String) async throws -> [FizzyCard] {
-        try await client.get("/cards?board_ids[]=\(boardID)", as: [FizzyCard].self)
+        try await client.getAllPages("/cards?board_ids[]=\(boardID)", as: [FizzyCard].self)
     }
 
     // MARK: - Apply remote → local
