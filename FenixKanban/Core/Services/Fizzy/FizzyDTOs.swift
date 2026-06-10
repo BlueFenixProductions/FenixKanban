@@ -34,11 +34,13 @@ struct FizzyUser: Codable, Equatable {
     let emailAddress: String
     let createdAt: Date
     let url: URL?
+    let avatarURL: URL?          // absent on /my/identity payloads — optional
 
     enum CodingKeys: String, CodingKey {
         case id, name, role, active, url
         case emailAddress = "email_address"
         case createdAt = "created_at"
+        case avatarURL = "avatar_url"
     }
 }
 
@@ -121,9 +123,10 @@ struct FizzyCard: Codable, Equatable {
     let url: URL?
     let column: FizzyColumn?    // present only on single-card endpoint per Fizzy docs
     let steps: [FizzyStep]?     // present only on single-card endpoint
+    let assignees: [FizzyUser]?  // present only on the column-cards list endpoint
 
     enum CodingKeys: String, CodingKey {
-        case id, number, title, status, description, tags, closed, golden, url, column, steps
+        case id, number, title, status, description, tags, closed, golden, url, column, steps, assignees
         case descriptionHTML = "description_html"
         case imageURL = "image_url"
         case hasAttachments = "has_attachments"

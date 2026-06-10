@@ -330,6 +330,20 @@ struct FizzyClientBoardsTests {
         #expect(card.column?.color.value == "var(--color-card-4)")
     }
 
+    @Test("cards decode assignees from the column cards doc (fixture verbatim)")
+    func cardsDecodeAssignees() async throws {
+        let data = try loadFixture("column_cards_doc")
+        MockURLProtocol.handler = { req in (data, .ok(for: req)) }
+
+        let cards = try await makeClient().cards(boardID: "B1", columnID: "C1")
+
+        let assignees = try #require(cards.first?.assignees)
+        #expect(assignees.count == 1)
+        #expect(assignees.first?.name == "David Heinemeier Hansson")
+        #expect(assignees.first?.id == "03f5v9zjw7pz8717a4no1h8a7")
+        #expect(assignees.first?.avatarURL != nil)
+    }
+
     // MARK: - Create column
 
     @Test("POST /:account/boards/:id/columns sends {column:{…}}, follows Location")

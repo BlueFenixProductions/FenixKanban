@@ -1582,3 +1582,30 @@ iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
 **Verification:** 326/68 (baseline) → **348 tests / 71 suites**, all green on
 pinned iPhone 17 sim; iOS + macOS builds clean, 0 warnings. Final holistic
 review verdict: READY TO CLOSE OUT.
+
+---
+
+### 26. Issue #19 Wave 2 Task 1 — Wire decode: card `assignees` + user `avatar_url` ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error —
+new DTO fields don't exist yet; repo TDD bend noted in commit body).
+
+**Wire layer only** (`FizzyDTOs.swift`):
+- `FizzyUser` gains `avatarURL: URL?` (`avatar_url`; absent on
+  `/my/identity` payloads — optional).
+- `FizzyCard` gains `assignees: [FizzyUser]?` (1:1 key; present only on
+  the column-cards list endpoint — the single-card doc has NO
+  `assignees` key, hence optional).
+- CodingKeys stay explicit per file convention — no
+  `.convertFromSnakeCase` introduced.
+
+**Test:** `cardsDecodeAssignees` in `FizzyClientBoardsTests` consumes
+`column_cards_doc.json` VERBATIM (fixture untouched — it already carried
+the `assignees` array + `avatar_url` from the fizzy docs) and asserts
+one assignee with DHH's id/name and a non-nil `avatarURL`.
+
+**Call-site sweep:** repo-wide grep for `FizzyUser(`/`FizzyCard(`
+memberwise inits found zero call sites — no fix-ups needed.
+
+**Verification:** 348 → **349 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
