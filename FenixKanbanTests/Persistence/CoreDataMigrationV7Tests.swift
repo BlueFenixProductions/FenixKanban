@@ -23,6 +23,16 @@ struct CoreDataMigrationV7Tests {
         return stripped
     }
 
+    @Test("current model carries Card.assigneesData (compiled version is v7)")
+    func currentModelHasAssigneesData() throws {
+        let current = try model(named: nil)
+        let card = try #require(current.entitiesByName["Card"])
+        let attr = try #require(card.attributesByName["assigneesData"],
+                                "Card has no 'assigneesData' attribute — current model regressed below v7")
+        #expect(attr.attributeType == .binaryDataAttributeType)
+        #expect(attr.isOptional)
+    }
+
     @Test("v7 Card gains optional binary assigneesData; rest unchanged")
     func v7ModelShape() throws {
         let v7 = try model(named: "FenixKanban 7")

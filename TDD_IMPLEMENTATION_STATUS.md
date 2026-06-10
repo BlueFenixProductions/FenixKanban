@@ -1640,3 +1640,10 @@ data-survival test needed.
 
 **Verification:** 349 → **351 tests / 72 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fix (M1, 2026-06-10):** added
+`currentModelHasAssigneesData` to `CoreDataMigrationV7Tests` — loads
+the CURRENT compiled model (`model(named: nil)`, V6Tests precedent)
+and asserts `Card.assigneesData` exists, so a pbxproj
+`currentVersion` regression to v6 fails tests instead of crashing at
+runtime. 351 → **352 tests / 72 suites green** on the pinned sim.
