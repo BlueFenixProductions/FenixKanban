@@ -44,11 +44,20 @@ struct CardView: View {
                     .foregroundStyle(card.isCompleted ? .secondary : .primary)
 
                 Spacer()
+            }
 
-                if let label = card.label,
-                   let name = label.name,
-                   let hex = label.colorHex {
-                    LabelBadge(name: name, colorHex: hex)
+            if !card.sortedLabels.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(Array(card.sortedLabels.prefix(3)), id: \.objectID) { label in
+                        if let name = label.name, let hex = label.colorHex {
+                            LabelBadge(name: name, colorHex: hex)
+                        }
+                    }
+                    if card.sortedLabels.count > 3 {
+                        Text("+\(card.sortedLabels.count - 3)")
+                            .font(.crossPlatformCaption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 

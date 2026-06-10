@@ -679,7 +679,7 @@ final class FizzySyncEngine {
     // MARK: - Apply remote → local
 
     /// Writes the synced fields from a `FizzyCard` onto a local `Card`.
-    /// Phase 4a maps only the first remote tag to `Card.label`; remaining
+    /// Phase 4a maps only the first remote tag to `Card.labels`; remaining
     /// tags are dropped (documented limitation).
     ///
     /// `modifiedAt` is reset to `fizzyUpdatedAt` so the next steady-state LWW
@@ -695,10 +695,11 @@ final class FizzySyncEngine {
         card.fizzyUpdatedAt = remote.lastActiveAt
         card.modifiedAt = remote.lastActiveAt
 
+        // Still first-tag-only here; Task 2 widens this to ALL tags (RED first).
         if let firstTag = remote.tags.first {
-            card.label = findOrCreateLabel(name: firstTag)
+            card.labels = NSSet(object: findOrCreateLabel(name: firstTag))
         } else {
-            card.label = nil
+            card.labels = NSSet()
         }
     }
 

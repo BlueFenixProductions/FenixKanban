@@ -7,7 +7,7 @@ final class CardDetailViewModel: ObservableObject {
     @Published var cardDescription: String
     @Published var dueDate: Date?
     @Published var isCompleted: Bool
-    @Published var selectedLabel: Label?
+    @Published var selectedLabels: Set<Label>
     @Published var showLabelPicker = false
     @Published var showDatePicker = false
 
@@ -18,13 +18,17 @@ final class CardDetailViewModel: ObservableObject {
         card.column?.board?.sortedColumns ?? []
     }
 
+    var sortedSelectedLabels: [Label] {
+        selectedLabels.sorted { ($0.name ?? "") < ($1.name ?? "") }
+    }
+
     init(card: Card, context: NSManagedObjectContext) {
         self.card = card
         self.title = card.title ?? ""
         self.cardDescription = card.cardDescription ?? ""
         self.dueDate = card.dueDate
         self.isCompleted = card.isCompleted
-        self.selectedLabel = card.label
+        self.selectedLabels = card.labels as? Set<Label> ?? []
         self.cardRepository = CardRepository(context: context)
         self.labelRepository = LabelRepository(context: context)
     }
@@ -36,7 +40,7 @@ final class CardDetailViewModel: ObservableObject {
             description: cardDescription.isEmpty ? nil : cardDescription,
             dueDate: dueDate,
             isCompleted: isCompleted,
-            label: selectedLabel
+            labels: selectedLabels
         )
     }
 
@@ -50,13 +54,17 @@ final class CardDetailViewModel: ObservableObject {
         cardRepository.clearDueDate(for: card)
     }
 
-    func clearLabel() {
-        selectedLabel = nil
-        cardRepository.clearLabel(for: card)
+    func clearLabels() {
+        selectedLabels = []
+        cardRepository.clearLabels(for: card)
     }
 
-    func selectLabel(_ label: Label) {
-        selectedLabel = label
+    func toggleLabel(_ label: Label) {
+        if selectedLabels.contains(label) {
+            selectedLabels.remove(label)
+        } else {
+            selectedLabels.insert(label)
+        }
         save()
     }
 

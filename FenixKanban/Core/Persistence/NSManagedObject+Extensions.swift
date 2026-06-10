@@ -31,6 +31,14 @@ extension Column {
     }
 }
 
+extension Card {
+    /// Labels sorted by name for stable chip ordering in UI.
+    var sortedLabels: [Label] {
+        let set = labels as? Set<Label> ?? []
+        return set.sorted { ($0.name ?? "") < ($1.name ?? "") }
+    }
+}
+
 extension Label {
     var cardCount: Int {
         (cards as? Set<Card>)?.count ?? 0

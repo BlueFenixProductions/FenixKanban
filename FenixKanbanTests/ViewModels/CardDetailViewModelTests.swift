@@ -27,7 +27,7 @@ struct CardDetailViewModelTests {
         #expect(viewModel.cardDescription == "")
         #expect(viewModel.dueDate == nil)
         #expect(viewModel.isCompleted == false)
-        #expect(viewModel.selectedLabel == nil)
+        #expect(viewModel.selectedLabels.isEmpty)
     }
 
     @Test func saveUpdatesCard() {
@@ -51,23 +51,38 @@ struct CardDetailViewModelTests {
         #expect(viewModel.dueDate == nil)
     }
 
-    @Test func selectLabel() {
+    @Test func toggleLabelAddsAndRemoves() {
         let labelRepo = LabelRepository(context: persistence.viewContext)
         let label = labelRepo.createLabel(name: "Bug", colorHex: "#FF0000")
 
-        viewModel.selectLabel(label)
-        #expect(viewModel.selectedLabel == label)
-        #expect(card.label == label)
+        viewModel.toggleLabel(label)
+        #expect(viewModel.selectedLabels == [label])
+        #expect((card.labels as? Set<Label>) == [label])
+
+        viewModel.toggleLabel(label)
+        #expect(viewModel.selectedLabels.isEmpty)
+        #expect((card.labels as? Set<Label>)?.isEmpty == true)
     }
 
-    @Test func clearLabel() {
+    @Test func multipleLabelsCoexist() {
+        let labelRepo = LabelRepository(context: persistence.viewContext)
+        let bug = labelRepo.createLabel(name: "Bug", colorHex: "#FF0000")
+        let urgent = labelRepo.createLabel(name: "Urgent", colorHex: "#00FF00")
+
+        viewModel.toggleLabel(bug)
+        viewModel.toggleLabel(urgent)
+        #expect(viewModel.selectedLabels == [bug, urgent])
+        #expect(viewModel.sortedSelectedLabels.map(\.name) == ["Bug", "Urgent"])
+    }
+
+    @Test func clearLabels() {
         let labelRepo = LabelRepository(context: persistence.viewContext)
         let label = labelRepo.createLabel(name: "Bug", colorHex: "#FF0000")
-        viewModel.selectLabel(label)
+        viewModel.toggleLabel(label)
 
-        viewModel.clearLabel()
-        #expect(viewModel.selectedLabel == nil)
-        #expect(card.label == nil)
+        viewModel.clearLabels()
+        #expect(viewModel.selectedLabels.isEmpty)
+        #expect((card.labels as? Set<Label>)?.isEmpty == true)
     }
 
     @Test("toggleGolden flips isGolden and updates modifiedAt")

@@ -58,10 +58,10 @@ struct LabelRepositoryTests {
         let column = boardRepo.createColumn(in: board, name: "Col")
         let cardRepo = CardRepository(context: persistence.viewContext)
         let card = cardRepo.createCard(in: column, title: "Card")
-        cardRepo.updateCard(card, label: label)
-        #expect(card.label != nil)
+        cardRepo.updateCard(card, labels: [label])
+        #expect((card.labels as? Set<Label>)?.isEmpty == false)
 
         repository.deleteLabel(label)
-        #expect(card.label == nil)
+        #expect((card.labels as? Set<Label>)?.isEmpty == true)
     }
 }

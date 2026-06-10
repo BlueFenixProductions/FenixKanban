@@ -1328,3 +1328,32 @@ second wave → watch/pin/golden as detail-view toggles + small card
 indicators (golden = subtle gold content tint, Liquid-Glass-safe).
 
 **Build order:** #19 (steps+tags) → #13 → #16 → #17 → #18.
+
+### 19. Issue #19 Task 1 — CoreData v6: `Card.label` → `Card.labels` (many-to-many) ✅
+
+**Date:** 2026-06-10 · RED `eb2aefa` → GREEN (this commit)
+
+**Schema:** new `FenixKanban 6.xcdatamodel` — `Card.label` (to-one)
+becomes `Card.labels` (to-many, `elementID="label"` renaming
+identifier), inverse `Label.cards` repointed. Lightweight migration
+proven by `CoreDataMigrationV6Tests`: seeds a real v5 SQLite store via
+KVC, reopens with the current model, asserts the old to-one label
+survives as a one-element set.
+
+**Gotcha captured:** writing `renamingIdentifier="label"` in the
+xcdatamodel XML compiles but is silently ignored by momc (the compiled
+relationship's renamingIdentifier defaults to its own name and the
+migration drops the data). The correct XML serialization is
+`elementID="label"` — verified by inspecting the compiled `.momd`.
+
+**Plumbing (mechanical, behavior preserved):** `CardRepository.updateCard`
+takes `labels: Set<Label>?` (nil = unchanged; `clearLabels` replaces
+`clearLabel`; new `toggleLabel`); `CardDetailViewModel` →
+`selectedLabels` + toggle semantics; `LabelPickerView` multi-select
+(checkmarks, Done, no dismiss-on-tap); `CardDetailView` chips row +
+clear-all; `CardView` up-to-3 chips + "+n" overflow; `Card.sortedLabels`
+helper; FizzySyncEngine still maps first tag only (Task 2 widens);
+preview seeds use `addToLabels`.
+
+**Verification:** 326 → **329 tests / 69 suites green** (2 migration +
+1 net-new viewmodel test); iOS + macOS builds clean, 0 warnings.

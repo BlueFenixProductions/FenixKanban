@@ -5,7 +5,7 @@ protocol CardRepositoryProtocol {
     func fetchAllCards(in board: Board) -> [Card]
     func fetchCardsWithDueDate() -> [Card]
     func createCard(in column: Column, title: String) -> Card
-    func updateCard(_ card: Card, title: String?, description: String?, dueDate: Date?, isCompleted: Bool?, label: Label?)
+    func updateCard(_ card: Card, title: String?, description: String?, dueDate: Date?, isCompleted: Bool?, labels: Set<Label>?)
     func deleteCard(_ card: Card)
     func moveCard(_ card: Card, to column: Column, at index: Int)
     func reorderCard(_ card: Card, to newIndex: Int, in cards: [Card])
@@ -56,13 +56,13 @@ final class CardRepository: CardRepositoryProtocol {
         return card
     }
 
-    func updateCard(_ card: Card, title: String? = nil, description: String? = nil, dueDate: Date? = nil, isCompleted: Bool? = nil, label: Label? = nil) {
+    func updateCard(_ card: Card, title: String? = nil, description: String? = nil, dueDate: Date? = nil, isCompleted: Bool? = nil, labels: Set<Label>? = nil) {
         if let title = title { card.title = title }
         if let description = description { card.cardDescription = description }
         if let dueDate = dueDate { card.dueDate = dueDate }
         if let isCompleted = isCompleted { card.isCompleted = isCompleted }
-        // Label can be explicitly set to nil to remove it
-        card.label = label
+        // nil = leave labels unchanged (use clearLabels to remove all)
+        if let labels = labels { card.labels = labels as NSSet }
         card.modifiedAt = Date()
         save()
     }
@@ -73,8 +73,18 @@ final class CardRepository: CardRepositoryProtocol {
         save()
     }
 
-    func clearLabel(for card: Card) {
-        card.label = nil
+    func clearLabels(for card: Card) {
+        card.labels = NSSet()
+        card.modifiedAt = Date()
+        save()
+    }
+
+    func toggleLabel(_ label: Label, on card: Card) {
+        if let current = card.labels as? Set<Label>, current.contains(label) {
+            card.removeFromLabels(label)
+        } else {
+            card.addToLabels(label)
+        }
         card.modifiedAt = Date()
         save()
     }

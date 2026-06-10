@@ -66,7 +66,7 @@ final class PersistenceController: ObservableObject {
         card.modifiedAt = Date()
         card.sortOrder = 0
         card.column = column1
-        card.label = label
+        card.addToLabels(label)
 
         try? context.save()
         return controller

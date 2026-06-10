@@ -51,25 +51,30 @@ struct CardDetailView: View {
                         }
                     }
 
-                    // Label
-                    HStack {
-                        Text("Label")
+                    // Labels (multi)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Labels")
                         Spacer()
-                        if let label = viewModel.selectedLabel,
-                           let name = label.name,
-                           let hex = label.colorHex {
-                            LabelBadge(name: name, colorHex: hex)
-                                .onTapGesture { viewModel.showLabelPicker = true }
+                        if viewModel.selectedLabels.isEmpty {
+                            Button("Select") { viewModel.showLabelPicker = true }
+                                .foregroundStyle(.secondary)
+                        } else {
+                            HStack(spacing: 4) {
+                                ForEach(viewModel.sortedSelectedLabels, id: \.objectID) { label in
+                                    if let name = label.name, let hex = label.colorHex {
+                                        LabelBadge(name: name, colorHex: hex)
+                                    }
+                                }
+                            }
+                            .onTapGesture { viewModel.showLabelPicker = true }
                             Button {
-                                viewModel.clearLabel()
+                                viewModel.clearLabels()
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                                     .font(.crossPlatformCaption)
                             }
-                        } else {
-                            Button("Select") { viewModel.showLabelPicker = true }
-                                .foregroundStyle(.secondary)
+                            .accessibilityLabel("Remove all labels")
                         }
                     }
 
@@ -134,9 +139,11 @@ struct CardDetailView: View {
             }
             .sheet(isPresented: $viewModel.showLabelPicker) {
                 LabelPickerView(
-                    selectedLabel: $viewModel.selectedLabel,
+                    selectedLabels: viewModel.selectedLabels,
                     context: viewModel.card.managedObjectContext!
-                )
+                ) { label in
+                    viewModel.toggleLabel(label)
+                }
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
                 dueDatePicker

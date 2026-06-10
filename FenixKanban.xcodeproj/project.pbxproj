@@ -202,6 +202,7 @@
 		4320EF6E55D4289D8090AF3A /* CardFizzyAttributesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardFizzyAttributesTests.swift; sourceTree = "<group>"; };
 		4352F68CBFA8610EEC9EE57A /* AuthenticationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServiceTests.swift; sourceTree = "<group>"; };
 		4655A9176AC7C9288D8920FE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		47370391180279CF8506A463 /* FenixKanban 6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 6.xcdatamodel"; sourceTree = "<group>"; };
 		48E24C6748D661CCE038C4F0 /* TipJarStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarStoreTests.swift; sourceTree = "<group>"; };
 		4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DueDateBadge.swift; sourceTree = "<group>"; };
 		4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardEntityTests.swift; sourceTree = "<group>"; };
@@ -1342,9 +1343,10 @@
 				0BFC2630360516F47B333AA9 /* FenixKanban 3.xcdatamodel */,
 				5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */,
 				80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */,
+				47370391180279CF8506A463 /* FenixKanban 6.xcdatamodel */,
 				86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */,
 			);
-			currentVersion = 80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */;
+			currentVersion = 47370391180279CF8506A463 /* FenixKanban 6.xcdatamodel */;
 			path = FenixKanban.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

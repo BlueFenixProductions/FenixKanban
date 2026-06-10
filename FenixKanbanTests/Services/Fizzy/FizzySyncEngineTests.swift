@@ -333,7 +333,7 @@ struct FizzySyncEngineReplaceLocalTests {
         #expect(golden?.isGolden == true)
 
         // Verify a local Label was auto-created for the "bug" tag and attached
-        #expect(golden?.label?.name == "bug")
+        #expect(golden?.sortedLabels.first?.name == "bug")
     }
 
     @Test("replace mode: remote column missing locally → auto-created")
