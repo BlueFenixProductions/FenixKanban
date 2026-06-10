@@ -139,6 +139,7 @@
 		EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */; };
 		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
 		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
+		F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */; };
 		F1D35060BF2A659F14333EAD /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC0555AA6318151E788C7B4 /* BackupSettingsView.swift */; };
 		F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */; };
 		F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */; };
@@ -285,6 +286,7 @@
 		D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMappingTests.swift; sourceTree = "<group>"; };
 		D613029DDB577CD954C47EEC /* FirstSyncModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstSyncModeTests.swift; sourceTree = "<group>"; };
 		D9864DD5AE3F9D3B1B6B2348 /* NavigationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationModel.swift; sourceTree = "<group>"; };
+		DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineAdoptionResilienceTests.swift; sourceTree = "<group>"; };
 		DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelTests.swift; sourceTree = "<group>"; };
 		DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorCrossPlatformTests.swift; sourceTree = "<group>"; };
 		DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProviderTests.swift; sourceTree = "<group>"; };
@@ -670,6 +672,7 @@
 				821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */,
 				E22CB144486430B2801DB56B /* FizzyDTOTests.swift */,
 				90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */,
+				DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */,
 				51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */,
 				3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */,
 				D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */,
@@ -1034,6 +1037,7 @@
 				957D0C7287B2CAB192BC4E96 /* FizzyClientTests.swift in Sources */,
 				AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */,
 				BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */,
+				F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */,
 				A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */,
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,
 				321C0D7DB3CF3DD8D9ECD6B4 /* FizzySyncMappingTests.swift in Sources */,
