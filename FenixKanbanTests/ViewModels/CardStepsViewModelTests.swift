@@ -52,8 +52,9 @@ struct CardStepsViewModelTests {
         await vm.load()
 
         #expect(vm.steps.count == 2)
-        #expect(vm.steps[0].content == "This is the first step")
-        #expect(vm.steps[0].completed == false)
+        let first = try #require(vm.steps.first)
+        #expect(first.content == "This is the first step")
+        #expect(first.completed == false)
         #expect(vm.errorMessage == nil)
         #expect(vm.progressText == "Steps (0/2)")
     }
@@ -113,9 +114,11 @@ struct CardStepsViewModelTests {
 
         let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
         await vm.load()
-        await vm.toggleStep(vm.steps[0])
+        let first = try #require(vm.steps.first)
+        await vm.toggleStep(first)
 
-        #expect(vm.steps[0].completed == true)
+        let toggled = try #require(vm.steps.first)
+        #expect(toggled.completed == true)
         #expect(vm.progressText == "Steps (1/2)")
         let put = MockURLProtocol.requests.first { $0.httpMethod == "PUT" }
         #expect(put?.url?.path.hasSuffix("/cards/1/steps/03f8huu0sog76g3s975963b5e") == true)
@@ -135,9 +138,11 @@ struct CardStepsViewModelTests {
 
         let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
         await vm.load()
-        await vm.toggleStep(vm.steps[0])
+        let first = try #require(vm.steps.first)
+        await vm.toggleStep(first)
 
-        #expect(vm.steps[0].completed == false)
+        let reverted = try #require(vm.steps.first)
+        #expect(reverted.completed == false)
         #expect(vm.errorMessage != nil)
     }
 
@@ -158,9 +163,11 @@ struct CardStepsViewModelTests {
         await vm.load()
 
         // Failed delete restores the step at index 0.
-        await vm.deleteStep(vm.steps[0])
+        let first = try #require(vm.steps.first)
+        await vm.deleteStep(first)
         #expect(vm.steps.count == 2)
-        #expect(vm.steps[0].content == "This is the first step")
+        let restored = try #require(vm.steps.first)
+        #expect(restored.content == "This is the first step")
         #expect(vm.errorMessage != nil)
 
         // Phase 2: reassign the handler so DELETE now succeeds with 204.
@@ -171,8 +178,35 @@ struct CardStepsViewModelTests {
             return (detail, .ok(for: request))
         }
         vm.errorMessage = nil
-        await vm.deleteStep(vm.steps[0])
+        await vm.deleteStep(try #require(vm.steps.first))
         #expect(vm.steps.map(\.content) == ["This is the second step"])
         #expect(vm.errorMessage == nil)
+    }
+
+    @Test("deleteSteps(at:) snapshots steps before awaiting — both rows go")
+    func deleteStepsSnapshotsBeforeAwait() async throws {
+        // IndexSet([0, 1]) over the 2-step fixture: deleting row 0 shifts
+        // row 1 to index 0, so a naive index walk would skip (or crash on)
+        // the second row. deleteSteps must snapshot step VALUES via
+        // compactMap BEFORE its first await — both steps end up removed.
+        MockURLProtocol.reset()
+        defer { MockURLProtocol.reset() }
+        let detail = try loadFixture("card_detail_doc")
+        MockURLProtocol.handler = { request in
+            if request.httpMethod == "DELETE" {
+                return (Data(), .response(for: request, status: 204))
+            }
+            return (detail, .ok(for: request))
+        }
+
+        let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
+        await vm.load()
+        #expect(vm.steps.count == 2)
+
+        await vm.deleteSteps(at: IndexSet([0, 1]))
+
+        #expect(vm.steps.isEmpty)
+        #expect(vm.errorMessage == nil)
+        #expect(MockURLProtocol.requests.filter { $0.httpMethod == "DELETE" }.count == 2)
     }
 }

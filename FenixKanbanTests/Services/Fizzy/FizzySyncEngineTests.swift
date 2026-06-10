@@ -720,6 +720,43 @@ struct FizzySyncEngineSteadyPullTests {
         #expect(names == ["backend", "bug", "urgent"])
     }
 
+    @Test("pull: case-colliding tags dedupe to a single label")
+    func pullDedupesCaseCollidingTags() async throws {
+        // findOrCreateLabel fetches `name ==[c]` on the same context, so
+        // pending inserts within one applyRemote dedupe by construction —
+        // ["Bug","bug","BUG"] must yield exactly ONE local Label.
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [{"id":"fzT3","number":13,"title":"Shouty","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":["Bug","bug","BUG"],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/13"}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+
+        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 13 })
+        #expect(card.sortedLabels.count == 1)
+
+        let request: NSFetchRequest<Label> = Label.fetchRequest()
+        request.predicate = NSPredicate(format: "name ==[c] %@", "bug")
+        let matching = try h.persistence.viewContext.fetch(request)
+        #expect(matching.count == 1)
+    }
+
     @Test("pull: tags removed remotely clears local labels")
     func pullClearsRemovedTags() async throws {
         let h = Harness()

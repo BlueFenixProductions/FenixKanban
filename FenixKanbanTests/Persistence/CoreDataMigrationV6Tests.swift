@@ -80,6 +80,13 @@ struct CoreDataMigrationV6Tests {
         var migError: Error?
         newContainer.loadPersistentStores { _, error in migError = error }
         try #require(migError == nil, "lightweight migration failed: \(String(describing: migError))")
+        // Registered after the file-deletion defer, so it runs first (LIFO):
+        // detach the store from its coordinator before the sqlite files go.
+        defer {
+            for store in newContainer.persistentStoreCoordinator.persistentStores {
+                try? newContainer.persistentStoreCoordinator.remove(store)
+            }
+        }
 
         // 3. The old to-one label is now a member of the to-many labels set.
         let request = NSFetchRequest<NSManagedObject>(entityName: "Card")

@@ -89,6 +89,15 @@ struct CardDetailViewModelTests {
         #expect(viewModel.stepsViewModel == nil)
     }
 
+    @Test("paired card without a client gets no steps view model")
+    func pairedCardWithoutClientHasNoStepsVM() {
+        // fizzyNumber > 0 alone isn't enough — both pairing AND a live
+        // client are required (conjunction in CardDetailViewModel.init).
+        card.fizzyNumber = 7
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext)
+        #expect(vm.stepsViewModel == nil)
+    }
+
     @Test("toggleGolden flips isGolden and updates modifiedAt")
     func toggleGoldenFlips() async throws {
         #expect(card.isGolden == false)
