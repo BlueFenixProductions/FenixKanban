@@ -325,6 +325,31 @@ extension FizzyClient {
         }
     }
 
+    /// POST a JSON body that expects a bare `201 Created` with no usable
+    /// response body. Fizzy's reaction endpoints
+    /// (docs/api/sections/reactions.md) respond `201` without a documented
+    /// Location header, so unlike `post` there is no follow-up GET. Also
+    /// accepts `204` for tolerance with the action-endpoint convention.
+    func postCreated<Body: Encodable & Sendable>(_ path: String, body: Body) async throws {
+        var request = URLRequest(url: url(for: path))
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try Self.encoder.encode(body)
+
+        let (data, http) = try await performWithRetry(request)
+
+        switch http.statusCode {
+        case 201, 204:
+            return
+        case 429:
+            throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw FizzyError(httpStatus: http.statusCode, body: data)
+        }
+    }
+
     /// POST with no request body that expects `201 Created` (or `200 OK`)
     /// with the resource in the response body — Fizzy's board publication
     /// endpoint (docs/api/sections/boards.md) deviates from the usual
