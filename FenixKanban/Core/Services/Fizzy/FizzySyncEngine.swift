@@ -21,6 +21,14 @@ final class FizzySyncEngine {
     private let mapping: FizzyBoardMapping
     private let context: NSManagedObjectContext
 
+    /// Reentrancy guard. `sync()`/`syncFirst(mode:)` suspend at every HTTP
+    /// await, so a second call (double-tapped Sync Now, a pair-then-sync
+    /// overlap, or Phase 6's polling timer) could interleave with the first,
+    /// snapshot the same nil-`fizzyID` cards, and POST them twice — the
+    /// UAT "~40 duplicate cards" bug. While a run is in flight, subsequent
+    /// calls return an empty `FizzySyncResult` immediately.
+    private var isSyncing = false
+
     init(
         client: FizzyClient,
         authState: FizzyAuthState,
@@ -37,6 +45,9 @@ final class FizzySyncEngine {
     /// `authState.accountSlug`, `mapping.setPairing(...)` *before* invoking.
     /// Returns an empty `FizzySyncResult` if any of those are missing.
     func syncFirst(mode: FirstSyncMode) async throws -> FizzySyncResult {
+        guard !isSyncing else { return FizzySyncResult() }
+        isSyncing = true
+        defer { isSyncing = false }
         guard authState.isConfigured,
               let localBoardID = mapping.localBoardID,
               let fizzyBoardID = mapping.fizzyBoardID,
@@ -62,6 +73,9 @@ final class FizzySyncEngine {
     /// Returns an empty `FizzySyncResult` if the engine is unpaired.
     /// Records `mapping.setLastSync(.now)` at the end of every successful cycle.
     func sync() async throws -> FizzySyncResult {
+        guard !isSyncing else { return FizzySyncResult() }
+        isSyncing = true
+        defer { isSyncing = false }
         guard authState.isConfigured,
               let localBoardID = mapping.localBoardID,
               let fizzyBoardID = mapping.fizzyBoardID,
@@ -149,6 +163,11 @@ final class FizzySyncEngine {
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteCards.map { ($0.id, $0) })
         for (fizzyID, card) in pairedByFizzyID {
             guard let remote = remoteByID[fizzyID] else { continue }
+            // Backfill the card number — Fizzy addresses per-card routes by
+            // `number`, not the opaque `id` (the server does
+            // `find_by!(number: params[:id])`). Cards paired before this
+            // attribute existed self-heal here on their next sync.
+            if card.fizzyNumber == 0 { card.fizzyNumber = Int64(remote.number) }
             let localFizzyTimestamp = card.fizzyUpdatedAt ?? .distantPast
             let localModified = card.modifiedAt ?? .distantPast
             let remoteTimestamp = remote.lastActiveAt
@@ -160,7 +179,7 @@ final class FizzySyncEngine {
             } else if localModified > localFizzyTimestamp {
                 // Local edited since last sync → push.
                 do {
-                    let updated = try await putCard(card, fizzyID: fizzyID)
+                    let updated = try await putCard(card, number: card.fizzyNumber)
                     card.fizzyUpdatedAt = updated.lastActiveAt
                     card.modifiedAt = updated.lastActiveAt
                     result.itemsUpdated += 1
@@ -184,6 +203,7 @@ final class FizzySyncEngine {
             if let orphanID = orphansByLocalID[card.objectID],
                let orphan = remoteByID[orphanID] {
                 card.fizzyID = orphan.id
+                card.fizzyNumber = Int64(orphan.number)
                 card.fizzyUpdatedAt = orphan.lastActiveAt
                 card.modifiedAt = orphan.lastActiveAt
                 result.itemsUpdated += 1
@@ -192,6 +212,7 @@ final class FizzySyncEngine {
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
                 card.fizzyID = created.id
+                card.fizzyNumber = Int64(created.number)
                 card.fizzyUpdatedAt = created.lastActiveAt
                 card.modifiedAt = created.lastActiveAt
                 result.itemsCreated += 1
@@ -226,6 +247,7 @@ final class FizzySyncEngine {
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
                 card.fizzyID = created.id
+                card.fizzyNumber = Int64(created.number)
                 card.fizzyUpdatedAt = created.lastActiveAt
                 result.itemsCreated += 1
             } catch let error as FizzyError {
@@ -351,6 +373,7 @@ final class FizzySyncEngine {
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
                 card.fizzyID = created.id
+                card.fizzyNumber = Int64(created.number)
                 card.fizzyUpdatedAt = created.lastActiveAt
                 result.itemsCreated += 1
             } catch let error as FizzyError {
@@ -394,6 +417,7 @@ final class FizzySyncEngine {
         card.cardDescription = remote.description
         card.isGolden = remote.golden
         card.fizzyID = remote.id
+        card.fizzyNumber = Int64(remote.number)
         card.fizzyUpdatedAt = remote.lastActiveAt
         card.modifiedAt = remote.lastActiveAt
 
@@ -421,7 +445,7 @@ final class FizzySyncEngine {
 
     /// PUT an updated local card to the remote. Returns the updated FizzyCard
     /// so we can sync back the server's lastActiveAt.
-    private func putCard(_ card: Card, fizzyID: String) async throws -> FizzyCard {
+    private func putCard(_ card: Card, number: Int64) async throws -> FizzyCard {
         let payload = FizzyCardWritePayload(
             card: FizzyCardWrite(
                 title: card.title ?? "",
@@ -431,7 +455,7 @@ final class FizzySyncEngine {
             )
         )
         return try await client.put(
-            "/cards/\(fizzyID)",
+            "/cards/\(number)",
             body: payload,
             as: FizzyCard.self
         )
