@@ -1301,3 +1301,30 @@ fizzyNumber==0 can't be remote-deleted until a pull backfills;
 `deleteBoard` cascade writes no tombstones; `syncFirst*` saves throw
 rather than error-collect; first-sync-POSTed markers strip on the next
 steady sync.
+
+### 18. Captain's Joint Review — needs-captain UI Issues (#13, #16–#19) 📋
+
+**Date:** 2026-06-10 · No code — design rulings only. Each ruling
+mirrored as a comment on its issue.
+
+**#13 lifecycle states:** filter toggle + state badges (no synthetic
+columns — keeps #12 column push clean). Closed/not_now hidden by
+default; close/postpone/triage actions in card context menu + detail.
+
+**#16 comments:** thread in card detail, composer pinned at bottom,
+online-only, **interactive tap-to-react reactions included in v1**.
+Offline comment queueing deferred to its own follow-up issue.
+
+**#17 notifications:** toolbar bell + unread badge → sheet; mark-read
+on view + bulk mark-read; read-mostly (no settings editor). Activity
+feed = second segment in the same sheet.
+
+**#18 multi-board:** board browser in Settings **and** onboarding via
+one shared component; existing pairing auto-migrates silently; sync
+prioritizes the visible board, others round-robin.
+
+**#19 extras tiers approved:** steps + tags full UI first → assignments
+second wave → watch/pin/golden as detail-view toggles + small card
+indicators (golden = subtle gold content tint, Liquid-Glass-safe).
+
+**Build order:** #19 (steps+tags) → #13 → #16 → #17 → #18.
