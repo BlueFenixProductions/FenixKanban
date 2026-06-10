@@ -1609,3 +1609,34 @@ memberwise inits found zero call sites — no fix-ups needed.
 
 **Verification:** 348 → **349 tests / 71 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+### 27. Issue #19 Wave 2 Task 2 — CoreData v7: `assigneesData` blob + `CardAssignee` ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a missing model
+version — "FenixKanban 7.mom" not in the compiled .momd; verified the
+failure reason before creating the model).
+
+**Persistence layer:**
+- New model version `FenixKanban 7.xcdatamodel` — exact copy of v6 plus
+  ONE additive optional Binary attribute `assigneesData` on Card
+  (`usedWithCloudKit="YES"` kept; optional attribute is
+  CloudKit-schema-additive). `.xccurrentversion` now points at v7.
+- `CardAssignee` struct (`Core/Persistence/CardAssignee.swift`):
+  `Codable, Equatable, Identifiable` with `id`/`name` — Captain's
+  ruling: JSON blob on Card, NO dedicated Assignee entity (assignees
+  are remote-authoritative like tags; id + name is all the
+  initials-avatar row needs).
+- `Card.assignees: [CardAssignee]` computed accessor over the blob —
+  empty array when unset or undecodable (never throws into the UI).
+
+**Tests:** `CoreDataMigrationV7Tests` (mirrors V6Tests' class-stripped
+model-loading helper): v7 Card has optional binary `assigneesData` with
+`labels` untouched, and `NSMappingModel.inferredMappingModel(v6 → v7)`
+succeeds — additive-only lightweight migration, so no on-disk
+data-survival test needed.
+
+**Drive-by:** silenced pre-existing unused-variable warning in
+`FizzySyncEngineTests.swift:1247` (`let column` → `_`).
+
+**Verification:** 349 → **351 tests / 72 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.

@@ -1244,7 +1244,7 @@ struct FizzySyncEngineIdempotenceTests {
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let board = boardRepo.createBoard(name: "B")
-        let column = boardRepo.createColumn(in: board, name: "C")
+        _ = boardRepo.createColumn(in: board, name: "C")
         try persistence.viewContext.save()
 
         let prefix = "test.fizzy.idemp.\(UUID().uuidString)"
