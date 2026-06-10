@@ -11,14 +11,16 @@ final class BoardViewModel: ObservableObject {
     private let boardRepository: BoardRepository
     private let cardRepository: CardRepository
     private let context: NSManagedObjectContext
+    private let fizzyClient: FizzyClient?
     private var debounceTask: Task<Void, Never>?
     private var observerToken: NSObjectProtocol?
 
-    init(board: Board, context: NSManagedObjectContext) {
+    init(board: Board, context: NSManagedObjectContext, fizzyClient: FizzyClient? = nil) {
         self.board = board
         self.context = context
         self.boardRepository = BoardRepository(context: context)
         self.cardRepository = CardRepository(context: context)
+        self.fizzyClient = fizzyClient
         refreshColumns()
         observeChanges()
     }
@@ -114,6 +116,33 @@ final class BoardViewModel: ObservableObject {
         card.column?.board?.modifiedAt = Date()
         try? context.save()
         refreshColumns()
+        pushGolden(for: card)
+    }
+
+    /// Fire-and-forget push for board-surface golden toggles (context menu,
+    /// swipe). The board has no alert affordance, so a failed push reverts
+    /// silently — without the push, the next pull reverted it anyway
+    /// (#19 wave 3).
+    private func pushGolden(for card: Card) {
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        let isGolden = card.isGolden
+        Task { @MainActor in
+            do {
+                if isGolden {
+                    try await client.markCardGolden(number: Int(card.fizzyNumber))
+                } else {
+                    try await client.unmarkCardGolden(number: Int(card.fizzyNumber))
+                }
+            } catch {
+                // State-recheck: only revert if nothing changed it since.
+                if card.isGolden == isGolden {
+                    card.isGolden = !isGolden
+                    card.modifiedAt = Date()
+                    try? self.context.save()
+                    self.refreshColumns()
+                }
+            }
+        }
     }
 
     func toggleGolden(cardID: UUID) {

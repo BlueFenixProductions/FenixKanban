@@ -192,8 +192,34 @@ final class CardDetailViewModel: ObservableObject {
         }
     }
 
-    func toggleGolden() {
-        card.isGolden.toggle()
+    /// Golden is local-first (works unpaired); paired cards also push to
+    /// Fizzy's goldness endpoint so the next pull doesn't revert the flip —
+    /// applyRemote is remote-authoritative on `golden` (#19 wave 3 fixes
+    /// the silent-revert latent bug). State-recheck revert on failure.
+    func toggleGolden() async {
+        let wasGolden = card.isGolden
+        applyGoldenLocally(!wasGolden)
+
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        do {
+            if wasGolden {
+                try await client.unmarkCardGolden(number: Int(card.fizzyNumber))
+            } else {
+                try await client.markCardGolden(number: Int(card.fizzyNumber))
+            }
+        } catch {
+            if card.isGolden != wasGolden {
+                applyGoldenLocally(wasGolden)
+            }
+            errorMessage = "Couldn't update golden ticket on Fizzy."
+        }
+    }
+
+    /// Golden keeps its modifiedAt bump (unlike watch/pin): golden is pulled
+    /// card content, and the bump blocks the LWW pull branch until the push
+    /// cycle completes — protecting against stale-pull reverts.
+    private func applyGoldenLocally(_ golden: Bool) {
+        card.isGolden = golden
         card.modifiedAt = Date()
         card.column?.modifiedAt = Date()
         card.column?.board?.modifiedAt = Date()

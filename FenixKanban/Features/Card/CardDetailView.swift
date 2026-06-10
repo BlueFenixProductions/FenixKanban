@@ -140,7 +140,7 @@ struct CardDetailView: View {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        viewModel.toggleGolden()
+                        Task { await viewModel.toggleGolden() }
                     } label: {
                         Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
                     }
@@ -151,7 +151,7 @@ struct CardDetailView: View {
                 #else
                 ToolbarItem(placement: .navigation) {
                     Button {
-                        viewModel.toggleGolden()
+                        Task { await viewModel.toggleGolden() }
                     } label: {
                         Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
                     }

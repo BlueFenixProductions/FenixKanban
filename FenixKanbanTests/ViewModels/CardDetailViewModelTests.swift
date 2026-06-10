@@ -131,11 +131,11 @@ struct CardDetailViewModelTests {
         let before = card.modifiedAt
         try? await Task.sleep(nanoseconds: 2_000_000)
 
-        viewModel.toggleGolden()
+        await viewModel.toggleGolden()
         #expect(card.isGolden == true)
         #expect((card.modifiedAt ?? .distantPast) > (before ?? .distantPast))
 
-        viewModel.toggleGolden()
+        await viewModel.toggleGolden()
         #expect(card.isGolden == false)
     }
 }
@@ -501,6 +501,47 @@ struct CardDetailViewModelWatchPinPushTests {
         await viewModel.togglePinned()
         #expect(viewModel.isPinned == false)
         #expect(card.isPinned == false)
+        #expect(viewModel.errorMessage != nil)
+        MockURLProtocol.reset()
+    }
+
+    @Test("toggleGolden on a paired card POSTs /cards/7/goldness")
+    func goldenTogglePostsGoldness() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        let stampBeforeToggle = card.modifiedAt
+        try? await Task.sleep(nanoseconds: 2_000_000)
+        await viewModel.toggleGolden()
+        #expect(card.isGolden == true)
+        // Unlike watch/pin, golden DOES bump modifiedAt: golden is pulled
+        // card content, and the bump blocks the LWW pull branch until the
+        // push cycle completes (stale-pull revert protection, #19 wave 3).
+        #expect((card.modifiedAt ?? .distantPast) > (stampBeforeToggle ?? .distantPast))
+        let req = MockURLProtocol.requests.first
+        #expect(req?.httpMethod == "POST")
+        #expect(req?.url?.path.hasSuffix("/cards/7/goldness") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("toggleGolden on a golden paired card DELETEs /cards/7/goldness")
+    func goldenToggleUnmarksDeletes() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        card.isGolden = true
+        try persistence.viewContext.save()
+        await viewModel.toggleGolden()
+        #expect(card.isGolden == false)
+        let req = MockURLProtocol.requests.first
+        #expect(req?.httpMethod == "DELETE")
+        #expect(req?.url?.path.hasSuffix("/cards/7/goldness") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("failed golden push (422) reverts and surfaces an error")
+    func failedGoldenToggleReverts() async throws {
+        MockURLProtocol.handler = { request in
+            (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+        }
+        await viewModel.toggleGolden()
+        #expect(card.isGolden == false)
         #expect(viewModel.errorMessage != nil)
         MockURLProtocol.reset()
     }

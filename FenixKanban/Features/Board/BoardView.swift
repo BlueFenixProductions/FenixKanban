@@ -16,7 +16,12 @@ struct BoardView: View {
     @State private var showColumnSheet = false
 
     init(board: Board, context: NSManagedObjectContext) {
-        _viewModel = StateObject(wrappedValue: BoardViewModel(board: board, context: context))
+        let provider = PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider
+        _viewModel = StateObject(wrappedValue: BoardViewModel(
+            board: board,
+            context: context,
+            fizzyClient: provider?.makeClient()
+        ))
     }
 
     var body: some View {

@@ -1972,3 +1972,56 @@ on `setWatched`/`setPinned` (a re-added bump = echo-PUT regression
 previously left all tests green; mutation-checked: temporary bump in
 `setWatched` failed the test). Still **374 tests / 76 suites green** on
 the pinned sim.
+
+---
+
+### 35. Issue #19 Wave 3 Task 4 — golden toggles push goldness from all surfaces ✅
+
+**Date:** 2026-06-10 · TDD: RED (compile error — `BoardViewModel` had
+no `fizzyClient:` init parameter, verified via build-for-testing) →
+GREEN (this commit; test + impl in one commit since RED was a compile
+error, not a runtime failure).
+
+**Latent bug fixed:** golden toggles were local-only everywhere, but
+the sync engine's `applyRemote` is remote-authoritative on `golden`
+(`card.isGolden = remote.golden` on every pull) and the PUT payload
+never carries golden — so a golden flip on a paired card silently
+reverted on a later pull. Fix: push via the existing goldness
+endpoints (`markCardGolden` POST `/cards/:n/goldness`,
+`unmarkCardGolden` DELETE) from BOTH golden-toggle surfaces.
+
+**Design:** golden KEEPS its `modifiedAt` bump (unlike watch/pin) —
+golden is pulled card content, and the bump blocks the LWW pull branch
+until the push cycle completes, protecting against stale-pull reverts.
+The new `goldenTogglePostsGoldness` test locks this in.
+
+**CardDetailViewModel:** `toggleGolden()` is now async — local flip via
+new `applyGoldenLocally(_:)` (flip + modifiedAt bumps + save +
+objectWillChange), then paired+client guard, POST/DELETE goldness,
+state-recheck revert + `errorMessage` on failure. Both
+`CardDetailView` toolbar buttons (iOS + macOS branches) wrap the call
+in `Task { await … }`.
+
+**BoardViewModel:** init gains `fizzyClient: FizzyClient? = nil`
+(default keeps all existing construction sites/tests compiling);
+`toggleGolden(for:)` gains a trailing fire-and-forget
+`pushGolden(for:)` — board surfaces have no alert affordance, so a
+failed push reverts silently with a state-recheck (only if nothing
+changed it since). `toggleGolden(cardID:)` funnels through
+`toggleGolden(for:)` so it inherits the push. `BoardView.init` wires
+the client via
+`(PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider)?.makeClient()`,
+mirroring `CardDetailView.init`.
+
+**Tests:** 3 new in `CardDetailViewModelWatchPinPushTests`
+(`goldenTogglePostsGoldness` — POST + modifiedAt-bump assertion,
+`goldenToggleUnmarksDeletes` — DELETE, `failedGoldenToggleReverts` —
+422 reverts + errorMessage); new suite `BoardViewModelGoldenPushTests`
+(2 tests: paired board toggle pushes goldness awaited via bounded
+yield loop; unpaired board toggle stays local with zero network).
+`toggleGoldenFlips` updated to `await` (unpaired → no push →
+assertions unchanged).
+
+**Verification:** 374 → **379 tests / 77 suites green** (+1 suite from
+the new board push sub-suite) on pinned iPhone 17 sim (UDID
+`1CCA4B1C…`); macOS build clean, 0 warnings.
