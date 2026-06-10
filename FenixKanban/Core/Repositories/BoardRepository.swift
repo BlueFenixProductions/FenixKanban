@@ -92,6 +92,13 @@ final class BoardRepository: BoardRepositoryProtocol {
 
     func deleteColumn(_ column: Column) {
         column.board?.modifiedAt = Date()
+        // Fizzy-paired columns leave a tombstone so the deletion propagates
+        // to the server on the next sync (issue #12). The cascade delete also
+        // removes the column's cards, so paired cards get tombstones too.
+        ColumnTombstone.record(for: column, in: context)
+        for card in (column.cards as? Set<Card>) ?? [] {
+            CardTombstone.record(for: card, in: context)
+        }
         context.delete(column)
         save()
     }

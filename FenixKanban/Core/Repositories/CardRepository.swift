@@ -83,6 +83,9 @@ final class CardRepository: CardRepositoryProtocol {
         let now = Date()
         card.column?.modifiedAt = now
         card.column?.board?.modifiedAt = now
+        // Fizzy-paired cards leave a tombstone so the deletion propagates to
+        // the server on the next sync (issue #11).
+        CardTombstone.record(for: card, in: context)
         context.delete(card)
         save()
     }

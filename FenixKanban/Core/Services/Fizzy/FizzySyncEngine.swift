@@ -96,8 +96,31 @@ final class FizzySyncEngine {
     private func steadyStateSync(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
         var result = FizzySyncResult()
 
+        // Push local deletions FIRST — before any pull — so a card/column the
+        // user deleted locally can't be resurrected by the very same cycle
+        // (issues #11/#12, "delete wins").
+        await pushCardDeletions(into: &result)
+        await pushColumnDeletions(localBoard: localBoard, fizzyBoardID: fizzyBoardID, into: &result)
+
+        // Tombstones that survived the push (failed DELETEs awaiting retry)
+        // block pull-resurrection below.
+        let blockedCardNumbers = Set(fetchCardTombstones().map(\.fizzyNumber))
+        let blockedColumnIDs = Set(fetchColumnTombstones().compactMap(\.fizzyColumnID))
+
         // Fetch remote state.
         let remoteColumns = try await fetchRemoteColumns(boardID: fizzyBoardID)
+
+        // Reconcile columns (pair by fizzyColumnID, backfill by name, push
+        // local creates/renames) and build the name-keyed placement map used
+        // by the card pull below.
+        let resolvedColumns = await reconcileColumns(
+            localBoard: localBoard,
+            fizzyBoardID: fizzyBoardID,
+            remoteColumns: remoteColumns,
+            blockedColumnIDs: blockedColumnIDs,
+            into: &result
+        )
+
         let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
 
         // Local cards keyed by fizzyID (only paired ones).
@@ -108,21 +131,6 @@ final class FizzySyncEngine {
         let pairedByFizzyID: [String: Card] = Dictionary(
             uniqueKeysWithValues: localCards.compactMap { card in card.fizzyID.map { ($0, card) } }
         )
-
-        // Resolve columns: auto-create local for any remote name not seen.
-        var resolvedColumns: [String: Column] = Dictionary(
-            uniqueKeysWithValues: localColumns.compactMap { col -> (String, Column)? in
-                guard let name = col.name else { return nil }
-                return (FizzySyncMapping.normalizedColumnName(name), col)
-            }
-        )
-        for remote in remoteColumns {
-            let key = FizzySyncMapping.normalizedColumnName(remote.name)
-            if resolvedColumns[key] == nil {
-                let new = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
-                resolvedColumns[key] = new
-            }
-        }
 
         // Crash-after-POST recovery: precompute orphan claims so the pull loop
         // doesn't also create a duplicate from the same remote. For each local
@@ -147,9 +155,12 @@ final class FizzySyncEngine {
         }
 
         // Pull: for each remote card not yet paired locally AND not earmarked
-        // for an orphan claim, create it.
+        // for an orphan claim AND not locally tombstoned (delete wins — a
+        // pending deletion must not resurrect), create it.
         for remote in remoteCards
-        where pairedByFizzyID[remote.id] == nil && !claimedRemoteIDs.contains(remote.id) {
+        where pairedByFizzyID[remote.id] == nil
+            && !claimedRemoteIDs.contains(remote.id)
+            && !blockedCardNumbers.contains(Int64(remote.number)) {
             let targetColumn = remote.column
                 .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
                 ?? resolvedColumns.values.first
@@ -385,6 +396,154 @@ final class FizzySyncEngine {
             try context.save()
         }
         return result
+    }
+
+    // MARK: - Local deletion propagation (issues #11/#12)
+
+    /// Tombstones older than this are abandoned (purged without a DELETE) —
+    /// the remote state has long since been pulled and re-deleting risks
+    /// removing a card the user re-created.
+    private static let tombstoneMaxAge: TimeInterval = 30 * 24 * 3600
+
+    private func isStale(_ deletedAt: Date?) -> Bool {
+        let age = Date().timeIntervalSince(deletedAt ?? .distantPast)
+        return age > Self.tombstoneMaxAge
+    }
+
+    private func fetchCardTombstones() -> [CardTombstone] {
+        let request: NSFetchRequest<CardTombstone> = CardTombstone.fetchRequest()
+        return (try? context.fetch(request)) ?? []
+    }
+
+    private func fetchColumnTombstones() -> [ColumnTombstone] {
+        let request: NSFetchRequest<ColumnTombstone> = ColumnTombstone.fetchRequest()
+        return (try? context.fetch(request)) ?? []
+    }
+
+    /// Issues `DELETE /cards/:number` for every live card tombstone. Purges
+    /// the tombstone on success or when the card is already gone (404/410);
+    /// keeps it for retry (recording the error) on anything else.
+    private func pushCardDeletions(into result: inout FizzySyncResult) async {
+        for tombstone in fetchCardTombstones() {
+            if isStale(tombstone.deletedAt) {
+                context.delete(tombstone)
+                continue
+            }
+            do {
+                try await client.deleteCard(number: Int(tombstone.fizzyNumber))
+                context.delete(tombstone)
+                result.itemsDeleted += 1
+            } catch FizzyError.notFound, FizzyError.unexpectedStatus(410) {
+                // Already deleted remotely — outcome achieved.
+                context.delete(tombstone)
+            } catch {
+                result.errors.append("Delete card #\(tombstone.fizzyNumber): \(error)")
+            }
+        }
+    }
+
+    /// Issues `DELETE /boards/:id/columns/:column_id` for every live column
+    /// tombstone belonging to the paired board. Same purge/retry semantics
+    /// as `pushCardDeletions`.
+    private func pushColumnDeletions(localBoard: Board, fizzyBoardID: String, into result: inout FizzySyncResult) async {
+        let localBoardID = localBoard.id?.uuidString
+        for tombstone in fetchColumnTombstones() {
+            if isStale(tombstone.deletedAt) {
+                context.delete(tombstone)
+                continue
+            }
+            guard tombstone.boardID == localBoardID, let columnID = tombstone.fizzyColumnID else { continue }
+            do {
+                try await client.deleteColumn(boardID: fizzyBoardID, columnID: columnID)
+                context.delete(tombstone)
+                result.itemsDeleted += 1
+            } catch FizzyError.notFound, FizzyError.unexpectedStatus(410) {
+                context.delete(tombstone)
+            } catch {
+                result.errors.append("Delete column \(columnID): \(error)")
+            }
+        }
+    }
+
+    // MARK: - Column reconciliation (issue #12)
+
+    /// Pairs local columns with remote ones and pushes local changes:
+    ///
+    /// 1. Remote columns are matched to local ones by `fizzyColumnID`.
+    ///    Paired columns whose names differ get the *local* name PUT to the
+    ///    server (local rename wins — `sync()` has no per-column timestamp
+    ///    to arbitrate with).
+    /// 2. Unmatched remote columns claim an unpaired local column with the
+    ///    same normalized name (ID backfill for pre-existing pairs), or are
+    ///    created locally — unless tombstoned (delete wins).
+    /// 3. Local columns still unpaired afterwards are new → POST to fizzy
+    ///    and the returned ID is claimed.
+    ///
+    /// Returns the normalized-name → Column map used for card placement.
+    /// Column reordering/position is out of scope.
+    private func reconcileColumns(
+        localBoard: Board,
+        fizzyBoardID: String,
+        remoteColumns: [FizzyColumn],
+        blockedColumnIDs: Set<String>,
+        into result: inout FizzySyncResult
+    ) async -> [String: Column] {
+        let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
+        let pairedByColumnID: [String: Column] = Dictionary(
+            uniqueKeysWithValues: localColumns.compactMap { col in col.fizzyColumnID.map { ($0, col) } }
+        )
+
+        for remote in remoteColumns where !blockedColumnIDs.contains(remote.id) {
+            if let paired = pairedByColumnID[remote.id] {
+                // Rename push: local name differs from remote → PUT local name.
+                if let localName = paired.name, localName != remote.name {
+                    do {
+                        _ = try await client.updateColumn(
+                            boardID: fizzyBoardID,
+                            columnID: remote.id,
+                            with: FizzyColumnWrite(name: localName)
+                        )
+                        result.itemsUpdated += 1
+                    } catch {
+                        result.errors.append("Rename column '\(localName)': \(error)")
+                    }
+                }
+            } else if let match = localColumns.first(where: {
+                $0.fizzyColumnID == nil
+                    && FizzySyncMapping.normalizedColumnName($0.name ?? "") == FizzySyncMapping.normalizedColumnName(remote.name)
+            }) {
+                // Backfill: column pair predates fizzyColumnID — claim the ID.
+                match.fizzyColumnID = remote.id
+            } else {
+                // Remote-only column → create locally, already paired.
+                let new = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
+                new.fizzyColumnID = remote.id
+            }
+        }
+
+        // Local columns still unpaired are local creates → push.
+        for column in localColumns where column.fizzyColumnID == nil {
+            do {
+                let created = try await client.createColumn(
+                    boardID: fizzyBoardID,
+                    FizzyColumnWrite(name: column.name ?? "Untitled Column")
+                )
+                column.fizzyColumnID = created.id
+                result.itemsCreated += 1
+            } catch {
+                result.errors.append("Push column '\(column.name ?? "(untitled)")': \(error)")
+            }
+        }
+
+        // Placement map for the card pull (includes any columns created above).
+        let allColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
+        return Dictionary(
+            allColumns.compactMap { col -> (String, Column)? in
+                guard let name = col.name else { return nil }
+                return (FizzySyncMapping.normalizedColumnName(name), col)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
     }
 
     // MARK: - Remote fetches
