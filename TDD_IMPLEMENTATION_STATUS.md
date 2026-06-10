@@ -1542,3 +1542,43 @@ test files.
 
 **Verification:** 343 → **348 tests / 71 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+---
+
+### 25. Issue #19 Slice 1 — CLOSE-OUT SUMMARY: Steps Checklist + Tags-as-Labels ✅
+
+**Date:** 2026-06-10 · Plan: `docs/superpowers/plans/2026-06-10-19-card-extras-steps-tags.md`
+· Commits `9495f8a..69000cf` (14) · Entries 19–24 above cover the per-task detail.
+
+**What shipped:**
+- **CoreData v6**: `Card.label` (to-one) → `Card.labels` (many-to-many),
+  lightweight migration proven by a real on-disk v5→v6 test. Key finding:
+  `renamingIdentifier=` in xcdatamodel XML is IGNORED by momc — the working
+  serialization is `elementID="label"`.
+- **Sync pull** maps ALL Fizzy tags ⇄ labels (remote-authoritative;
+  case-colliding tags dedupe to one label; removed tags clear).
+- **Tag toggles push** `POST /cards/:n/taggings` from the detail view for
+  paired cards — optimistic, revert-on-422, state-recheck guard so a newer
+  concurrent toggle is never clobbered.
+- **Steps checklist** (Captain's ruling: online-only, never persisted):
+  `CardStepsViewModel` (load/add/toggle/delete, optimistic w/ revert +
+  state-recheck) + `CardStepsSection` in the card detail Form (toggle rows,
+  swipe + context-menu delete for macOS, add field w/ failure text restore,
+  progress header, error alert). Rendered only for paired cards with a client.
+
+**Known gray areas (documented, by design):**
+- Label colors for server-created tags are FNV-derived from the tag name
+  (deterministic across reinstalls, not user-chosen).
+- `clearLabels` on a paired card is local-only — no per-tag toggle calls;
+  the next pull reconciles (remote-authoritative on tags).
+- Steps are invisible for unpaired cards — they don't exist locally.
+- A stale `selectedLabels` snapshot in an open detail sheet can write over a
+  remotely-added label on the next save (same family as the `clearLabels`
+  gray area — candidate for the same follow-up issue).
+- Migrated pre-v6 card→label links won't re-export to CloudKit (lightweight
+  migration writes no persistent-history transactions) — follow-up issue
+  needed before any CloudKit-enabled release.
+
+**Verification:** 326/68 (baseline) → **348 tests / 71 suites**, all green on
+pinned iPhone 17 sim; iOS + macOS builds clean, 0 warnings. Final holistic
+review verdict: READY TO CLOSE OUT.
