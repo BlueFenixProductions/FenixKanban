@@ -2161,3 +2161,219 @@ struct FizzySyncEngineColumnPushTests {
         #expect(try h.columnTombstones().count == 1, "tombstone retained for retry")
     }
 }
+
+// MARK: - Pin reconciliation (issue #19 wave 3)
+
+private final class FixtureLocatorPins {}
+
+@Suite("FizzySyncEngine — pin reconciliation (issue #19 wave 3)", .serialized)
+@MainActor
+struct FizzySyncEnginePinReconciliationTests {
+
+    private struct Harness {
+        let persistence: PersistenceController
+        let boardRepo: BoardRepository
+        let cardRepo: CardRepository
+        let board: Board
+        let column: Column
+        let engine: FizzySyncEngine
+        let suiteName: String
+        let authState: FizzyAuthState
+        let mappingDefaults: UserDefaults
+
+        @MainActor
+        init() {
+            MockURLProtocol.reset()
+            persistence = PersistenceController(inMemory: true, useCloudKit: false)
+            boardRepo = BoardRepository(context: persistence.viewContext)
+            cardRepo = CardRepository(context: persistence.viewContext)
+            board = boardRepo.createBoard(name: "Roadmap")
+            column = boardRepo.createColumn(in: board, name: "Triage")
+            try! persistence.viewContext.save()
+
+            let prefix = "test.fizzy.pins.\(UUID().uuidString)"
+            authState = FizzyAuthState(keyPrefix: prefix)
+            authState.setAccessToken("t")
+            authState.setAccountSlug("ACCT")
+
+            suiteName = "test.fizzy.pins.mapping.\(UUID().uuidString)"
+            mappingDefaults = UserDefaults(suiteName: suiteName)!
+            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MockURLProtocol.self]
+            let session = URLSession(configuration: config)
+            let client = FizzyClient(
+                baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+                accessToken: "t", accountSlug: "ACCT",
+                urlSession: session, clock: ImmediateClock()
+            )
+
+            engine = FizzySyncEngine(
+                client: client, authState: authState, mapping: mapping,
+                context: persistence.viewContext
+            )
+        }
+
+        func tearDown() {
+            authState.clear()
+            mappingDefaults.removePersistentDomain(forName: suiteName)
+            MockURLProtocol.reset()
+        }
+    }
+
+    /// Loads a wire-shape fixture verbatim (mirrors FizzyClientBoardsTests).
+    private func loadFixture(_ name: String) throws -> Data {
+        let bundle = Bundle(for: FixtureLocatorPins.self)
+        if let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "Fixtures/fizzy") {
+            return try Data(contentsOf: url)
+        }
+        if let url = bundle.url(forResource: name, withExtension: "json") {
+            return try Data(contentsOf: url)
+        }
+        // Fallback: resolve via #file path (works when resources aren't bundled)
+        let testFile = #file
+        let testURL = URL(fileURLWithPath: testFile)
+        let testBundleDir = testURL.deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let fixturePath = testBundleDir
+            .appendingPathComponent("Fixtures")
+            .appendingPathComponent("fizzy")
+            .appendingPathComponent("\(name).json")
+        guard FileManager.default.fileExists(atPath: fixturePath.path) else {
+            Issue.record("Could not locate fixture \(name).json")
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return try Data(contentsOf: fixturePath)
+    }
+
+    @Test("sync: pins from GET /my/pins land on isPinned (fixture verbatim)")
+    func syncReconcilesPinsFromMyPins() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        // Two cards: the first's id matches pins_doc.json's first pin; the second doesn't.
+        let cardsJSON = """
+        [{"id":"03f5vaeq985jlvwv3arl4srq2","number":31,"title":"Pinned","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/31"},{"id":"fzB2","number":32,"title":"Unpinned","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/32"}]
+        """
+        let pinsData = try loadFixture("pins_doc")
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (pinsData, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+
+        let cards = h.cardRepo.fetchAllCards(in: h.board)
+        #expect(cards.first { $0.fizzyNumber == 31 }?.isPinned == true)
+        #expect(cards.first { $0.fizzyNumber == 32 }?.isPinned == false)
+    }
+
+    @Test("sync: card absent from GET /my/pins is unpinned (remote-authoritative)")
+    func syncClearsUnpinnedCards() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        // Identical card content both rounds — pin reconciliation is
+        // independent of the LWW card branches, so round 2's pull is a no-op
+        // for content and only the pin state moves.
+        let cardsJSON = """
+        [{"id":"fzP1","number":41,"title":"Pinned once","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/41"}]
+        """
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        // Round 1: card pulled and paired.
+        _ = try await h.engine.sync()
+        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 41 })
+
+        // Pin locally, then sync again with an empty remote pin set.
+        // Touching only isPinned keeps modifiedAt == fizzyUpdatedAt, so the
+        // LWW branches stay quiet and only pin reconciliation acts.
+        card.isPinned = true
+        try h.persistence.viewContext.save()
+
+        _ = try await h.engine.sync()
+
+        #expect(card.isPinned == false, "remote pin set is authoritative — absent means unpinned")
+    }
+
+    @Test("sync: failed GET /my/pins leaves pin state alone and does not fail the sync")
+    func pinsFetchFailureLeavesPinStateAlone() async throws {
+        let h = Harness()
+        defer { h.tearDown() }
+
+        let columnsJSON = """
+        [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
+        """
+        let cardsJSON = """
+        [{"id":"fzP2","number":42,"title":"Sticky pin","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/42"}]
+        """
+        // Round 1: remote pin set contains the card → isPinned becomes true.
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 42 })
+        #expect(card.isPinned == true, "round 1 seeded the pin")
+
+        // Round 2: the pins fetch fails (422). Best-effort — the sync must
+        // not throw and the pre-sync pin state must survive untouched.
+        // No Issue.record for the pins arm: the failure is the point.
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data(), .response(for: req, status: 422))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (columnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (cardsJSON.data(using: .utf8)!, .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 422))
+            }
+        }
+
+        _ = try await h.engine.sync()
+
+        #expect(card.isPinned == true, "failed pins fetch leaves pin state alone")
+    }
+}
