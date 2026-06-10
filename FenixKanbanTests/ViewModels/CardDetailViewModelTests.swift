@@ -98,6 +98,11 @@ struct CardDetailViewModelTests {
         #expect(vm.stepsViewModel == nil)
     }
 
+    @Test("unpaired card cannot edit assignments")
+    func unpairedCardCannotEditAssignments() async throws {
+        #expect(viewModel.canEditAssignments == false)
+    }
+
     @Test("unpaired card: toggleAssignment is a no-op with zero network")
     func unpairedToggleAssignmentNoOp() async throws {
         MockURLProtocol.reset()
@@ -276,6 +281,11 @@ struct CardDetailViewModelAssignmentPushTests {
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+    }
+
+    @Test("paired card with client exposes assignment editing")
+    func pairedCardCanEditAssignments() async throws {
+        #expect(viewModel.canEditAssignments == true)
     }
 
     @Test("toggle POSTs /cards/7/assignments with assignee_id and updates the blob")

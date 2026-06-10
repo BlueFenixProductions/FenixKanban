@@ -83,6 +83,27 @@ struct CardDetailView: View {
                         }
                     }
 
+                    // Assignees (fizzy-paired cards only — issue #19 wave 2)
+                    if viewModel.canEditAssignments {
+                        HStack {
+                            Text("Assignees")
+                            Spacer()
+                            if viewModel.assignees.isEmpty {
+                                Button("Assign") { viewModel.showAssigneePicker = true }
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                HStack(spacing: -6) {
+                                    ForEach(viewModel.assignees) { assignee in
+                                        InitialsAvatar(name: assignee.name)
+                                    }
+                                }
+                                .onTapGesture { viewModel.showAssigneePicker = true }
+                                .accessibilityLabel("Assignees: \(viewModel.assignees.map(\.name).joined(separator: ", "))")
+                                .accessibilityHint("Opens the assignee picker.")
+                            }
+                        }
+                    }
+
                     // Due date
                     HStack {
                         Text("Due Date")
@@ -152,6 +173,16 @@ struct CardDetailView: View {
                     context: viewModel.card.managedObjectContext!
                 ) { label in
                     Task { await viewModel.toggleLabel(label) }
+                }
+            }
+            .sheet(isPresented: $viewModel.showAssigneePicker) {
+                if let client = viewModel.fizzyClient {
+                    AssigneePickerView(
+                        client: client,
+                        assignedIDs: Set(viewModel.assignees.map(\.id))
+                    ) { user in
+                        Task { await viewModel.toggleAssignment(user) }
+                    }
                 }
             }
             .sheet(isPresented: $viewModel.showDatePicker) {

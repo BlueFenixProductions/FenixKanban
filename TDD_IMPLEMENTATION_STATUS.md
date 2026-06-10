@@ -1724,3 +1724,45 @@ of the tag suite's `failedPushRespectsNewerState`, covering the
 non-revert arm of the state-recheck (mutation-checked: an
 unconditional revert now fails via the `modifiedAt` no-re-save
 assertion). 358 → **359 tests / 73 suites green** on the pinned sim.
+
+### 30. Issue #19 Wave 2 Task 5 — assignee avatar row + picker UI ✅
+
+**Date:** 2026-06-10 · Gating tests pass immediately (no RED phase —
+`canEditAssignments` shipped in Task 4; the tests lock the exposure
+gate rather than drive new logic).
+
+**Components:**
+- `Components/InitialsAvatar.swift` — colored initials circle.
+  Initials-only by Captain's ruling (Fizzy avatar URLs require the
+  bearer token, which AsyncImage can't send); fill color is
+  FNV-derived via `FizzySyncMapping.labelColorHex(forName:)` (same
+  determinism as auto-created label colors). `accessibilityLabel` is
+  the full name.
+- `Features/Card/AssigneePickerView.swift` — multi-select picker
+  mirroring `LabelPickerView` (plain List, checkmarks, Done button,
+  no dismiss-on-tap, `.presentationDetents([.medium])`). User list
+  fetched live via `client.users()` filtered to `active`; local
+  `assignedIDs` set flips optimistically, toggles route through
+  `onToggle` → `CardDetailViewModel.toggleAssignment`. Load failure →
+  `ContentUnavailableView`. `.task`/`.toolbar` attach to concrete
+  views (Group/NavigationStack content), not a Form `Section`.
+
+**CardDetailView:**
+- Assignees row after the Labels row, gated on
+  `viewModel.canEditAssignments` (fizzy-paired + live client only):
+  "Assign" button when empty, overlapping `InitialsAvatar` strip
+  (spacing -6) opening the picker when populated, with combined
+  accessibility label/hint.
+- New `.sheet(isPresented: $viewModel.showAssigneePicker)` alongside
+  the label-picker sheet; content guards `viewModel.fizzyClient`
+  against nil. Toggle failures surface through the existing
+  "Sync Error" alert (`errorMessage`).
+
+**Tests (gating, pass-on-arrival by design):**
+- `CardDetailViewModelAssignmentPushTests.pairedCardCanEditAssignments`
+  — paired card + client → `canEditAssignments == true`.
+- `CardDetailViewModelTests.unpairedCardCannotEditAssignments` —
+  unpaired, no-client VM → `canEditAssignments == false`.
+
+**Verification:** 359 → **361 tests / 73 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
