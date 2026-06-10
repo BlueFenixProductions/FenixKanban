@@ -34,6 +34,9 @@ struct CardView: View {
     }
 
     var body: some View {
+        // Computed once per body evaluation — sortedLabels sorts the Core
+        // Data set on every access, and the chips row reads it up to 4x.
+        let sortedLabels = card.sortedLabels
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(card.title ?? "Untitled")
@@ -46,15 +49,15 @@ struct CardView: View {
                 Spacer()
             }
 
-            if !card.sortedLabels.isEmpty {
+            if !sortedLabels.isEmpty {
                 HStack(spacing: 4) {
-                    ForEach(Array(card.sortedLabels.prefix(3)), id: \.objectID) { label in
+                    ForEach(Array(sortedLabels.prefix(3)), id: \.objectID) { label in
                         if let name = label.name, let hex = label.colorHex {
                             LabelBadge(name: name, colorHex: hex)
                         }
                     }
-                    if card.sortedLabels.count > 3 {
-                        Text("+\(card.sortedLabels.count - 3)")
+                    if sortedLabels.count > 3 {
+                        Text("+\(sortedLabels.count - 3)")
                             .font(.crossPlatformCaption2)
                             .foregroundStyle(.secondary)
                     }

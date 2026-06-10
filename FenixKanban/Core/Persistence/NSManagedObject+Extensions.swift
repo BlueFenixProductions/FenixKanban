@@ -35,7 +35,17 @@ extension Card {
     /// Labels sorted by name for stable chip ordering in UI.
     var sortedLabels: [Label] {
         let set = labels as? Set<Label> ?? []
-        return set.sorted { ($0.name ?? "") < ($1.name ?? "") }
+        return set.sortedByDisplayName()
+    }
+}
+
+extension Sequence where Element == Label {
+    /// Shared display ordering for label chips: locale-aware, numeric-smart
+    /// (`localizedStandardCompare`, Finder-style). Used by `Card.sortedLabels`
+    /// and `CardDetailViewModel.sortedSelectedLabels` so board cards and the
+    /// detail sheet always agree on chip order.
+    func sortedByDisplayName() -> [Label] {
+        sorted { ($0.name ?? "").localizedStandardCompare($1.name ?? "") == .orderedAscending }
     }
 }
 

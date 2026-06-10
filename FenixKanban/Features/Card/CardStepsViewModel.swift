@@ -35,15 +35,22 @@ final class CardStepsViewModel: ObservableObject {
         }
     }
 
-    func addStep(content: String) async {
+    /// Returns `false` when the create call failed, so callers can restore
+    /// the typed text (`CardStepsSection` clears its field optimistically).
+    /// Whitespace-only input is ignored and returns `true` — nothing was
+    /// lost, so there's nothing to restore.
+    @discardableResult
+    func addStep(content: String) async -> Bool {
         errorMessage = nil
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else { return true }
         do {
             let created = try await client.createStep(cardNumber: cardNumber, content: trimmed)
             steps.append(created)
+            return true
         } catch {
             errorMessage = "Couldn't add the step."
+            return false
         }
     }
 

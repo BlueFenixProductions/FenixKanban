@@ -26,7 +26,7 @@ final class CardDetailViewModel: ObservableObject {
     }
 
     var sortedSelectedLabels: [Label] {
-        selectedLabels.sorted { ($0.name ?? "") < ($1.name ?? "") }
+        selectedLabels.sortedByDisplayName()
     }
 
     init(card: Card, context: NSManagedObjectContext, fizzyClient: FizzyClient? = nil) {

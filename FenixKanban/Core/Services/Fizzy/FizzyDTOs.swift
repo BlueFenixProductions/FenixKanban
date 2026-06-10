@@ -132,7 +132,7 @@ struct FizzyCard: Codable, Equatable {
     }
 }
 
-struct FizzyStep: Codable, Equatable {
+struct FizzyStep: Codable, Equatable, Identifiable {
     let id: String
     let content: String
     let completed: Bool

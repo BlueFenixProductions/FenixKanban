@@ -9,7 +9,7 @@ struct CardStepsSection: View {
 
     var body: some View {
         Section {
-            ForEach(viewModel.steps, id: \.id) { step in
+            ForEach(viewModel.steps) { step in
                 Button {
                     Task { await viewModel.toggleStep(step) }
                 } label: {
@@ -41,7 +41,14 @@ struct CardStepsSection: View {
                 .onSubmit {
                     let content = newStepText
                     newStepText = ""
-                    Task { await viewModel.addStep(content: content) }
+                    Task {
+                        let added = await viewModel.addStep(content: content)
+                        // Failed add: restore the typed text so it isn't
+                        // lost — unless the user has already typed anew.
+                        if !added && newStepText.isEmpty {
+                            newStepText = content
+                        }
+                    }
                 }
                 .accessibilityIdentifier("steps-add-field")
         } header: {

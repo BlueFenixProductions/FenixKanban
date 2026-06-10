@@ -78,10 +78,29 @@ struct CardStepsViewModelTests {
         }
 
         let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
-        await vm.addStep(content: "Write tests")
+        let added = await vm.addStep(content: "Write tests")
 
+        #expect(added == true)
         #expect(vm.steps.map(\.content) == ["Write tests"])
         #expect(vm.errorMessage == nil)
+    }
+
+    @Test("addStep failure surfaces an error and returns false")
+    func addStepFailureReturnsFalse() async throws {
+        // The false return drives CardStepsSection's restore-typed-text
+        // path — the field is cleared optimistically before the POST.
+        MockURLProtocol.reset()
+        defer { MockURLProtocol.reset() }
+        MockURLProtocol.handler = { request in
+            (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+        }
+
+        let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
+        let added = await vm.addStep(content: "Write tests")
+
+        #expect(added == false)
+        #expect(vm.steps.isEmpty)
+        #expect(vm.errorMessage != nil)
     }
 
     @Test("addStep ignores whitespace-only content without a network call")

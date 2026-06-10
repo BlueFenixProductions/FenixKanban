@@ -1491,3 +1491,54 @@ iOS swipe; `.task` moved off the `Section` onto the header `HStack`.
 View-layer wiring only — no new tests; 343/71 still green, macOS build
 clean. Follow-up: the alert was likewise relocated onto the header
 `HStack` — `Section` is a variadic container, not a modifier host.
+
+### 24. Issue #19 cleanup batch — review minors (Tasks 1–5) ✅
+
+**Date:** 2026-06-10 · Accumulated Minor findings from per-task code
+reviews (commits eb2aefa..df9d031), landed as three commits.
+
+**Test hygiene + coverage (commit 1):**
+- `CoreDataMigrationV6Tests`: v6 container's store now detached from
+  its coordinator via a LIFO `defer` before the sqlite files are
+  deleted (the v5 container already did this).
+- `pullDedupesCaseCollidingTags` (FizzySyncEngineTests): remote tags
+  `["Bug","bug","BUG"]` map to exactly ONE local Label —
+  `findOrCreateLabel` fetches `name ==[c]` on the same context, so
+  pending inserts dedupe by construction.
+- `pairedCardWithoutClientHasNoStepsVM` (CardDetailViewModelTests):
+  `fizzyNumber > 0` alone isn't enough — the init conjunction also
+  requires a live `FizzyClient`.
+- `CardStepsViewModelTests`: bare `vm.steps[0]` post-load replaced
+  with `try #require(vm.steps.first)` (clean fail, not crash); new
+  `deleteStepsSnapshotsBeforeAwait` locks in that `deleteSteps(at:)`
+  captures step VALUES via `compactMap` before its first await
+  (IndexSet([0,1]) → both rows removed, index-shift safe).
+
+**CardStepsViewModel hardening (commit 2):**
+- Stale `errorMessage` cleared at the start of `load`/`addStep`/
+  `toggleStep`/`deleteStep` (AuthViewModel pattern).
+- `toggleStep` re-checks local `completed` against the optimistic flip
+  before applying the server response AND before reverting in catch —
+  a concurrent newer toggle wins (mirrors `toggleLabel`'s guard).
+  Locked in by `staleToggleRespectsNewerState` using
+  `MockURLProtocol.delayedHandler` + an AsyncStream gate.
+
+**View polish (commit 3):**
+- `CardView`: `card.sortedLabels` hoisted into one `let` per body
+  evaluation (was recomputed up to 4× for the chips row).
+- New `Sequence<Label>.sortedByDisplayName()` (localizedStandardCompare)
+  shared by `Card.sortedLabels` and
+  `CardDetailViewModel.sortedSelectedLabels`; ASCII orderings in
+  existing tests unchanged.
+- `FizzyStep` adopts `Identifiable`; `CardStepsSection`'s ForEach
+  drops the explicit `id: \.id`.
+- `addStep(content:)` is now `@discardableResult ... -> Bool`;
+  `CardStepsSection.onSubmit` restores the typed text on a failed add
+  (only if the field is still empty — newer typing is never
+  clobbered). `addStepFailureReturnsFalse` locks the contract.
+
+**Deferred (deliberate):** shared loadFixture test helper across 7
+test files.
+
+**Verification:** 343 → **348 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
