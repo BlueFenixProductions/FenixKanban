@@ -1139,3 +1139,50 @@ Rather than resize the PNG or rework the handoff, the user pivoted to "no animat
 - `test fixtures must match wire shape` applies here too: the original plan trusted `INFOPLIST_KEY_UILaunchScreen_*` would just work. Verifying on the compiled `Info.plist` (not just successful build) caught the no-op.
 - Visual verification is non-optional for launch-screen work. Build success only proves the assets compiled, not that they render the way the design assumed.
 - Plans that hinge on a "pixel-aligned invisible handoff" between system chrome and app code are fragile. A static launch screen with no app-side counterpart removes the whole class of timing/sizing/handoff failures.
+
+---
+
+### 14. Fizzy Phase 5 UAT Blocker Fix — Card-Number Addressing + Sync Reentrancy ✅
+**Status:** Complete — UAT push-duplicates blocker root-caused and fixed via TDD.
+**Date:** 2026-06-09
+**Commits:** `b30b2a3` (RED), `fb0dffe` (GREEN)
+
+**Root cause (two independent real defects):**
+1. **ULID-vs-number addressing.** FK PUT `/cards/<ULID>` while fizzy's
+   `set_card` resolves `find_by!(number: params[:id])` — per-card routes
+   take the integer card *number*, not the ULID `id`. Under MySQL
+   string→int coercion this is a silent wrong-card write.
+2. **No reentrancy guard.** `FizzySyncEngine` is `@MainActor` but every
+   HTTP `await` is an interleave point; overlapping `sync()`/`syncFirst()`
+   calls both snapshotted the same nil-`fizzyID` cards and double-POSTed
+   them — the UAT "~40 duplicate cards" from repeated Sync Now taps.
+
+**Fix:**
+- CoreData **v4 model**: `Card.fizzyNumber` (Integer 64, default 0 = unset,
+  scalar), lightweight migration from v3. `.xccurrentversion` → v4;
+  note: re-run `make generate` after pointing the version file, since
+  xcodegen bakes `currentVersion` into the pbxproj at generation time.
+- Engine: backfills `fizzyNumber` from every list pull (covers cards
+  paired before v4), stores it at all 3 POST sites + orphan claim +
+  `applyRemote`, and `putCard(_:number:)` now hits `/cards/<number>`.
+- Reentrancy: `isSyncing` guard in `sync()` and `syncFirst(mode:)`;
+  while a run is in flight, subsequent calls return an empty
+  `FizzySyncResult` immediately (matches the view-level guard in
+  `FizzyAuthStatusView`, now enforced at the engine).
+
+**Tests (5 new, 224 total / 58 suites, 0 warnings, macOS build clean):**
+- `CardFizzyAttributesTests.fizzyNumberPersists` — v4 attribute round-trip.
+- `FizzySyncEngineNumberReentrancyTests` (4): PUT path uses backfilled
+  number (never ULID); POST stores created number; sequential double
+  sync issues exactly 1 POST (stateful mock: POSTed card joins the next
+  list pull); overlapping `async let` syncs issue exactly 1 POST.
+
+**Wire-shape lesson (again):** first Green run failed because the new
+suite's POST mocks returned `200 + body`; real fizzy returns
+`201 + Location` with **no body** and the client follows the Location
+with a GET. Fixing the mocks to the real wire shape made the engine
+pass unchanged — the engine was right, the synthetic mock was wrong.
+
+**Residual hypotheses** (not reproduced, filed as GH issues): CloudKit
+fizzy-attribute clobber; save-failure → re-POST; orphan-claim ±60s
+window weakness.
