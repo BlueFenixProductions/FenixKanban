@@ -52,14 +52,14 @@ struct CardStepsSection: View {
                 }
             }
             .task { await viewModel.load() }
-        }
-        .alert("Steps Error", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+            .alert("Steps Error", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 }

@@ -1489,4 +1489,5 @@ iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
 `.contextMenu` "Delete Step" adds a macOS delete affordance alongside
 iOS swipe; `.task` moved off the `Section` onto the header `HStack`.
 View-layer wiring only — no new tests; 343/71 still green, macOS build
-clean.
+clean. Follow-up: the alert was likewise relocated onto the header
+`HStack` — `Section` is a variadic container, not a modifier host.
