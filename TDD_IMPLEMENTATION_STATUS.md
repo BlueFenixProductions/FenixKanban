@@ -1923,3 +1923,44 @@ handlers untouched — first-sync modes don't reconcile pins.
 
 **Verification:** 364 → **367 tests / 75 suites green** on pinned
 iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+---
+
+### 34. Issue #19 Wave 3 Task 3 — watch/pin toggles from CardDetailViewModel ✅
+
+**Date:** 2026-06-10 · TDD: RED (compile errors — `toggleWatched`/
+`togglePinned`/`isWatched`/`isPinned` didn't exist on the VM, verified
+via build-for-testing) → GREEN (this commit; test + impl in one commit
+since RED was a compile error, not a runtime failure).
+
+**ViewModel:** `toggleWatched()`/`togglePinned()` mirror the
+`toggleAssignment` pattern — paired+client guard at top (unpaired =
+full no-op, zero network), optimistic flip of the new `@Published
+isWatched`/`isPinned`, persist via repository, POST/DELETE
+`/cards/:n/watch` (or `/pin`), state-recheck revert on failure +
+`errorMessage`. Gate refactor: new `isFizzyPaired` computed property;
+`canEditAssignments` kept as a delegating alias (existing tests and
+Task 5's UI use both). Captain's rulings encoded in doc comments:
+watch state is LOCAL WRITE-ONLY (Fizzy never reports it — no wire
+field, no watchers endpoint; cross-client drift is a documented MVP
+limitation); pin state is remote-authoritative via `/my/pins` on sync
+(Task 2).
+
+**Repository:** `setWatched(_:for:)`/`setPinned(_:for:)` next to
+`updateAssignees`. Deliberately NO `modifiedAt` bump — these flags
+aren't part of the card-content LWW contract (never in the PUT
+payload); bumping would cause spurious echo-PUTs on the next sync.
+
+**Tests:** new suite `CardDetailViewModelWatchPinPushTests` (6 tests,
+harness cloned from `CardDetailViewModelAssignmentPushTests`):
+- `watchPostsToWatchEndpoint` / `unwatchDeletes` — POST then DELETE
+  `/cards/7/watch`, flag mirrored to VM + Card.
+- `pinPostsToPinEndpoint` / `unpinDeletes` — same for `/cards/7/pin`.
+- `failedWatchToggleReverts` / `failedPinToggleReverts` — 422 reverts
+  the optimistic flip and surfaces `errorMessage`.
+
+Plus `unpairedWatchPinNoOp` in the base `CardDetailViewModelTests`
+suite — both toggles on an unpaired card are no-ops with zero network.
+
+**Verification:** 367 → **374 tests / 76 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.

@@ -85,6 +85,19 @@ final class CardRepository: CardRepositoryProtocol {
         save()
     }
 
+    /// Watch/pin flags deliberately do NOT bump modifiedAt: they're not part
+    /// of the card-content LWW contract (never pushed in the PUT payload) and
+    /// bumping would trigger spurious echo-PUTs on the next sync (#19 wave 3).
+    func setWatched(_ watched: Bool, for card: Card) {
+        card.isWatched = watched
+        save()
+    }
+
+    func setPinned(_ pinned: Bool, for card: Card) {
+        card.isPinned = pinned
+        save()
+    }
+
     func deleteCard(_ card: Card) {
         let now = Date()
         card.column?.modifiedAt = now

@@ -114,6 +114,17 @@ struct CardDetailViewModelTests {
         #expect(MockURLProtocol.requests.isEmpty)
     }
 
+    @Test("unpaired card: watch/pin toggles are no-ops with zero network")
+    func unpairedWatchPinNoOp() async throws {
+        MockURLProtocol.reset()
+        defer { MockURLProtocol.reset() }
+        await viewModel.toggleWatched()
+        await viewModel.togglePinned()
+        #expect(viewModel.isWatched == false)
+        #expect(viewModel.isPinned == false)
+        #expect(MockURLProtocol.requests.isEmpty)
+    }
+
     @Test("toggleGolden flips isGolden and updates modifiedAt")
     func toggleGoldenFlips() async throws {
         #expect(card.isGolden == false)
@@ -371,6 +382,117 @@ struct CardDetailViewModelAssignmentPushTests {
         #expect(!viewModel.assignees.contains { $0.id == "u9" })
         #expect(card.assignees.isEmpty)
         #expect(card.modifiedAt == stampAfterSecondToggle)
+        #expect(viewModel.errorMessage != nil)
+        MockURLProtocol.reset()
+    }
+}
+
+@Suite("CardDetailViewModel watch/pin push", .serialized)
+@MainActor
+struct CardDetailViewModelWatchPinPushTests {
+    let persistence: PersistenceController
+    let card: Card
+    let client: FizzyClient
+    let viewModel: CardDetailViewModel
+
+    init() {
+        MockURLProtocol.reset()
+        persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "Board")
+        let column = boardRepo.createColumn(in: board, name: "Col")
+        card = cardRepo.createCard(in: column, title: "Paired Card")
+        card.fizzyID = "fz7"
+        card.fizzyNumber = 7
+        try! persistence.viewContext.save()
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: URLSession(configuration: config),
+            clock: ImmediateClock()
+        )
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+    }
+
+    @Test("toggleWatched POSTs /cards/7/watch and sets the flag")
+    func watchPostsToWatchEndpoint() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        await viewModel.toggleWatched()
+        #expect(viewModel.isWatched == true)
+        #expect(card.isWatched == true)
+        let req = MockURLProtocol.requests.first
+        #expect(req?.httpMethod == "POST")
+        #expect(req?.url?.path.hasSuffix("/cards/7/watch") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("toggleWatched on a watched card DELETEs /cards/7/watch")
+    func unwatchDeletes() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        card.isWatched = true
+        try persistence.viewContext.save()
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        await vm.toggleWatched()
+        #expect(vm.isWatched == false)
+        #expect(card.isWatched == false)
+        let req = MockURLProtocol.requests.first
+        #expect(req?.httpMethod == "DELETE")
+        #expect(req?.url?.path.hasSuffix("/cards/7/watch") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("togglePinned POSTs /cards/7/pin and sets the flag")
+    func pinPostsToPinEndpoint() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        await viewModel.togglePinned()
+        #expect(viewModel.isPinned == true)
+        #expect(card.isPinned == true)
+        let req = MockURLProtocol.requests.first
+        #expect(req?.httpMethod == "POST")
+        #expect(req?.url?.path.hasSuffix("/cards/7/pin") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("togglePinned on a pinned card DELETEs /cards/7/pin")
+    func unpinDeletes() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        card.isPinned = true
+        try persistence.viewContext.save()
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        await vm.togglePinned()
+        #expect(vm.isPinned == false)
+        #expect(card.isPinned == false)
+        let req = MockURLProtocol.requests.first
+        #expect(req?.httpMethod == "DELETE")
+        #expect(req?.url?.path.hasSuffix("/cards/7/pin") == true)
+        MockURLProtocol.reset()
+    }
+
+    @Test("failed watch toggle (422) reverts and surfaces an error")
+    func failedWatchToggleReverts() async throws {
+        MockURLProtocol.handler = { request in
+            (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+        }
+        await viewModel.toggleWatched()
+        #expect(viewModel.isWatched == false)
+        #expect(card.isWatched == false)
+        #expect(viewModel.errorMessage != nil)
+        MockURLProtocol.reset()
+    }
+
+    @Test("failed pin toggle (422) reverts and surfaces an error")
+    func failedPinToggleReverts() async throws {
+        MockURLProtocol.handler = { request in
+            (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
+        }
+        await viewModel.togglePinned()
+        #expect(viewModel.isPinned == false)
+        #expect(card.isPinned == false)
         #expect(viewModel.errorMessage != nil)
         MockURLProtocol.reset()
     }

@@ -10,6 +10,8 @@ final class CardDetailViewModel: ObservableObject {
     @Published var isCompleted: Bool
     @Published var selectedLabels: Set<Label>
     @Published var assignees: [CardAssignee]
+    @Published var isWatched: Bool
+    @Published var isPinned: Bool
     @Published var showLabelPicker = false
     @Published var showAssigneePicker = false
     @Published var showDatePicker = false
@@ -39,6 +41,8 @@ final class CardDetailViewModel: ObservableObject {
         self.isCompleted = card.isCompleted
         self.selectedLabels = card.labels as? Set<Label> ?? []
         self.assignees = card.assignees
+        self.isWatched = card.isWatched
+        self.isPinned = card.isPinned
         self.cardRepository = CardRepository(context: context)
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
@@ -101,11 +105,15 @@ final class CardDetailViewModel: ObservableObject {
         }
     }
 
-    /// Assignments are fizzy-only: the row renders (and toggles run) only
-    /// for paired cards with a live client (issue #19 wave 2).
-    var canEditAssignments: Bool {
+    /// Fizzy-only affordances (assignments, watch, pin) share this gate:
+    /// paired card + live client (issue #19).
+    var isFizzyPaired: Bool {
         card.fizzyNumber > 0 && fizzyClient != nil
     }
+
+    /// Assignments are fizzy-only: the row renders (and toggles run) only
+    /// for paired cards with a live client (issue #19 wave 2).
+    var canEditAssignments: Bool { isFizzyPaired }
 
     /// Toggles a user's assignment: optimistic blob update, POST toggle,
     /// state-recheck revert on failure (same pattern as `toggleLabel` —
@@ -134,6 +142,53 @@ final class CardDetailViewModel: ObservableObject {
                 cardRepository.updateAssignees(for: card, to: assignees)
             }
             errorMessage = "Couldn't update assignment for \(user.name) on Fizzy."
+        }
+    }
+
+    /// Watch state is local write-only: Fizzy accepts watch/unwatch but never
+    /// reports current state (no wire field, no watchers endpoint) — Captain's
+    /// ruling, #19 wave 3. Optimistic flip + state-recheck revert; can drift
+    /// if toggled from another client (documented MVP limitation).
+    func toggleWatched() async {
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        let wasWatched = isWatched
+        isWatched = !wasWatched
+        cardRepository.setWatched(isWatched, for: card)
+        do {
+            if wasWatched {
+                try await client.unwatchCard(number: Int(card.fizzyNumber))
+            } else {
+                try await client.watchCard(number: Int(card.fizzyNumber))
+            }
+        } catch {
+            // Revert only if no later toggle changed the state in flight.
+            if isWatched != wasWatched {
+                isWatched = wasWatched
+                cardRepository.setWatched(isWatched, for: card)
+            }
+            errorMessage = "Couldn't update watch state on Fizzy."
+        }
+    }
+
+    /// Pin state is remote-authoritative via GET /my/pins on sync; the toggle
+    /// is optimistic with state-recheck revert (issue #19 wave 3).
+    func togglePinned() async {
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        let wasPinned = isPinned
+        isPinned = !wasPinned
+        cardRepository.setPinned(isPinned, for: card)
+        do {
+            if wasPinned {
+                try await client.unpinCard(number: Int(card.fizzyNumber))
+            } else {
+                try await client.pinCard(number: Int(card.fizzyNumber))
+            }
+        } catch {
+            if isPinned != wasPinned {
+                isPinned = wasPinned
+                cardRepository.setPinned(isPinned, for: card)
+            }
+            errorMessage = "Couldn't update pin on Fizzy."
         }
     }
 
