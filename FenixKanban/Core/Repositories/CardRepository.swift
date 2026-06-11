@@ -15,9 +15,11 @@ protocol CardRepositoryProtocol {
 
 final class CardRepository: CardRepositoryProtocol {
     private let context: NSManagedObjectContext
+    private let pairingStore: FizzyCardPairingStore
 
-    init(context: NSManagedObjectContext) {
+    init(context: NSManagedObjectContext, pairingStore: FizzyCardPairingStore = .shared) {
         self.context = context
+        self.pairingStore = pairingStore
     }
 
     func fetchCards(in column: Column) -> [Card] {

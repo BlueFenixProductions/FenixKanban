@@ -18,12 +18,17 @@ private struct AdoptionHarness {
     let suiteName: String
     let authState: FizzyAuthState
     let mappingDefaults: UserDefaults
+    let pairingStore: FizzyCardPairingStore
 
     init() {
         MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         boardRepo = BoardRepository(context: persistence.viewContext)
-        cardRepo = CardRepository(context: persistence.viewContext)
+        pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         board = boardRepo.createBoard(name: "Roadmap")
         column = boardRepo.createColumn(in: board, name: "Triage")
         try! persistence.viewContext.save()
@@ -49,13 +54,14 @@ private struct AdoptionHarness {
 
         engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
     }
 
     func tearDown() {
         authState.clear()
         mappingDefaults.removePersistentDomain(forName: suiteName)
+        try? FileManager.default.removeItem(at: pairingStore.fileURL)
         MockURLProtocol.reset()
     }
 }

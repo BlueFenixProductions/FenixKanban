@@ -142,7 +142,8 @@ final class FizzySyncProvider: BoardSyncProvider {
             client: client,
             authState: authState,
             mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext,
+            pairingStore: .shared
         )
     }
 }

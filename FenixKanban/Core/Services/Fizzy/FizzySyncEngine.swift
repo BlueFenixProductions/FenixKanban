@@ -20,6 +20,9 @@ final class FizzySyncEngine {
     private let authState: FizzyAuthState
     private let mapping: FizzyBoardMapping
     private let context: NSManagedObjectContext
+    /// Device-local pairing authority (issue #21 A′). CloudKit-synced
+    /// attributes on Card are demoted to a self-healing hint channel.
+    private let pairingStore: FizzyCardPairingStore
 
     /// Reentrancy guard. `sync()`/`syncFirst(mode:)` suspend at every HTTP
     /// await, so a second call (double-tapped Sync Now, a pair-then-sync
@@ -33,12 +36,14 @@ final class FizzySyncEngine {
         client: FizzyClient,
         authState: FizzyAuthState,
         mapping: FizzyBoardMapping,
-        context: NSManagedObjectContext
+        context: NSManagedObjectContext,
+        pairingStore: FizzyCardPairingStore
     ) {
         self.client = client
         self.authState = authState
         self.mapping = mapping
         self.context = context
+        self.pairingStore = pairingStore
     }
 
     /// One-shot first-sync. Caller must have set `authState.accessToken`,
@@ -207,7 +212,7 @@ final class FizzySyncEngine {
                 .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
                 ?? resolvedColumns.values.first
                 ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
-            let card = CardRepository(context: context).createCard(in: targetColumn, title: remote.title)
+            let card = CardRepository(context: context, pairingStore: pairingStore).createCard(in: targetColumn, title: remote.title)
             applyRemote(remote, to: card)
             result.itemsCreated += 1
         }
@@ -427,7 +432,7 @@ final class FizzySyncEngine {
                 ?? resolvedColumns.values.first
                 ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
 
-            let card = CardRepository(context: context).createCard(in: targetColumn, title: remote.title)
+            let card = CardRepository(context: context, pairingStore: pairingStore).createCard(in: targetColumn, title: remote.title)
             applyRemote(remote, to: card)
             result.itemsCreated += 1
         }
@@ -489,7 +494,7 @@ final class FizzySyncEngine {
                 .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
                 ?? resolvedColumns.values.first
                 ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
-            let card = CardRepository(context: context).createCard(in: targetColumn, title: remote.title)
+            let card = CardRepository(context: context, pairingStore: pairingStore).createCard(in: targetColumn, title: remote.title)
             applyRemote(remote, to: card)
             result.itemsCreated += 1
         }

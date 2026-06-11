@@ -2371,3 +2371,13 @@ the new test fails on the missing marker suffix while the rest of the
 suite stays green; hunk restored byte-identical (clean `git diff` on
 `FizzySyncEngine.swift`). **387 tests / 79 suites green** on the
 pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.
+
+**Task 2 (issue #21 plumbing), 2026-06-11:** Threaded `FizzyCardPairingStore`
+through engine, repository, provider, and all test harnesses. Pure DI — no
+behavior changes, engine does not read/write the store yet. `CardRepository`
+gains a defaulted `pairingStore: .shared` parameter (UI call-sites untouched);
+`FizzySyncEngine` gains a required `pairingStore:` parameter (explicit at every
+construction site). `FizzySyncProvider.makeEngine` passes `.shared`. All 11
+harnesses + 8 inline constructions in the four Fizzy engine test files use
+per-test temp-file stores cleaned up in `tearDown`. **391 tests / 80 suites
+green** on the pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.

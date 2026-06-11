@@ -26,11 +26,17 @@ struct FizzySyncEnginePairingTests {
             accessToken: "t",
             accountSlug: "ACCT"
         )
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
         let engine = FizzySyncEngine(
             client: client,
             authState: authState,
             mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext,
+            pairingStore: pairingStore
         )
 
         let result = try await engine.syncFirst(mode: .pushLocalToFizzy)
@@ -53,13 +59,18 @@ struct FizzySyncEnginePushLocalTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -89,13 +100,15 @@ struct FizzySyncEnginePushLocalTests {
                 client: client,
                 authState: authState,
                 mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext,
+                pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -228,13 +241,18 @@ struct FizzySyncEngineReplaceLocalTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             labelRepo = LabelRepository(context: persistence.viewContext)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
@@ -265,13 +283,15 @@ struct FizzySyncEngineReplaceLocalTests {
                 client: client,
                 authState: authState,
                 mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext,
+                pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -373,13 +393,18 @@ struct FizzySyncEngineMergeTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -409,13 +434,15 @@ struct FizzySyncEngineMergeTests {
                 client: client,
                 authState: authState,
                 mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext,
+                pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -558,9 +585,14 @@ struct FizzySyncEngineSyncPairingTests {
             accessToken: "t",
             accountSlug: "ACCT"
         )
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
         let engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
 
         let result = try await engine.sync()
@@ -583,13 +615,18 @@ struct FizzySyncEngineSteadyPullTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -615,13 +652,14 @@ struct FizzySyncEngineSteadyPullTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -928,13 +966,18 @@ struct FizzySyncEngineSteadyPushTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -959,13 +1002,14 @@ struct FizzySyncEngineSteadyPushTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -1028,13 +1072,18 @@ struct FizzySyncEngineLWWTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -1059,13 +1108,14 @@ struct FizzySyncEngineLWWTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -1159,7 +1209,12 @@ struct FizzySyncEngineSoftDeleteTests {
     func softDeletesMissingRemote() async throws {
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
-        let cardRepo = CardRepository(context: persistence.viewContext)
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
+        let cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         let board = boardRepo.createBoard(name: "B")
         let column = boardRepo.createColumn(in: board, name: "C")
         try persistence.viewContext.save()
@@ -1206,7 +1261,7 @@ struct FizzySyncEngineSoftDeleteTests {
 
         let engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
         let result = try await engine.sync()
 
@@ -1225,7 +1280,12 @@ struct FizzySyncEngineCrashRecoveryTests {
     func claimsOrphan() async throws {
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
-        let cardRepo = CardRepository(context: persistence.viewContext)
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
+        let cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         let board = boardRepo.createBoard(name: "B")
         let column = boardRepo.createColumn(in: board, name: "C")
         try persistence.viewContext.save()
@@ -1279,7 +1339,7 @@ struct FizzySyncEngineCrashRecoveryTests {
         )
         let engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
 
         let result = try await engine.sync()
@@ -1294,7 +1354,12 @@ struct FizzySyncEngineCrashRecoveryTests {
     func orphanClaimNoDuplicatePull() async throws {
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
-        let cardRepo = CardRepository(context: persistence.viewContext)
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
+        let cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         let board = boardRepo.createBoard(name: "B")
         let column = boardRepo.createColumn(in: board, name: "C")
         try persistence.viewContext.save()
@@ -1347,7 +1412,7 @@ struct FizzySyncEngineCrashRecoveryTests {
         )
         let engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
 
         _ = try await engine.sync()
@@ -1403,6 +1468,11 @@ struct FizzySyncEngineIdempotenceTests {
             }
         }
 
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: config)
@@ -1413,7 +1483,7 @@ struct FizzySyncEngineIdempotenceTests {
         )
         let engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
 
         let first = try await engine.sync()
@@ -1456,6 +1526,11 @@ struct FizzySyncEngine401Tests {
             (Data(), .response(for: req, status: 401))
         }
 
+        let pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: config)
@@ -1466,7 +1541,7 @@ struct FizzySyncEngine401Tests {
         )
         let engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
 
         // Pre-condition
@@ -1498,13 +1573,18 @@ struct FizzySyncEngineNumberReentrancyTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -1529,13 +1609,14 @@ struct FizzySyncEngineNumberReentrancyTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
@@ -1755,13 +1836,18 @@ struct FizzySyncEngineDeletePropagationTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -1786,13 +1872,14 @@ struct FizzySyncEngineDeletePropagationTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
 
@@ -1993,13 +2080,18 @@ struct FizzySyncEngineColumnPushTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -2024,13 +2116,14 @@ struct FizzySyncEngineColumnPushTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
 
@@ -2240,13 +2333,18 @@ struct FizzySyncEnginePinReconciliationTests {
         let suiteName: String
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
-            cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
             board = boardRepo.createBoard(name: "Roadmap")
             column = boardRepo.createColumn(in: board, name: "Triage")
             try! persistence.viewContext.save()
@@ -2272,13 +2370,14 @@ struct FizzySyncEnginePinReconciliationTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }
