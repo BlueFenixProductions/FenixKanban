@@ -29,6 +29,9 @@ struct FizzyCardPairingStoreTests {
         store.removePairing(for: id)
         #expect(store.pairing(for: id) == nil)
         #expect(store.isEmpty)
+        // The removal must reach disk too — a silently broken persist on the
+        // remove path would resurrect the pairing on next launch.
+        #expect(FizzyCardPairingStore(fileURL: url).pairing(for: id) == nil, "removePairing persists")
     }
 
     @Test("pairings persist across instances sharing a file URL")
