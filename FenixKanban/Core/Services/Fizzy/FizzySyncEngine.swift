@@ -129,13 +129,14 @@ final class FizzySyncEngine {
         let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
 
         // Local cards keyed by fizzyID — pairing comes from the device-local
-        // store (issue #21 A′), which CloudKit cannot clobber. Seed the
-        // store from the legacy hint attributes when cold.
+        // store (issue #21 A′), which CloudKit cannot clobber. Seed any
+        // missing store entries from legacy hint attributes (per-card, so a
+        // partially-warm store still adopts remaining hints).
         let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
         let localCards: [Card] = localColumns.flatMap { col -> [Card] in
             (col.cards as? Set<Card>).map { Array($0) } ?? []
         }
-        seedPairingStoreIfCold(localCards: localCards, remoteCards: remoteCards)
+        seedPairingStoreFromHints(localCards: localCards, remoteCards: remoteCards)
 
         // First-wins on the pathological duplicate-pairing case (two local
         // cards claiming one remote — e.g. a CloudKit duplicate import):
@@ -323,13 +324,18 @@ final class FizzySyncEngine {
         if card.fizzyNumber != number { card.fizzyNumber = number }
     }
 
-    /// Seeds the pairing store from the CloudKit-carried hint attributes
-    /// when the store is cold (zero entries): upgrade from a pre-A′ build,
-    /// fresh reinstall, or a second device that received cards via
-    /// CloudKit. A hint with a number but no fizzyID (pre-A′ clobber
-    /// residue) resolves through the remote list.
-    private func seedPairingStoreIfCold(localCards: [Card], remoteCards: [FizzyCard]) {
-        guard pairingStore.isEmpty else { return }
+    /// Seeds store entries from the CloudKit-carried hint attributes for any
+    /// card that doesn't have one yet: upgrade from a pre-A′ build, fresh
+    /// reinstall, a second device whose CloudKit import lands late, or a
+    /// partially-completed earlier seeding run. Per-card (not gated on an
+    /// empty store) so a partially-warm store still adopts remaining hints
+    /// instead of letting the push loop duplicate them. A hint with a number
+    /// but no fizzyID (pre-A′ clobber residue) resolves through the remote
+    /// list. Worst case for a stale hint pointing at an already-claimed
+    /// remote: a second store entry for the same fizzyID — the
+    /// `pairedByFizzyID` first-wins build keeps the duplicate inert (never
+    /// pushed, never deleted).
+    private func seedPairingStoreFromHints(localCards: [Card], remoteCards: [FizzyCard]) {
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteCards.map { ($0.id, $0) })
         let remoteByNumber: [Int64: FizzyCard] = Dictionary(
             remoteCards.map { (Int64($0.number), $0) },
@@ -337,6 +343,7 @@ final class FizzySyncEngine {
         )
         for card in localCards {
             guard let id = card.id else { continue }
+            guard pairing(for: card) == nil else { continue }
             if let fizzyID = card.fizzyID {
                 let number = card.fizzyNumber != 0
                     ? card.fizzyNumber

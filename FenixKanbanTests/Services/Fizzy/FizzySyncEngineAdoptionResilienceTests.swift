@@ -612,6 +612,66 @@ struct FizzySyncEngineResilienceTests {
         #expect(cardCount == 1)
     }
 
+    @Test("partially-warm store still seeds remaining attribute hints — no duplicate POST")
+    func partialStoreStillSeedsRemainingHints() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // Card A is already in the store (paired post-A′). Card B was paired
+        // pre-A′ — attribute hints only. A store with one entry must STILL
+        // adopt B's hints instead of POSTing a duplicate (partial first
+        // sync after upgrade / late CloudKit import).
+        let baseline = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
+        let cardA = h.cardRepo.createCard(in: h.column, title: "Alpha")
+        cardA.modifiedAt = baseline
+        let cardB = h.cardRepo.createCard(in: h.column, title: "Beta")
+        cardB.fizzyID = "fzB"
+        cardB.fizzyNumber = 8
+        cardB.fizzyUpdatedAt = baseline
+        cardB.modifiedAt = baseline
+        try h.persistence.viewContext.save()
+        let aUUID = try #require(cardA.id)
+        let bUUID = try #require(cardB.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzA", fizzyNumber: 7, fizzyUpdatedAt: baseline),
+            for: aUUID
+        )
+
+        let remoteA = remoteCardDict(
+            id: "fzA", number: 7, title: "Alpha",
+            description: nil, createdAtISO: "2026-05-01T00:00:00Z",
+            lastActiveISO: "2026-06-01T00:00:00Z"
+        )
+        let remoteB = remoteCardDict(
+            id: "fzB", number: 8, title: "Beta",
+            description: nil, createdAtISO: "2026-05-01T00:00:00Z",
+            lastActiveISO: "2026-06-01T00:00:00Z"
+        )
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData([remoteA, remoteB]), .ok(for: req))
+            case ("PUT", _), ("POST", _):
+                Issue.record("hinted card must be adopted, not written: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.isEmpty)
+        #expect(h.pairingStore.pairing(for: bUUID)?.fizzyID == "fzB", "B's hints seeded despite warm store")
+        let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
+        #expect(cardCount == 2, "no local duplicates either")
+    }
+
     @Test("cold store seeds from full attribute hints — upgrade/reinstall/second device")
     func coldStoreSeedsFromAttributeHints() async throws {
         let h = AdoptionHarness()

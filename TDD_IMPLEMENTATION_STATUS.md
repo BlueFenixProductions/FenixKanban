@@ -2420,3 +2420,15 @@ reworked (store survives the save failure); `clobberedFizzyIDRepairsByNumber`
 + 1 added) on pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS
 `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings on both
 platforms.
+
+**Review fix (M1), 2026-06-11:** `seedPairingStoreIfCold` guard was
+all-or-nothing (`pairingStore.isEmpty`) — a partially-warm store
+(partial first sync, late CloudKit import on a second device) skipped
+seeding remaining hint cards, letting the push loop POST duplicates.
+Fix: rename to `seedPairingStoreFromHints`, drop the `isEmpty` guard,
+add a per-card `guard pairing(for: card) == nil else { continue }` so
+already-paired cards are skipped while unpaired hint cards are always
+adopted. RED: `partialStoreStillSeedsRemainingHints` — Issue.record
+fired on a POST for Beta, `result.errors` non-empty, `pairing(for:
+bUUID)` nil, cardCount 3. GREEN: **391 tests / 80 suites**, macOS
+`BUILD SUCCEEDED`, zero warnings.

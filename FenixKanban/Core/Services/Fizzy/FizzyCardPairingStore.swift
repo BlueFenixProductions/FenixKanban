@@ -19,7 +19,7 @@ struct FizzyCardPairing: Codable, Equatable {
 ///
 /// Backed by a JSON sidecar in Application Support, written atomically on
 /// every mutation. Loaded once at init; a missing or unreadable file is an
-/// empty store — `FizzySyncEngine.seedPairingStoreIfCold` re-seeds from the
+/// empty store — `FizzySyncEngine.seedPairingStoreFromHints` re-seeds from the
 /// CloudKit hint attributes and the orphan-claim heuristic heals the rest.
 final class FizzyCardPairingStore: @unchecked Sendable {
 
