@@ -116,6 +116,19 @@ private func jsonData(_ object: Any) -> Data {
     try! JSONSerialization.data(withJSONObject: object)
 }
 
+/// Mimics Fizzy's ActionText rich-text sanitizer: HTML comments are
+/// stripped ON WRITE (verified against the production DB, 2026-06-10 —
+/// issue #21 forensics: 41 marker-POSTed cards, zero retained markers).
+/// Every stateful mock MUST pass stored descriptions through this so a
+/// write→read round-trip can never certify a fictional server again.
+private func sanitizedDescription(_ raw: Any?) -> Any {
+    guard let s = raw as? String, !s.isEmpty else { return NSNull() }
+    let stripped = s.replacingOccurrences(
+        of: #"(?:\n\n)?<!--[\s\S]*?-->"#, with: "", options: .regularExpression
+    )
+    return stripped.isEmpty ? NSNull() : stripped
+}
+
 private let triageColumnsJSON = #"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#
 
 // MARK: - Issue #14: marker-based deterministic orphan adoption
@@ -493,30 +506,26 @@ struct FizzySyncEngineResilienceTests {
         #expect(cardCount == 1, "exactly one Hero — locally and remotely")
     }
 
-    @Test("CloudKit-clobbered pairing heals by marker — no duplicate POST")
-    func cloudKitClobberHealsWithoutDuplicate() async throws {
+    @Test("CloudKit attribute clobber cannot unpair — the store is the authority, hints heal")
+    func cloudKitClobberCannotUnpair() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
         // Production shape of issue #21: a CloudKit import clobbers ALL
-        // synced pairing fields (fizzyID, fizzyNumber, fizzyUpdatedAt) to
-        // nil/zero after a successful pairing. Re-pair-by-number can't help
-        // (number is gone too) and the card's createdAt is backdated 10
-        // minutes from the remote's so the title±60s orphan heuristic can't
-        // claim the remote either — the persistent marker is the only path
-        // that can heal instead of duplicating.
+        // synced pairing attributes to nil/zero after a successful pairing.
+        // The server strips adoption markers (sanitizer-faithful mock), the
+        // number is zeroed (no re-pair-by-number), and createdAt is
+        // backdated 10 minutes (the title±60s heuristic can't claim the
+        // remote). Only the local pairing store can prevent a duplicate.
         let remoteCreated = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
         let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.cardDescription = "Body"
         card.createdAt = remoteCreated.addingTimeInterval(-600)
         try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
 
-        // Faithful stateful server: POSTed cards join the remote store
-        // verbatim (markers included), PUTs are applied to the stored state.
-        // This keeps the test honest in both worlds: pre-#21 code strips the
-        // marker via PUT during sync 2 and duplicates in sync 3; post-#21
-        // code never strips, so the marker survives and adoption heals.
         var postCount = 0
+        var putCount = 0
         var nextNumber = 20
         var remotesByNumber: [Int: [String: Any]] = [:]
         MockURLProtocol.handler = { req in
@@ -531,12 +540,13 @@ struct FizzySyncEngineResilienceTests {
                 postCount += 1
                 nextNumber += 1
                 let payload = cardWritePayload(of: req)
-                remotesByNumber[nextNumber] = remoteCardDict(
+                var dict = remoteCardDict(
                     id: "fz-\(nextNumber)", number: nextNumber,
                     title: payload?["title"] as? String ?? "?",
-                    description: payload?["description"] as? String,
-                    createdAtISO: "2026-06-01T00:00:00Z"
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
                 )
+                dict["description"] = sanitizedDescription(payload?["description"])
+                remotesByNumber[nextNumber] = dict
                 let response = HTTPURLResponse(
                     url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
                     headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/\(nextNumber)"]
@@ -550,6 +560,7 @@ struct FizzySyncEngineResilienceTests {
                 }
                 return (jsonData(stored), .ok(for: req))
             case ("PUT", let p?) where p.contains("/cards/"):
+                putCount += 1
                 let number = Int((p as NSString).lastPathComponent) ?? 0
                 guard remotesByNumber[number] != nil else {
                     Issue.record("PUT for unknown card number \(number)")
@@ -557,7 +568,7 @@ struct FizzySyncEngineResilienceTests {
                 }
                 let payload = cardWritePayload(of: req)
                 remotesByNumber[number]?["title"] = payload?["title"] ?? "?"
-                remotesByNumber[number]?["description"] = payload?["description"] ?? NSNull()
+                remotesByNumber[number]?["description"] = sanitizedDescription(payload?["description"])
                 return (jsonData(remotesByNumber[number]!), .ok(for: req))
             default:
                 Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
@@ -565,38 +576,40 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        // Sync 1: the local card pairs via POST.
+        // Sync 1: the local card pairs via POST — into the pairing store.
         let first = try await h.engine.sync()
         #expect(first.errors.isEmpty)
         #expect(postCount == 1)
-        #expect(card.fizzyID == "fz-21")
+        #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyID == "fz-21")
+        #expect(card.fizzyID == "fz-21", "hint attributes written at pairing time")
 
-        // Sync 2: a steady-state cycle while the pairing is intact — this is
-        // where pre-#21 code stripped the marker remotely, defeating the net.
+        // Sync 2: steady-state cycle while everything is intact.
         let second = try await h.engine.sync()
         #expect(second.errors.isEmpty)
 
-        // Between syncs: the CloudKit import clobbers the pairing fields.
+        // Between syncs: a CloudKit import clobbers ALL hint attributes.
         card.fizzyID = nil
         card.fizzyNumber = 0
         card.fizzyUpdatedAt = nil
         try h.persistence.viewContext.save()
 
-        // Sync 3: the persistent marker must heal the pairing — never POST.
+        // Sync 3: the store still owns the pairing — never POST.
         let third = try await h.engine.sync()
-
-        #expect(postCount == 1, "no duplicate POST — marker adoption heals the clobbered pairing")
+        #expect(postCount == 1, "no duplicate POST — the pairing store is CloudKit-proof")
         #expect(third.errors.isEmpty)
-        #expect(card.fizzyID == "fz-21", "fizzyID restored from the remote twin")
-        #expect(card.fizzyNumber == 21, "fizzyNumber restored from the remote twin")
-        let remoteTwin = try #require(remotesByNumber[21])
-        let twinLastActive = ISO8601DateFormatter().date(
-            from: try #require(remoteTwin["last_active_at"] as? String)
-        )
-        #expect(card.fizzyUpdatedAt == twinLastActive, "fizzyUpdatedAt restored from the remote twin")
+        #expect(card.fizzyID == "fz-21", "fizzyID hint healed from the store")
+        #expect(card.fizzyNumber == 21, "fizzyNumber hint healed from the store")
         #expect(remotesByNumber.count == 1, "exactly one Hero remotely")
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1, "exactly one Hero locally")
+
+        // Sync 4: hint healing must not have bumped modifiedAt — the next
+        // cycle stays completely quiet (no PUT/POST echo).
+        let putsBefore = putCount
+        let fourth = try await h.engine.sync()
+        #expect(fourth.errors.isEmpty)
+        #expect(postCount == 1)
+        #expect(putCount == putsBefore, "hint healing causes no echo-PUT")
     }
 
     @Test("LWW push PUT preserves the local edit AND re-embeds the marker (issue #21)")
