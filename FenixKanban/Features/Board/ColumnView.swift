@@ -101,9 +101,14 @@ struct ColumnView: View {
                                     Button {
                                         onToggleGolden(card)
                                     } label: {
+                                        // "ticket.slash" is NOT an SF Symbol (rendered blank +
+                                        // console warning on device). Mirror the card-detail
+                                        // toolbar's current-state depiction: golden → filled,
+                                        // not golden → outline; the label text carries the
+                                        // action semantics.
                                         SwiftUI.Label(
                                             card.isGolden ? "Remove Golden Ticket" : "Mark as Golden",
-                                            systemImage: card.isGolden ? "ticket.slash" : "ticket"
+                                            systemImage: card.isGolden ? "ticket.fill" : "ticket"
                                         )
                                     }
                                     // Visible menu text uses title case (UI convention);

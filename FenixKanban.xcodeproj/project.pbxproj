@@ -118,6 +118,7 @@
 		BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78234911E102475108AE9455 /* KeychainHelperTests.swift */; };
 		BFA7112B4AC02616859C2445 /* SyncMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8BA67918984E11FD14D58F /* SyncMonitorTests.swift */; };
 		C071193A6B7A63C7AC32817D /* FizzyError.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABA181CFB55168EB577EAA1 /* FizzyError.swift */; };
+		C1BAF30C84B8A9779C622AB3 /* SFSymbolValidityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758B536347095E7B6F9BEA6F /* SFSymbolValidityTests.swift */; };
 		C2902035A969FF5D17E7BAA0 /* BoardQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5619875D16CD1B3B74E215 /* BoardQuery.swift */; };
 		C3476FFC4259355BF0F3555D /* SyncResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EACADBB67BFDA43E39C6E2 /* SyncResultTests.swift */; };
 		C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */; };
@@ -237,6 +238,7 @@
 		705401ADCC82CB1481075EA4 /* LabelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelPickerView.swift; sourceTree = "<group>"; };
 		72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldZoneChip.swift; sourceTree = "<group>"; };
 		754AA8D2F4FF050550CD5DED /* TipJarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarStore.swift; sourceTree = "<group>"; };
+		758B536347095E7B6F9BEA6F /* SFSymbolValidityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolValidityTests.swift; sourceTree = "<group>"; };
 		78234911E102475108AE9455 /* KeychainHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelperTests.swift; sourceTree = "<group>"; };
 		78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		7B1B9186731B8F85F0294268 /* AssigneePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssigneePickerView.swift; sourceTree = "<group>"; };
@@ -814,6 +816,14 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
+		FB5B8CAA5DFA52827B913145 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				758B536347095E7B6F9BEA6F /* SFSymbolValidityTests.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		FC1AC208A9E6B4BA1D3A553E /* FenixKanbanTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -827,6 +837,7 @@
 				2ADAD06F0584C897CBB97668 /* Persistence */,
 				CEB25DA70C666F89336E18F6 /* Repositories */,
 				74EE9E89E5F457BABDDF039C /* Services */,
+				FB5B8CAA5DFA52827B913145 /* UI */,
 				7F68A8D5B1BEE2A3B176B872 /* ViewModels */,
 			);
 			path = FenixKanbanTests;
@@ -1105,6 +1116,7 @@
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
 				3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */,
 				B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */,
+				C1BAF30C84B8A9779C622AB3 /* SFSymbolValidityTests.swift in Sources */,
 				BFA7112B4AC02616859C2445 /* SyncMonitorTests.swift in Sources */,
 				C3476FFC4259355BF0F3555D /* SyncResultTests.swift in Sources */,
 				73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */,

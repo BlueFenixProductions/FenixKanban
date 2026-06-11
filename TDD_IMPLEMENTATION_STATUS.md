@@ -2237,3 +2237,42 @@ carriage is no longer asserted (comment documents the CloudKit ruling).
 version-parameterized test runs 3 cases) on pinned iPhone 17 sim
 (UDID `1CCA4B1C…`) — including the v5→v8 on-disk migration inferred
 WITHOUT the rename; macOS `BUILD SUCCEEDED`, zero warnings.
+
+---
+
+### 39. ticket.slash is not an SF Symbol — phantom-symbol sweep ✅
+
+**Date:** 2026-06-10 · RED → GREEN (regression test first; caught live
+on-device).
+
+**The bug (cosmetic, runtime-only):** device console logged `No symbol
+named 'ticket.slash' found in system symbol set` — `ticket.slash` does
+not exist in SF Symbols. The "Remove Golden Ticket" context-menu item
+on golden cards (`ColumnView.swift` line 106) rendered a blank icon.
+Phantom symbol names compile fine; the failure only surfaces at render
+time, so 384 green tests never noticed.
+
+**RED:** new `FenixKanbanTests/UI/SFSymbolValidityTests.swift`
+("SF Symbol validity" suite) — locates the app source tree from
+`#filePath` (walks up to `FenixKanban.xcodeproj`, `try #require`s the
+tree so a CI-artifact run fails loudly instead of passing vacuously),
+recursively reads every app `.swift` file, extracts each
+`systemImage:` / `systemName:` / `systemImageName:` string literal
+(both branches of ternaries included; only symbol-shaped strings —
+lowercase/digits/dots — are candidates, so titles and interpolations
+are skipped), and asserts each resolves via `UIImage(systemName:)`
+(`NSImage(systemSymbolName:)` on macOS). Failed pre-fix on exactly
+one symbol: `"ticket.slash" (ColumnView.swift:106)`. No other phantom
+symbols and no false positives across the 53 literals (32 unique) the
+sweep validates.
+
+**GREEN:** context menu now uses
+`card.isGolden ? "ticket.fill" : "ticket"` — mirrors the existing
+golden precedent everywhere else (CardDetailView toolbar
+`ticket.fill`/`ticket` by current state, CardView badge and
+GoldZoneChip `ticket.fill`); the label text ("Remove Golden Ticket" /
+"Mark as Golden") carries the action semantics.
+
+**Verification:** **385 tests / 79 suites green** (384 + 1 new) on
+pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS `BUILD SUCCEEDED`,
+zero warnings.
