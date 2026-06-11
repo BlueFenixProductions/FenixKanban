@@ -133,6 +133,10 @@ final class CardDetailViewModel: ObservableObject {
         do {
             try await client.toggleCardTag(number: Int(card.fizzyNumber), tagTitle: tagTitle)
         } catch {
+            // A sync can soft-delete the card while the push is in flight
+            // (#20 guard family, BoardViewModel precedent): reverting a dead
+            // card would fire a fault. Stand down — the failure is moot.
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
             // Revert only if no later toggle changed this label's state while
             // the push was in flight — otherwise leave the newer state alone
             // (last writer wins locally; the next pull reconciles the server).
@@ -170,6 +174,8 @@ final class CardDetailViewModel: ObservableObject {
         do {
             try await client.toggleCardAssignment(number: Int(card.fizzyNumber), assigneeID: user.id)
         } catch {
+            // #20 guard family: stand down if a sync deleted the card mid-flight.
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
             // Revert only if no later toggle changed this user's state while
             // the POST was in flight.
             if assignees.contains(where: { $0.id == user.id }) != wasAssigned {
@@ -200,6 +206,8 @@ final class CardDetailViewModel: ObservableObject {
                 try await client.watchCard(number: Int(card.fizzyNumber))
             }
         } catch {
+            // #20 guard family: stand down if a sync deleted the card mid-flight.
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
             // Revert only if no later toggle changed the state in flight.
             if isWatched != wasWatched {
                 isWatched = wasWatched
@@ -223,6 +231,8 @@ final class CardDetailViewModel: ObservableObject {
                 try await client.pinCard(number: Int(card.fizzyNumber))
             }
         } catch {
+            // #20 guard family: stand down if a sync deleted the card mid-flight.
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
             if isPinned != wasPinned {
                 isPinned = wasPinned
                 cardRepository.setPinned(isPinned, for: card)
@@ -247,6 +257,9 @@ final class CardDetailViewModel: ObservableObject {
                 try await client.markCardGolden(number: Int(card.fizzyNumber))
             }
         } catch {
+            // #20 guard family: stand down if a sync deleted the card
+            // mid-flight — the isGolden read below would fire a fault.
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
             if card.isGolden != wasGolden {
                 applyGoldenLocally(wasGolden)
             }
