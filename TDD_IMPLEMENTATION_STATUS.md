@@ -290,6 +290,30 @@ All completed work has followed the Red → Green → Refactor workflow:
 
 ---
 
+---
+
+## ✅ FizzyCardPairingStore — device-local pairing sidecar (issue #21 A′)
+**Date:** 2026-06-11  
+**Status:** Complete (Red → Green)
+
+**🔴 Red Phase:**
+- Created `FenixKanbanTests/Services/Fizzy/FizzyCardPairingStoreTests.swift`
+- 4 tests covering: round-trip set/get/remove, persistence across instances, corrupt-file recovery, allPairings/removeAll
+- Verified build failure: `cannot find 'FizzyCardPairingStore' in scope`
+
+**🟢 Green Phase:**
+- Created `FenixKanban/Core/Services/Fizzy/FizzyCardPairingStore.swift`
+- `FizzyCardPairing` struct: `Codable & Equatable`, fields `fizzyID: String`, `fizzyNumber: Int64`, `fizzyUpdatedAt: Date`
+- `FizzyCardPairingStore` final class: file-backed JSON sidecar, `NSLock`-protected, atomic writes
+- Public API: `init(fileURL:)`, `static let shared`, `isEmpty`, `count`, `pairing(for:)`, `setPairing(_:for:)`, `removePairing(for:)`, `removeAll()`, `allPairings()`
+- All 4 tests pass; sub-second `Date` fidelity verified through JSON round-trip
+
+**Notes:**
+- Rationale: CloudKit imports clobber freshly-written pairing attributes (issue #21); this store lives in Application Support, outside CloudKit/Fizzy server reach
+- Default Codable `Date` encoding (Double `timeIntervalSinceReferenceDate`) preserves sub-second precision — critical for LWW comparisons
+
+---
+
 ## 📞 QUESTIONS FOR TEAM
 
 1. Should we prioritize remaining force unwraps or move to service refactoring?
