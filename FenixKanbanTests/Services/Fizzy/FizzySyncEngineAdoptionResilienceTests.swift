@@ -137,8 +137,8 @@ private let triageColumnsJSON = #"[{"id":"FCLOCAL","name":"Triage","color":{"nam
 @MainActor
 struct FizzySyncEngineMarkerAdoptionTests {
 
-    @Test("POSTed card descriptions carry the <!--fk:UUID--> adoption marker")
-    func postCarriesMarker() async throws {
+    @Test("POST sends the description verbatim — no marker, wire-clean")
+    func postSendsCleanDescription() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
@@ -146,10 +146,10 @@ struct FizzySyncEngineMarkerAdoptionTests {
         withDesc.cardDescription = "Hello"
         let noDesc = h.cardRepo.createCard(in: h.column, title: "NoDesc")
         try h.persistence.viewContext.save()
-        let withDescUUID = try #require(withDesc.id)
-        let noDescUUID = try #require(noDesc.id)
 
-        var postedDescriptionsByTitle: [String: String] = [:]
+        // Maps title → posted description string (absent/NSNull description left absent from the dict).
+        var postedStringDescriptions: [String: String] = [:]
+        var postedTitles: Set<String> = []
         var nextNumber = 40
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
@@ -162,7 +162,10 @@ struct FizzySyncEngineMarkerAdoptionTests {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 let payload = cardWritePayload(of: req)
                 if let title = payload?["title"] as? String {
-                    postedDescriptionsByTitle[title] = payload?["description"] as? String ?? "(nil)"
+                    postedTitles.insert(title)
+                    if let desc = payload?["description"] as? String {
+                        postedStringDescriptions[title] = desc
+                    }
                 }
                 nextNumber += 1
                 let response = HTTPURLResponse(
@@ -186,8 +189,9 @@ struct FizzySyncEngineMarkerAdoptionTests {
         let result = try await h.engine.sync()
 
         #expect(result.errors.isEmpty)
-        #expect(postedDescriptionsByTitle["WithDesc"] == "Hello\n\n<!--fk:\(withDescUUID.uuidString)-->")
-        #expect(postedDescriptionsByTitle["NoDesc"] == "<!--fk:\(noDescUUID.uuidString)-->")
+        #expect(postedStringDescriptions["WithDesc"] == "Hello", "verbatim — no marker suffix")
+        #expect(postedTitles.contains("NoDesc"), "NoDesc was posted")
+        #expect(postedStringDescriptions["NoDesc"] == nil, "nil description stays nil — not a bare marker")
     }
 
     @Test("store-paired card stays quiet across repeated syncs — no churn")
@@ -238,15 +242,17 @@ struct FizzySyncEngineMarkerAdoptionTests {
         #expect(cardCount == 1)
     }
 
-    @Test("marker matching no local card → created normally, marker stripped locally, no error")
-    func unownedMarkerCreatesCardNormally() async throws {
+    @Test("remote descriptions import verbatim — no marker stripping on pull")
+    func remoteDescriptionImportsVerbatim() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
-        let strangerUUID = UUID()
+        // Production remotes never contain markers (the server's sanitizer
+        // strips HTML comments on write) — so the engine performs no
+        // stripping of its own. What the server returns is what we store.
         let remote = remoteCardDict(
             id: "fzZ", number: 5, title: "Stray",
-            description: "Body text\n\n<!--fk:\(strangerUUID.uuidString)-->",
+            description: "Body text",
             createdAtISO: "2026-06-01T00:00:00Z"
         )
         MockURLProtocol.handler = { req in
@@ -258,7 +264,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (jsonData([remote]), .ok(for: req))
             default:
-                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?") — stripping an unowned marker is not our job")
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
                 return (Data(), .response(for: req, status: 500))
             }
         }
@@ -268,8 +274,9 @@ struct FizzySyncEngineMarkerAdoptionTests {
         #expect(result.errors.isEmpty)
         #expect(result.itemsCreated == 1)
         let cards = try h.persistence.viewContext.fetch(Card.fetchRequest())
-        let stray = try #require(cards.first { $0.fizzyID == "fzZ" })
-        #expect(stray.cardDescription == "Body text", "local copies never contain markers")
+        let stray = try #require(cards.first { $0.title == "Stray" })
+        #expect(stray.cardDescription == "Body text")
+        #expect(h.pairingStore.pairing(for: try #require(stray.id))?.fizzyID == "fzZ")
     }
 
 }
@@ -499,25 +506,25 @@ struct FizzySyncEngineResilienceTests {
         #expect(putCount == putsBefore, "hint healing causes no echo-PUT")
     }
 
-    @Test("LWW push PUT preserves the local edit AND re-embeds the marker (issue #21)")
-    func putReembedsMarkerWithLocalEdit() async throws {
+    @Test("LWW push PUT sends the edited description verbatim — no marker")
+    func putSendsCleanDescription() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
-        // Paired card with a local edit newer than the remote — LWW pushes.
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.cardDescription = "Edited body"
-        card.fizzyID = "fzP"
-        card.fizzyNumber = 9
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = baseline.addingTimeInterval(500)
         try h.persistence.viewContext.save()
-        let localUUID = try #require(card.id)
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzP", fizzyNumber: 9, fizzyUpdatedAt: baseline),
+            for: cardUUID
+        )
 
         let remote = remoteCardDict(
             id: "fzP", number: 9, title: "Hero",
-            description: "Old body\n\n<!--fk:\(localUUID.uuidString)-->",
+            description: "Old body",
             createdAtISO: "2026-01-01T00:00:00Z",
             lastActiveISO: ISO8601DateFormatter().string(from: baseline)
         )
@@ -535,7 +542,7 @@ struct FizzySyncEngineResilienceTests {
                 putDescriptions.append(payload?["description"] as? String ?? "(nil)")
                 var updated = remote
                 updated["title"] = payload?["title"] ?? "?"
-                updated["description"] = payload?["description"] ?? NSNull()
+                updated["description"] = sanitizedDescription(payload?["description"])
                 return (jsonData(updated), .ok(for: req))
             default:
                 Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
@@ -546,13 +553,7 @@ struct FizzySyncEngineResilienceTests {
         let result = try await h.engine.sync()
 
         #expect(result.errors.isEmpty)
-        #expect(putDescriptions.count == 1, "exactly one LWW push PUT")
-        let putBody = try #require(putDescriptions.first)
-        #expect(putBody.contains("Edited body"), "local edit preserved in the PUT payload")
-        #expect(
-            putBody.hasSuffix("<!--fk:\(localUUID.uuidString)-->"),
-            "marker re-embedded — a local edit must not wipe the remote marker (issue #21)"
-        )
+        #expect(putDescriptions == ["Edited body"], "exactly one LWW push PUT, description verbatim")
     }
 
     @Test("cold store seeds from a number-only hint (pre-A′ clobber residue)")

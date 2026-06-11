@@ -2432,3 +2432,33 @@ adopted. RED: `partialStoreStillSeedsRemainingHints` — Issue.record
 fired on a POST for Beta, `result.errors` non-empty, `pairing(for:
 bUUID)` nil, cardCount 3. GREEN: **391 tests / 80 suites**, macOS
 `BUILD SUCCEEDED`, zero warnings.
+
+### Task 4 — Delete adoption-marker machinery (issue #21 A′), 2026-06-11
+
+**Files:** `FenixKanban/Core/Services/Fizzy/FizzySyncEngine.swift`,
+`FenixKanbanTests/Services/Fizzy/FizzySyncEngineAdoptionResilienceTests.swift`
+
+**Test rework (1:1 replacements):** `postCarriesMarker` →
+`postSendsCleanDescription`; `putReembedsMarkerWithLocalEdit` →
+`putSendsCleanDescription`; `unownedMarkerCreatesCardNormally` →
+`remoteDescriptionImportsVerbatim`.
+
+**RED:** `postSendsCleanDescription` failed (`"Hello\n\n<!--fk:…-->"
+!= "Hello"`); `putSendsCleanDescription` failed (`["Edited
+body\n\n<!--fk:…-->"] != ["Edited body"]`). `remoteDescriptionImportsVerbatim`
+passed on arrival (stripping a marker-free description is a no-op).
+
+**Engine changes:** deleted the entire `// MARK: - Adoption marker
+(issue #14)` section (`adoptionMarker(for:)`, `adoptionMarkerPattern`,
+`adoptionMarkerUUID(in:)`, `strippingAdoptionMarker(from:)`);
+simplified `putCard` and `postCard` to send `card.cardDescription`
+verbatim; `applyRemote`: `card.cardDescription = remote.description`
+(deleted the stripping call + comment). No remaining `marker`/`#14`
+references in the engine.
+
+**Grep sweep:** `grep -rn "adoptionMarker\|strippingAdoptionMarker"
+FenixKanban FenixKanbanTests` → no output.
+
+**Verification:** **391 tests / 80 suites green** on pinned iPhone 17
+sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`),
+zero warnings.
