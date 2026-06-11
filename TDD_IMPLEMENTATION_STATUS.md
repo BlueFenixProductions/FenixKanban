@@ -2695,3 +2695,15 @@ as «unknown» from the URLProtocol thread; suite red regardless). GREEN:
 `post()` resolves `URL(string:relativeTo: baseURL).absoluteURL` — a no-op
 for absolute Locations. **398 tests / 81 suites green**; macOS zero
 warnings.
+
+### #44 — Consolidation: back-merge main into develop (2026-06-11)
+
+Branch bookkeeping, no new code. `develop`, `origin/develop`, and the
+session branch were already at the same commit; the only work missing
+from `develop` was `89d6dc8` (PR #8 — silence the Swift 6
+strict-concurrency warning on `serviceKey` in
+`AuthenticationServiceTests`), which had landed on `main` only.
+Merged `origin/main` into `develop` (one-line test delta, no conflicts)
+so `develop` is again a superset of `main`. Full suite on the pinned
+iPhone 17 simulator (UDID 1CCA4B1C…, two-sim flake rule): **TEST
+SUCCEEDED**, 398 tests / 81 suites green.
