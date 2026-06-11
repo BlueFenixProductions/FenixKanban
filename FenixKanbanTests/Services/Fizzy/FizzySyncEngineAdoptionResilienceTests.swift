@@ -171,7 +171,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
         #expect(postedDescriptionsByTitle["NoDesc"] == "<!--fk:\(noDescUUID.uuidString)-->")
     }
 
-    @Test("pull adopts an unpaired local by marker, strips locally, PUTs strip remotely")
+    @Test("pull adopts an unpaired local by marker, strips locally, marker persists remotely")
     func pullAdoptsByMarker() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
@@ -188,8 +188,6 @@ struct FizzySyncEngineMarkerAdoptionTests {
             description: "My body\n\n<!--fk:\(localUUID.uuidString)-->",
             createdAtISO: "2026-01-01T00:00:00Z", lastActiveISO: "2026-01-02T00:00:00Z"
         )
-        var putPaths: [String] = []
-        var putDescriptions: [String?] = []
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
@@ -198,12 +196,9 @@ struct FizzySyncEngineMarkerAdoptionTests {
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (jsonData([remote]), .ok(for: req))
-            case ("PUT", let p?):
-                putPaths.append(p)
-                putDescriptions.append(cardWritePayload(of: req)?["description"] as? String)
-                var updated = remote
-                updated["description"] = cardWritePayload(of: req)?["description"] ?? NSNull()
-                return (jsonData(updated), .ok(for: req))
+            case ("PUT", _):
+                Issue.record("no strip-PUT — markers persist remotely by design (issue #21)")
+                return (Data(), .response(for: req, status: 500))
             default:
                 Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
                 return (Data(), .response(for: req, status: 500))
@@ -217,15 +212,17 @@ struct FizzySyncEngineMarkerAdoptionTests {
         #expect(card.fizzyID == "fzM")
         #expect(card.fizzyNumber == 9)
         #expect(card.cardDescription?.contains("<!--fk:") != true, "local copy never contains markers")
-        #expect(putPaths == ["/ACCT/cards/9"], "one PUT to strip the marker remotely")
-        #expect(putDescriptions == ["My body"], "PUT body description carries no marker")
 
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1, "adoption must not duplicate the card locally")
     }
 
-    @Test("strip-PUT failure → error recorded, adoption holds, next sync retries")
-    func stripPutFailureRecordsErrorAndRetries() async throws {
+    @Test("adoption holds across repeated syncs — marker persists remotely, no strip-PUT churn")
+    func adoptionStableWithPersistentMarker() async throws {
+        // Inverts the pre-#21 "strip-PUT failure retries" coverage: there is
+        // no strip-PUT anymore. The remote keeps serving the marker on every
+        // sync and the engine must stay quiet — adopt once, then no PUTs, no
+        // POSTs, no spurious updates.
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
@@ -239,8 +236,6 @@ struct FizzySyncEngineMarkerAdoptionTests {
             description: "Body\n\n<!--fk:\(localUUID.uuidString)-->",
             createdAtISO: "2026-01-01T00:00:00Z", lastActiveISO: "2026-01-02T00:00:00Z"
         )
-        var putCount = 0
-        var putShouldFail = true
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
@@ -250,15 +245,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (jsonData([remote]), .ok(for: req))
             case ("PUT", _):
-                putCount += 1
-                if putShouldFail {
-                    // 422: FizzyClient does not retry 4xx, so each sync makes
-                    // exactly one strip-PUT attempt (deterministic count).
-                    return (Data(), .response(for: req, status: 422))
-                }
-                var updated = remote
-                updated["description"] = "Body"
-                return (jsonData(updated), .ok(for: req))
+                Issue.record("no strip-PUT — markers persist remotely by design (issue #21)")
+                return (Data(), .response(for: req, status: 500))
             case ("POST", _):
                 Issue.record("adopted card must not be POSTed")
                 return (Data(), .response(for: req, status: 500))
@@ -269,15 +257,16 @@ struct FizzySyncEngineMarkerAdoptionTests {
         }
 
         let first = try await h.engine.sync()
-        #expect(!first.errors.isEmpty, "failed strip-PUT must surface in errors")
-        #expect(card.fizzyID == "fzM", "adoption holds even when the strip-PUT fails")
-        #expect(putCount == 1)
+        #expect(first.errors.isEmpty)
+        #expect(card.fizzyID == "fzM", "marker adoption pairs the card")
 
-        // Marker is still on the remote (PUT failed) — next sync retries.
-        putShouldFail = false
+        // The marker is still on the remote — the next sync must be a no-op,
+        // not an echo loop (no PUT/POST; handler records any as an issue).
         let second = try await h.engine.sync()
         #expect(second.errors.isEmpty)
-        #expect(putCount == 2, "second sync retries the strip-PUT")
+        #expect(second.itemsUpdated == 0, "steady state — nothing to update")
+        #expect(card.fizzyID == "fzM")
+        #expect(card.cardDescription?.contains("<!--fk:") != true, "local copy never contains markers")
 
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1)
@@ -348,10 +337,9 @@ struct FizzySyncEngineMarkerAdoptionTests {
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (jsonData([remote]), .ok(for: req))
-            case ("PUT", let p?) where p.hasSuffix("/cards/11"):
-                var updated = remote
-                updated["description"] = NSNull()
-                return (jsonData(updated), .ok(for: req))
+            case ("PUT", _):
+                Issue.record("no strip-PUT — markers persist remotely by design (issue #21)")
+                return (Data(), .response(for: req, status: 500))
             case ("POST", _):
                 postCount += 1
                 let response = HTTPURLResponse(
@@ -492,7 +480,7 @@ struct FizzySyncEngineResilienceTests {
         #expect(second.errors.isEmpty)
         #expect(card.fizzyID == "fzH")
         #expect(card.fizzyNumber == 21)
-        #expect(putCount == 1, "marker stripped remotely after adoption")
+        #expect(putCount == 0, "no strip-PUT — markers persist remotely by design (issue #21)")
         #expect(card.cardDescription == "Body")
 
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())

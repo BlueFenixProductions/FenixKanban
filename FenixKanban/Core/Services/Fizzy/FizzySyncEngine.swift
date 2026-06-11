@@ -151,7 +151,7 @@ final class FizzySyncEngine {
         // description carries a hidden `<!--fk:LOCAL_UUID-->` marker. If a
         // remote card's marker names a local unpaired card, that card is the
         // owner — adopt it BEFORE the fuzzy title±60s heuristic gets a say.
-        // The remote marker is stripped via PUT in the LWW loop below.
+        // The marker stays on the remote by design — see putCard (issue #21).
         let unpairedByLocalUUID: [UUID: Card] = Dictionary(
             localCards.compactMap { card -> (UUID, Card)? in
                 guard card.fizzyID == nil, let id = card.id else { return nil }
@@ -225,22 +225,13 @@ final class FizzySyncEngine {
             let localModified = card.modifiedAt ?? .distantPast
             let remoteTimestamp = remote.lastActiveAt
 
-            // The remote description still carries this card's adoption
-            // marker (just adopted this cycle, or a previous strip-PUT
-            // failed). PUT the local marker-free state to scrub it.
-            // Idempotent: retried every sync until the PUT sticks.
-            let needsMarkerStrip = card.id != nil
-                && Self.adoptionMarkerUUID(in: remote.description) == card.id
-
             if remoteTimestamp > localFizzyTimestamp && localModified <= localFizzyTimestamp {
                 // Remote newer, local untouched → pull.
                 applyRemote(remote, to: card)
                 result.itemsUpdated += 1
-                if needsMarkerStrip {
-                    await stripMarkerRemotely(for: card, into: &result)
-                }
             } else if localModified > localFizzyTimestamp {
-                // Local edited since last sync → push.
+                // Local edited since last sync → push. putCard re-embeds the
+                // adoption marker so it survives the edit (issue #21).
                 do {
                     let updated = try await putCard(card, number: card.fizzyNumber)
                     card.fizzyUpdatedAt = updated.lastActiveAt
@@ -249,12 +240,10 @@ final class FizzySyncEngine {
                 } catch let error as FizzyError {
                     result.errors.append("Push update '\(card.title ?? "(untitled)")': \(error)")
                 }
-                // The PUT payload is the local (marker-free) description, so
-                // a successful push also strips any lingering marker.
-            } else if needsMarkerStrip {
-                await stripMarkerRemotely(for: card, into: &result)
             }
-            // else: both equal or remote stale → no-op.
+            // else: both equal or remote stale → no-op. Any adoption marker
+            // in the remote description is deliberately left in place —
+            // markers persist remotely by design (issue #21).
         }
 
         // Soft-delete: paired local cards whose fizzyID is no longer in the
@@ -366,19 +355,6 @@ final class FizzySyncEngine {
             options: .regularExpression
         )
         return stripped.isEmpty ? nil : stripped
-    }
-
-    /// PUTs the card's local (marker-free) state to scrub a lingering
-    /// adoption marker from the remote description. Failure is recorded and
-    /// retried on the next sync — the marker is harmless meanwhile.
-    private func stripMarkerRemotely(for card: Card, into result: inout FizzySyncResult) async {
-        do {
-            let updated = try await putCard(card, number: card.fizzyNumber)
-            card.fizzyUpdatedAt = updated.lastActiveAt
-            card.modifiedAt = updated.lastActiveAt
-        } catch {
-            result.errors.append("Strip adoption marker '\(card.title ?? "(untitled)")': \(error)")
-        }
     }
 
     // MARK: - Mode implementations (skeleton — return empty in this task; filled by Tasks 4-6)
@@ -754,11 +730,30 @@ final class FizzySyncEngine {
 
     /// PUT an updated local card to the remote. Returns the updated FizzyCard
     /// so we can sync back the server's lastActiveAt.
+    ///
+    /// Adoption markers persist on remote cards BY DESIGN (issue #21,
+    /// temporarily reversing #15's remote stripping): the fizzy pairing
+    /// fields (`fizzyID`/`fizzyNumber`/`fizzyUpdatedAt`) are CloudKit-synced,
+    /// and a CloudKit import can clobber a fresh pairing back to nil — after
+    /// which the push step would POST a duplicate of every clobbered card.
+    /// A persistent `<!--fk:UUID-->` marker lets marker adoption (#14)
+    /// deterministically re-pair the card to its remote twin instead. The
+    /// PUT payload therefore re-embeds the marker (mirroring `postCard`);
+    /// previously a local edit silently wiped it because the payload carried
+    /// the marker-free local description. Remote stripping returns once
+    /// pairing moves to a local-only (non-CloudKit) store.
     private func putCard(_ card: Card, number: Int64) async throws -> FizzyCard {
+        let outgoingDescription: String?
+        if let localID = card.id {
+            let marker = Self.adoptionMarker(for: localID)
+            outgoingDescription = card.cardDescription.map { "\($0)\n\n\(marker)" } ?? marker
+        } else {
+            outgoingDescription = card.cardDescription
+        }
         let payload = FizzyCardWritePayload(
             card: FizzyCardWrite(
                 title: card.title ?? "",
-                description: card.cardDescription,
+                description: outgoingDescription,
                 status: nil,
                 tagIds: nil
             )
@@ -778,9 +773,9 @@ final class FizzySyncEngine {
     /// preserves whatever tags the server defaults to (none, for new cards).
     private func postCard(_ card: Card, toBoardID fizzyBoardID: String) async throws -> FizzyCard {
         // Append the hidden adoption marker (issue #14) so the card can be
-        // re-claimed deterministically if the pairing save is lost (crash
-        // after POST, save failure, CloudKit clobber). Stripped from the
-        // remote on the next sync after pairing persists.
+        // re-claimed deterministically if the pairing is lost (crash after
+        // POST, save failure, CloudKit clobber). The marker persists on the
+        // remote by design — see putCard (issue #21).
         let outgoingDescription: String?
         if let localID = card.id {
             let marker = Self.adoptionMarker(for: localID)
