@@ -2707,3 +2707,46 @@ Merged `origin/main` into `develop` (one-line test delta, no conflicts)
 so `develop` is again a superset of `main`. Full suite on the pinned
 iPhone 17 simulator (UDID 1CCA4B1C…, two-sim flake rule): **TEST
 SUCCEEDED**, 398 tests / 81 suites green.
+
+### #45 — Issue #20: snapshot-staleness + deleted-card guard families; backfill ruled void (2026-06-11)
+
+**Scope ruling first:** #20's headline item (flag-gated backfill of migrated
+card→label links for CloudKit export) is **void** — the issue was filed at
+2026-06-10 19:01 CDT, 38 minutes before `f07b3d7` (19:39 CDT) dropped the
+`label→labels` renaming identifier under the Captain's ruling. v5-era links
+are dropped by the migration *by design* (CloudKit forbids rename
+migrations; Fizzy re-pulls tags), so there are no migrated links to
+backfill and no re-export gap. What survived from the #20 thread was the
+two CardDetailViewModel families.
+
+**Snapshot-staleness family** (labels / assignees / watched / pinned): the
+init-time snapshots went stale when a sync or CloudKit merge landed under
+an open detail sheet — the labels variant clobbered a remote-added label on
+the next `save()` (RED proved it: `card.labels → []`). One mechanism fixes
+all four: observe `NSManagedObjectContextObjectsDidChange` on the card's
+context (BoardListViewModel precedent — fires for local saves AND CloudKit
+merges) and re-read the four sync-authoritative fields when the card is
+among updated/refreshed. Text-edit fields (title/description/dueDate/
+isCompleted) deliberately not refreshed — that would clobber in-progress
+typing (documented LWW). Six RED tests including the assignment-toggle
+preserve case.
+
+**Deleted-card guard family**: all five fizzy catch-revert paths
+(label/assignment/watch/pin/golden) now stand down when a sync
+soft-deleted the card mid-flight (`!card.isDeleted` +
+`managedObjectContext != nil`, BoardViewModel:140 precedent), placed
+before any card read — toggleGolden's catch reads `card.isGolden`, which
+faults on a zombie. RED runs surfaced the exact predicted Core Data error
+("Mutating a managed object … after it has been removed from its
+context") on four of five paths; the mid-flight deletion is simulated
+from the MockURLProtocol handler via a main-queue hop while the toggle is
+suspended at its await.
+
+**Still open on #20 (captain-gated):** dev-run `initializeCloudKitSchema()`
++ CloudKit Dashboard deploy checklist — v6 `Card.labels` many-to-many
+(CDMR), v7 `assigneesData`, v8 `isWatched`/`isPinned` — before any
+CloudKit-enabled release.
+
+**Final verification:** **408 tests / 83 suites green** on the pinned
+iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED`
+(`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
