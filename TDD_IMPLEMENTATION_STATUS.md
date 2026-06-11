@@ -2182,3 +2182,58 @@ re-run at close-out: `Test run with 382 tests in 77 suites passed`,
 macOS `BUILD SUCCEEDED` with zero warnings. Every task went through
 spec + quality review; 3 review-fix commits landed, two of them
 mutation-verified.
+
+---
+
+### 38. HOTFIX — CloudKit forbids label→labels rename migration ✅
+
+**Date:** 2026-06-10 · RED → GREEN (regression test first; this was a
+RED-able production bug).
+
+**The bug (FATAL, on-device only):** real iOS device with a pre-v6
+store crashed at launch — `loadPersistentStores` failed with
+NSCocoaErrorDomain 134110, "Cannot migrate store in-place: CloudKit
+integration forbids renaming 'label' to 'labels'" → `fatalError` in
+`PersistenceController.init`.
+
+**Root cause:** v6 renamed `Card.label` (to-one) → `Card.labels`
+(to-many) via a renaming identifier (`elementID="label"`), which
+survived in the v6, v7 AND v8 model contents. The production app uses
+`NSPersistentCloudKitContainer`, whose schema is additive-only —
+rename migrations are rejected at store-load time on any device
+holding a pre-v6 store.
+
+**Why CI was blind:** all 382 tests were green because every test
+harness uses `useCloudKit: false` and the migration tests use plain
+`NSPersistentContainer` — the CloudKit rename check never ran.
+
+**The fix (Captain's ruling — Option A):** removed ` elementID="label"`
+from the Card `labels` relationship in all three model contents
+(`FenixKanban {6,7,8}.xcdatamodel`). The v5→current migration is now
+"remove `label`, add `labels`" — additive, CloudKit-legal. Renaming
+identifiers are not part of entity version hashes, so existing healthy
+stores are unaffected.
+
+**Accepted data tradeoff:** v5-era card→label links are NOT carried
+forward (v5 was the first-tag-only era — at most one label per card;
+Fizzy re-pulls tags on next sync). Label entities and their attributes
+survive the migration; only the link is dropped, by design.
+
+**RED (regression guard):** new
+`FenixKanbanTests/Persistence/CloudKitModelCompatibilityTests.swift` —
+bans explicit renaming identifiers (any
+`renamingIdentifier != property name`) on every property and entity of
+v6/v7/v8 and the current compiled model. Failed pre-fix on all 4
+cases with "Card.labels carries renaming identifier label — forbidden
+on a CloudKit model"; green post-fix.
+
+**Updated contract:** `CoreDataMigrationV6Tests.migratesLabelDataForward`
+asserted the v5 to-one link carried into `labels` — renamed to
+`migratesV5StoreForward`: migration still succeeds from a real v5
+on-disk store, the card and Label (name + colorHex) survive, but link
+carriage is no longer asserted (comment documents the CloudKit ruling).
+
+**Verification:** **384 tests / 78 suites green** (382 + 2 new; the
+version-parameterized test runs 3 cases) on pinned iPhone 17 sim
+(UDID `1CCA4B1C…`) — including the v5→v8 on-disk migration inferred
+WITHOUT the rename; macOS `BUILD SUCCEEDED`, zero warnings.

@@ -3,9 +3,12 @@ import CoreData
 import Foundation
 @testable import FenixKanban
 
-/// Proves the v5 → v6 lightweight migration: `Card.label` (to-one) becomes
-/// `Card.labels` (many-to-many) via `renamingIdentifier="label"`, and existing
-/// to-one data survives as a one-element set.
+/// Proves the v5 → v6 lightweight migration: `Card.label` (to-one) is removed
+/// and `Card.labels` (many-to-many) is added — an additive change, NOT a
+/// rename. CloudKit (NSPersistentCloudKitContainer) forbids rename migrations,
+/// so the former `renamingIdentifier="label"` was dropped (Captain's ruling,
+/// 2026-06-10): v5-era card→label links are not carried forward by design —
+/// v5 was the first-tag-only era and Fizzy re-pulls tags on next sync.
 ///
 /// Both containers use class-stripped model copies (entities resolved to plain
 /// NSManagedObject + KVC) so loading two model versions in one process doesn't
@@ -25,8 +28,8 @@ struct CoreDataMigrationV6Tests {
         #expect(label.relationshipsByName["cards"]?.inverseRelationship?.name == "labels")
     }
 
-    @Test("v5 store with card.label migrates to card.labels containing that label")
-    func migratesLabelDataForward() throws {
+    @Test("v5 on-disk store migrates forward; Label entities survive")
+    func migratesV5StoreForward() throws {
         let storeURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("migration-v6-\(UUID().uuidString).sqlite")
         defer {
@@ -78,11 +81,19 @@ struct CoreDataMigrationV6Tests {
             }
         }
 
-        // 3. The old to-one label is now a member of the to-many labels set.
+        // 3. The card and the Label entity (with its attributes) survive the
+        //    migration. The old to-one card→label LINK is intentionally NOT
+        //    carried into `labels`: renaming identifiers are forbidden on
+        //    CloudKit models (rename migrations crash real devices with
+        //    "CloudKit integration forbids renaming"), so v5→current is
+        //    remove-label/add-labels and the link is dropped by design.
+        //    Fizzy re-syncs tags on the next pull.
         let request = NSFetchRequest<NSManagedObject>(entityName: "Card")
         let migrated = try #require(try newContainer.viewContext.fetch(request).first)
-        let labels = try #require(migrated.value(forKey: "labels") as? Set<NSManagedObject>)
-        #expect(labels.count == 1)
-        #expect(labels.first?.value(forKey: "name") as? String == "Urgent")
+        #expect(migrated.value(forKey: "title") as? String == "Migrating card")
+        let labelRequest = NSFetchRequest<NSManagedObject>(entityName: "Label")
+        let survivingLabel = try #require(try newContainer.viewContext.fetch(labelRequest).first)
+        #expect(survivingLabel.value(forKey: "name") as? String == "Urgent")
+        #expect(survivingLabel.value(forKey: "colorHex") as? String == "#FF0000")
     }
 }
