@@ -15,6 +15,7 @@ struct FizzySyncProviderTests {
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
         let suiteName: String
+        let pairingStore: FizzyCardPairingStore
         let provider: FizzySyncProvider
 
         @MainActor
@@ -33,18 +34,27 @@ struct FizzySyncProviderTests {
             config.protocolClasses = [MockURLProtocol.self]
             let session = URLSession(configuration: config)
 
+            // Temp-file pairing store — the provider's engines must never
+            // write the developer's real Application Support sidecar.
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+
             provider = FizzySyncProvider(
                 authState: authState,
                 mapping: mapping,
                 persistence: persistence,
                 urlSession: session,
-                clock: ImmediateClock()
+                clock: ImmediateClock(),
+                pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
     }

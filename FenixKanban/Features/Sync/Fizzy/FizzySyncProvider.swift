@@ -21,19 +21,25 @@ final class FizzySyncProvider: BoardSyncProvider {
     private let persistence: PersistenceController
     private let urlSession: URLSession
     private let clock: any Clock<Duration> & Sendable
+    /// Device-local pairing authority handed to every engine the provider
+    /// builds (issue #21 A′). Injectable so tests never touch the real
+    /// Application Support sidecar.
+    private let pairingStore: FizzyCardPairingStore
 
     init(
         authState: FizzyAuthState,
         mapping: FizzyBoardMapping,
         persistence: PersistenceController,
         urlSession: URLSession = .shared,
-        clock: any Clock<Duration> & Sendable = ContinuousClock()
+        clock: any Clock<Duration> & Sendable = ContinuousClock(),
+        pairingStore: FizzyCardPairingStore = .shared
     ) {
         self.authState = authState
         self.mapping = mapping
         self.persistence = persistence
         self.urlSession = urlSession
         self.clock = clock
+        self.pairingStore = pairingStore
     }
 
     /// `true` when both token and slug are present in the Keychain.
@@ -143,7 +149,7 @@ final class FizzySyncProvider: BoardSyncProvider {
             authState: authState,
             mapping: mapping,
             context: persistence.viewContext,
-            pairingStore: .shared
+            pairingStore: pairingStore
         )
     }
 }

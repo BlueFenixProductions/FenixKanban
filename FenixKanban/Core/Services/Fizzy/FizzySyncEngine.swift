@@ -73,7 +73,7 @@ final class FizzySyncEngine {
 
     /// Steady-state sync. Runs the pull/push/LWW/soft-delete cycle. Caller
     /// must have completed `syncFirst(mode:)` once before — `sync()` keys off
-    /// `Card.fizzyID` and won't pair anything by title.
+    /// the device-local pairing store and won't pair anything by title.
     ///
     /// Returns an empty `FizzySyncResult` if the engine is unpaired.
     /// Records `mapping.setLastSync(.now)` at the end of every successful cycle.
@@ -128,66 +128,33 @@ final class FizzySyncEngine {
 
         let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
 
-        // Local cards keyed by fizzyID (only paired ones).
+        // Local cards keyed by fizzyID — pairing comes from the device-local
+        // store (issue #21 A′), which CloudKit cannot clobber. Seed the
+        // store from the legacy hint attributes when cold.
         let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
         let localCards: [Card] = localColumns.flatMap { col -> [Card] in
             (col.cards as? Set<Card>).map { Array($0) } ?? []
         }
-        var pairedByFizzyID: [String: Card] = Dictionary(
-            uniqueKeysWithValues: localCards.compactMap { card in card.fizzyID.map { ($0, card) } }
-        )
+        seedPairingStoreIfCold(localCards: localCards, remoteCards: remoteCards)
 
-        // Clobber recovery (issue #15): a CloudKit merge can null out
-        // `fizzyID` while `fizzyNumber` survives. Re-pair by number instead
-        // of treating the card as new (which would duplicate it both ways).
-        let remoteByNumber: [Int64: FizzyCard] = Dictionary(
-            remoteCards.map { (Int64($0.number), $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        for card in localCards where card.fizzyID == nil && card.fizzyNumber != 0 {
-            guard let remote = remoteByNumber[card.fizzyNumber],
-                  pairedByFizzyID[remote.id] == nil else { continue }
-            card.fizzyID = remote.id
-            pairedByFizzyID[remote.id] = card
-            result.itemsUpdated += 1
-        }
-
-        // Marker-based deterministic adoption (issue #14): every POSTed
-        // description carries a hidden `<!--fk:LOCAL_UUID-->` marker. If a
-        // remote card's marker names a local unpaired card, that card is the
-        // owner — adopt it BEFORE the fuzzy title±60s heuristic gets a say.
-        // The marker stays on the remote by design — see putCard (issue #21).
-        let unpairedByLocalUUID: [UUID: Card] = Dictionary(
-            localCards.compactMap { card -> (UUID, Card)? in
-                guard card.fizzyID == nil, let id = card.id else { return nil }
-                return (id, card)
-            },
-            uniquingKeysWith: { first, _ in first }
-        )
-        for remote in remoteCards
-        where pairedByFizzyID[remote.id] == nil
-            && !blockedCardNumbers.contains(Int64(remote.number)) {
-            guard let ownerID = Self.adoptionMarkerUUID(in: remote.description),
-                  let owner = unpairedByLocalUUID[ownerID],
-                  owner.fizzyID == nil
-            else { continue }
-            owner.fizzyID = remote.id
-            owner.fizzyNumber = Int64(remote.number)
-            owner.fizzyUpdatedAt = remote.lastActiveAt
-            owner.modifiedAt = remote.lastActiveAt
-            pairedByFizzyID[remote.id] = owner
-            result.itemsUpdated += 1
+        // First-wins on the pathological duplicate-pairing case (two local
+        // cards claiming one remote — e.g. a CloudKit duplicate import):
+        // the loser stays inert locally rather than crashing or duplicating.
+        var pairedByFizzyID: [String: Card] = [:]
+        for card in localCards {
+            guard let p = pairing(for: card), pairedByFizzyID[p.fizzyID] == nil else { continue }
+            pairedByFizzyID[p.fizzyID] = card
         }
 
         // Crash-after-POST recovery: precompute orphan claims so the pull loop
         // doesn't also create a duplicate from the same remote. For each local
-        // card with nil fizzyID, try to find an unpaired remote with matching
-        // title + createdAt within ±60s. First-match wins; each remote is
-        // claimed by at most one local.
+        // card with no store pairing, try to find an unpaired remote with
+        // matching title + createdAt within ±60s. First-match wins; each
+        // remote is claimed by at most one local.
         let orphanWindow: TimeInterval = 60
         var orphansByLocalID: [NSManagedObjectID: String] = [:]
         var claimedRemoteIDs: Set<String> = []
-        for card in localCards where card.fizzyID == nil {
+        for card in localCards where pairing(for: card) == nil {
             let localCreated = card.createdAt ?? .distantPast
             let orphan = remoteCards.first { remote in
                 remote.title == (card.title ?? "")
@@ -217,16 +184,22 @@ final class FizzySyncEngine {
             result.itemsCreated += 1
         }
 
-        // LWW for paired cards (both sides have fizzyID).
+        // LWW for paired cards.
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteCards.map { ($0.id, $0) })
         for (fizzyID, card) in pairedByFizzyID {
-            guard let remote = remoteByID[fizzyID] else { continue }
+            guard let remote = remoteByID[fizzyID], var p = pairing(for: card) else { continue }
             // Backfill the card number — Fizzy addresses per-card routes by
-            // `number`, not the opaque `id` (the server does
-            // `find_by!(number: params[:id])`). Cards paired before this
-            // attribute existed self-heal here on their next sync.
-            if card.fizzyNumber == 0 { card.fizzyNumber = Int64(remote.number) }
-            let localFizzyTimestamp = card.fizzyUpdatedAt ?? .distantPast
+            // `number`, not the opaque `id`. Cards paired before this field
+            // existed self-heal here on their next sync.
+            if p.fizzyNumber == 0 {
+                p.fizzyNumber = Int64(remote.number)
+                if let id = card.id { pairingStore.setPairing(p, for: id) }
+            }
+            // Heal the hint attributes every cycle — CloudKit imports may
+            // have clobbered them; the UI reads them for per-card routes.
+            healHints(on: card, fizzyID: p.fizzyID, number: p.fizzyNumber)
+
+            let localFizzyTimestamp = p.fizzyUpdatedAt
             let localModified = card.modifiedAt ?? .distantPast
             let remoteTimestamp = remote.lastActiveAt
 
@@ -235,46 +208,42 @@ final class FizzySyncEngine {
                 applyRemote(remote, to: card)
                 result.itemsUpdated += 1
             } else if localModified > localFizzyTimestamp {
-                // Local edited since last sync → push. putCard re-embeds the
-                // adoption marker so it survives the edit (issue #21).
+                // Local edited since last sync → push.
                 do {
-                    let updated = try await putCard(card, number: card.fizzyNumber)
-                    card.fizzyUpdatedAt = updated.lastActiveAt
+                    let updated = try await putCard(card, number: p.fizzyNumber)
+                    recordPairing(for: card, fizzyID: fizzyID, number: p.fizzyNumber, updatedAt: updated.lastActiveAt)
                     card.modifiedAt = updated.lastActiveAt
                     result.itemsUpdated += 1
                 } catch let error as FizzyError {
                     result.errors.append("Push update '\(card.title ?? "(untitled)")': \(error)")
                 }
             }
-            // else: both equal or remote stale → no-op. Any adoption marker
-            // in the remote description is deliberately left in place —
-            // markers persist remotely by design (issue #21).
+            // else: both equal or remote stale → no-op.
         }
 
         // Soft-delete: paired local cards whose fizzyID is no longer in the
         // remote response were deleted on the server.
         for (fizzyID, card) in pairedByFizzyID where remoteByID[fizzyID] == nil {
+            if let id = card.id { pairingStore.removePairing(for: id) }
             context.delete(card)
             result.itemsDeleted += 1
         }
 
-        // Push: local cards with nil fizzyID (not yet paired) → claim a
-        // precomputed orphan or POST a new card.
-        for card in localCards where card.fizzyID == nil {
+        // Push: local cards with no pairing → claim a precomputed orphan or
+        // POST a new card. The pairing lands in the store the moment the
+        // server responds — BEFORE context.save() — so a later save failure
+        // or crash cannot lose it and duplicate the card next sync.
+        for card in localCards where pairing(for: card) == nil {
             if let orphanID = orphansByLocalID[card.objectID],
                let orphan = remoteByID[orphanID] {
-                card.fizzyID = orphan.id
-                card.fizzyNumber = Int64(orphan.number)
-                card.fizzyUpdatedAt = orphan.lastActiveAt
+                recordPairing(for: card, fizzyID: orphan.id, number: Int64(orphan.number), updatedAt: orphan.lastActiveAt)
                 card.modifiedAt = orphan.lastActiveAt
                 result.itemsUpdated += 1
                 continue
             }
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
-                card.fizzyID = created.id
-                card.fizzyNumber = Int64(created.number)
-                card.fizzyUpdatedAt = created.lastActiveAt
+                recordPairing(for: card, fizzyID: created.id, number: Int64(created.number), updatedAt: created.lastActiveAt)
                 card.modifiedAt = created.lastActiveAt
                 result.itemsCreated += 1
             } catch let error as FizzyError {
@@ -292,9 +261,9 @@ final class FizzySyncEngine {
         mapping.setLastSync(.now)
 
         // A failed save must surface — not throw away the whole result and
-        // not pass silently (issue #15). The next sync re-pairs any cards
-        // whose POSTed pairing was lost via the #14 adoption marker, so a
-        // save failure here cannot cause duplicate POSTs.
+        // not pass silently (issue #15). Pairing state persists in the
+        // device-local store independently of this save, so a save failure
+        // can no longer cause duplicate POSTs on the next sync (issue #21 A′).
         if context.hasChanges {
             do {
                 try context.save()
@@ -316,11 +285,77 @@ final class FizzySyncEngine {
         let pinnedIDs = Set(pins.map(\.id))
         for column in localBoard.sortedColumns {
             for card in column.sortedCards {
-                guard let fizzyID = card.fizzyID else { continue }
+                guard let fizzyID = pairing(for: card)?.fizzyID else { continue }
                 let shouldPin = pinnedIDs.contains(fizzyID)
                 if card.isPinned != shouldPin {
                     card.isPinned = shouldPin
                 }
+            }
+        }
+    }
+
+    // MARK: - Pairing store access (issue #21 A′)
+
+    /// The store entry for a card, if paired.
+    private func pairing(for card: Card) -> FizzyCardPairing? {
+        card.id.flatMap { pairingStore.pairing(for: $0) }
+    }
+
+    /// Records (or refreshes) a card's pairing in the local store and heals
+    /// the CloudKit-synced hint attributes. The store is the authority; the
+    /// attributes survive only as a bootstrap hint channel (cold store on a
+    /// fresh install / second device) and for the UI's per-card routes.
+    private func recordPairing(for card: Card, fizzyID: String, number: Int64, updatedAt: Date) {
+        guard let id = card.id else { return }
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: fizzyID, fizzyNumber: number, fizzyUpdatedAt: updatedAt),
+            for: id
+        )
+        healHints(on: card, fizzyID: fizzyID, number: number)
+    }
+
+    /// Re-writes the hint attributes when they drift from the store —
+    /// CloudKit imports clobber them with stale record versions; nothing
+    /// reads them for sync decisions. Never bumps `modifiedAt`: hint writes
+    /// are not content edits and must not trigger LWW echo-pushes.
+    private func healHints(on card: Card, fizzyID: String, number: Int64) {
+        if card.fizzyID != fizzyID { card.fizzyID = fizzyID }
+        if card.fizzyNumber != number { card.fizzyNumber = number }
+    }
+
+    /// Seeds the pairing store from the CloudKit-carried hint attributes
+    /// when the store is cold (zero entries): upgrade from a pre-A′ build,
+    /// fresh reinstall, or a second device that received cards via
+    /// CloudKit. A hint with a number but no fizzyID (pre-A′ clobber
+    /// residue) resolves through the remote list.
+    private func seedPairingStoreIfCold(localCards: [Card], remoteCards: [FizzyCard]) {
+        guard pairingStore.isEmpty else { return }
+        let remoteByID = Dictionary(uniqueKeysWithValues: remoteCards.map { ($0.id, $0) })
+        let remoteByNumber: [Int64: FizzyCard] = Dictionary(
+            remoteCards.map { (Int64($0.number), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        for card in localCards {
+            guard let id = card.id else { continue }
+            if let fizzyID = card.fizzyID {
+                let number = card.fizzyNumber != 0
+                    ? card.fizzyNumber
+                    : remoteByID[fizzyID].map { Int64($0.number) } ?? 0
+                pairingStore.setPairing(
+                    FizzyCardPairing(
+                        fizzyID: fizzyID, fizzyNumber: number,
+                        fizzyUpdatedAt: card.fizzyUpdatedAt ?? .distantPast
+                    ),
+                    for: id
+                )
+            } else if card.fizzyNumber != 0, let remote = remoteByNumber[card.fizzyNumber] {
+                pairingStore.setPairing(
+                    FizzyCardPairing(
+                        fizzyID: remote.id, fizzyNumber: card.fizzyNumber,
+                        fizzyUpdatedAt: card.fizzyUpdatedAt ?? .distantPast
+                    ),
+                    for: id
+                )
             }
         }
     }
@@ -697,9 +732,7 @@ final class FizzySyncEngine {
         // Local copies never contain adoption markers (issue #14).
         card.cardDescription = Self.strippingAdoptionMarker(from: remote.description)
         card.isGolden = remote.golden
-        card.fizzyID = remote.id
-        card.fizzyNumber = Int64(remote.number)
-        card.fizzyUpdatedAt = remote.lastActiveAt
+        recordPairing(for: card, fizzyID: remote.id, number: Int64(remote.number), updatedAt: remote.lastActiveAt)
         card.modifiedAt = remote.lastActiveAt
 
         // All remote tags map to local Labels (issue #19 lifts the Phase 4a

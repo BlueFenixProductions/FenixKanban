@@ -2381,3 +2381,42 @@ construction site). `FizzySyncProvider.makeEngine` passes `.shared`. All 11
 harnesses + 8 inline constructions in the four Fizzy engine test files use
 per-test temp-file stores cleaned up in `tearDown`. **391 tests / 80 suites
 green** on the pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.
+
+**Task 3 (issue #21 A′ core), 2026-06-11:** Steady-state sync now keys
+every pairing decision off the device-local `FizzyCardPairingStore` —
+CloudKit attribute clobbers are structurally incapable of unpairing a
+card. New engine helpers: `pairing(for:)`, `recordPairing` (store write
+lands BEFORE `context.save()`, so save failures can't lose a pairing),
+`healHints` (re-writes `fizzyID`/`fizzyNumber` hint attributes without
+bumping `modifiedAt` — no echo-PUTs), and `seedPairingStoreIfCold`
+(cold store adopts legacy attribute hints, resolving number-only
+residue against the remote list). The marker-ADOPTION block in
+`steadyStateSync` and the re-pair-by-number block are deleted (the
+store subsumes both); marker post/put/strip machinery stays until
+Task 4. `reconcilePins`, LWW, soft-delete, orphan-claim, and push all
+consult the store. `FizzySyncProvider` gains an injectable
+`pairingStore` (default `.shared`) so provider tests stop writing the
+real Application Support sidecar.
+
+**RED:** `FizzySyncEngineResilienceTests.cloudKitClobberCannotUnpair`
+— sanitizer-faithful stateful mock (HTML comments stripped on every
+stored write, matching production Fizzy per the 2026-06-10 forensics);
+backdated `createdAt` defeats the heuristic, zeroed number defeats
+re-pair-by-number, sanitizer kills the marker. Failed pre-fix first on
+`(pairing(for:) → nil) == "fz-21"` (store never written), then
+`(postCount → 2) == 1` — the duplicate POST.
+
+**Test rework:** deleted `pullAdoptsByMarker` + `markerWinsOverHeuristic`
+(mechanism gone — server strips markers); `adoptionStableWithPersistentMarker`
+→ `pairedSteadyStateStaysQuiet`; `saveFailureDoesNotDuplicateOnNextSync`
+reworked (store survives the save failure); `clobberedFizzyIDRepairsByNumber`
+→ `coldStoreSeedsByNumberHint`; new `coldStoreSeedsFromAttributeHints`
+(upgrade/reinstall/second-device path). One guard assertion in
+`pullClearsOrPreservesAssignees` retargeted from `card.fizzyUpdatedAt`
+(attribute no longer written in steady state) to the store's
+`fizzyUpdatedAt` — same "pull branch ran" meaning.
+
+**Verification:** **390 tests / 80 suites green** (391 − 2 deleted
++ 1 added) on pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS
+`BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings on both
+platforms.

@@ -946,7 +946,11 @@ struct FizzySyncEngineSteadyPullTests {
         }
 
         _ = try await h.engine.sync()
-        #expect(card.fizzyUpdatedAt == ISO8601DateFormatter().date(from: "2026-06-12T00:00:00Z"),
+        // fizzyUpdatedAt lives in the pairing store now (issue #21 A′) —
+        // the attribute is a hint that only heals fizzyID/number.
+        let cardUUID = try #require(card.id)
+        #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyUpdatedAt
+                    == ISO8601DateFormatter().date(from: "2026-06-12T00:00:00Z"),
                 "round 2 pull branch ran")
         #expect(card.assignees == seeded, "absent assignees key leaves the blob alone")
     }
