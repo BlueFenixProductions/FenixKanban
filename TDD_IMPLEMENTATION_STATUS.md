@@ -2276,3 +2276,59 @@ GoldZoneChip `ticket.fill`); the label text ("Remove Golden Ticket" /
 **Verification:** **385 tests / 79 suites green** (384 + 1 new) on
 pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS `BUILD SUCCEEDED`,
 zero warnings.
+
+---
+
+### 40. Persistent adoption markers — CloudKit clobber heals, not duplicates ✅
+
+**Date:** 2026-06-10 · RED → GREEN (issue #21, Option B stopgap; live
+in production that night — 30 of 32 cards duplicated across two real
+sync cycles).
+
+**The bug (#21):** `Card`'s fizzy pairing fields (`fizzyID` /
+`fizzyNumber` / `fizzyUpdatedAt`) are CloudKit-synced attributes, and a
+CloudKit import can clobber a freshly written pairing back to
+nil/zero. The next sync's push step then sees "unpaired local card"
+and POSTs a duplicate. The #14 marker-adoption safety net would heal
+this deterministically (`<!--fk:UUID-->` in the remote description
+re-pairs the nil-fizzyID local card to its remote twin) — but #15
+stripped the marker from the remote right after first adoption, so the
+net was gone exactly when the clobber needed it.
+
+**The fix (Captain's ruling — temporarily reverses #15):** markers now
+persist on remote cards by design. In `FizzySyncEngine`:
+`needsMarkerStrip` and both `stripMarkerRemotely` call sites removed
+from the LWW loop (the strip-only branch collapses to a genuine
+no-op), `stripMarkerRemotely` deleted, and `putCard` now re-embeds the
+marker in its PUT description (mirroring `postCard`) so local edits no
+longer wipe it as a side effect. Local stripping in `applyRemote` is
+untouched — local copies stay marker-free. Remote stripping returns
+once pairing moves to a local-only (non-CloudKit) store after the
+A′ wave.
+
+**RED:** `FizzySyncEngineResilienceTests.cloudKitClobberHealsWithoutDuplicate`
+— three syncs against a faithful stateful mock server (POSTs join the
+served remote state verbatim, PUTs are applied to it, so the same test
+is honest pre- and post-fix): sync 1 pairs via POST, sync 2 is a
+steady-state cycle, then the simulated CloudKit import nulls all three
+pairing fields, and sync 3 must heal. `createdAt` backdated 10 minutes
+defeats the title±60s orphan heuristic and the zeroed number defeats
+re-pair-by-number, isolating the marker path. Failed pre-fix with
+`(postCount → 2) == 1` — sync 2's strip-PUT had removed the marker, so
+sync 3 duplicated the card on both sides.
+
+**Retargeted (coverage inverted, never deleted):**
+`pullAdoptsByMarker` (asserted one strip-PUT with marker-free body →
+asserts NO PUT; handler records any PUT as an issue);
+`stripPutFailureRecordsErrorAndRetries` →
+`adoptionStableWithPersistentMarker` (strip-retry semantics are gone —
+now proves repeated syncs against a marker-bearing remote stay quiet:
+no PUT/POST churn, `itemsUpdated == 0` at steady state);
+`saveFailureDoesNotDuplicateOnNextSync` (`putCount == 1` "marker
+stripped after adoption" → `putCount == 0` "markers persist");
+`markerWinsOverHeuristic` (strip-PUT handler case removed — unexpected
+PUTs now recorded).
+
+**Verification:** **386 tests / 79 suites green** (385 + 1 new) on
+pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS `BUILD SUCCEEDED`,
+zero warnings.
