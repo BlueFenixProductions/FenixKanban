@@ -18,12 +18,17 @@ private struct AdoptionHarness {
     let suiteName: String
     let authState: FizzyAuthState
     let mappingDefaults: UserDefaults
+    let pairingStore: FizzyCardPairingStore
 
     init() {
         MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
-        boardRepo = BoardRepository(context: persistence.viewContext)
-        cardRepo = CardRepository(context: persistence.viewContext)
+        pairingStore = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        boardRepo = BoardRepository(context: persistence.viewContext, pairingStore: pairingStore)
+        cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         board = boardRepo.createBoard(name: "Roadmap")
         column = boardRepo.createColumn(in: board, name: "Triage")
         try! persistence.viewContext.save()
@@ -49,13 +54,14 @@ private struct AdoptionHarness {
 
         engine = FizzySyncEngine(
             client: client, authState: authState, mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext, pairingStore: pairingStore
         )
     }
 
     func tearDown() {
         authState.clear()
         mappingDefaults.removePersistentDomain(forName: suiteName)
+        try? FileManager.default.removeItem(at: pairingStore.fileURL)
         MockURLProtocol.reset()
     }
 }
@@ -110,27 +116,40 @@ private func jsonData(_ object: Any) -> Data {
     try! JSONSerialization.data(withJSONObject: object)
 }
 
+/// Mimics Fizzy's ActionText rich-text sanitizer: HTML comments are
+/// stripped ON WRITE (verified against the production DB, 2026-06-10 —
+/// issue #21 forensics: 41 marker-POSTed cards, zero retained markers).
+/// Every stateful mock MUST pass stored descriptions through this so a
+/// write→read round-trip can never certify a fictional server again.
+private func sanitizedDescription(_ raw: Any?) -> Any {
+    guard let s = raw as? String, !s.isEmpty else { return NSNull() }
+    let stripped = s.replacingOccurrences(
+        of: #"(?:\n\n)?<!--[\s\S]*?-->"#, with: "", options: .regularExpression
+    )
+    return stripped.isEmpty ? NSNull() : stripped
+}
+
 private let triageColumnsJSON = #"[{"id":"FCLOCAL","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#
 
-// MARK: - Issue #14: marker-based deterministic orphan adoption
+// MARK: - Issue #21 A′: pairing store adoption & wire hygiene
 
-@Suite("FizzySyncEngine — marker-based adoption (issue #14)", .serialized)
+@Suite("FizzySyncEngine — pairing store adoption & wire hygiene (issue #21 A′)", .serialized)
 @MainActor
 struct FizzySyncEngineMarkerAdoptionTests {
 
-    @Test("POSTed card descriptions carry the <!--fk:UUID--> adoption marker")
-    func postCarriesMarker() async throws {
+    @Test("POST sends the description verbatim — no marker, wire-clean")
+    func postSendsCleanDescription() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
         let withDesc = h.cardRepo.createCard(in: h.column, title: "WithDesc")
         withDesc.cardDescription = "Hello"
-        let noDesc = h.cardRepo.createCard(in: h.column, title: "NoDesc")
+        _ = h.cardRepo.createCard(in: h.column, title: "NoDesc")
         try h.persistence.viewContext.save()
-        let withDescUUID = try #require(withDesc.id)
-        let noDescUUID = try #require(noDesc.id)
 
-        var postedDescriptionsByTitle: [String: String] = [:]
+        // Maps title → posted description string (absent/NSNull description left absent from the dict).
+        var postedStringDescriptions: [String: String] = [:]
+        var postedTitles: Set<String> = []
         var nextNumber = 40
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
@@ -143,7 +162,10 @@ struct FizzySyncEngineMarkerAdoptionTests {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 let payload = cardWritePayload(of: req)
                 if let title = payload?["title"] as? String {
-                    postedDescriptionsByTitle[title] = payload?["description"] as? String ?? "(nil)"
+                    postedTitles.insert(title)
+                    if let desc = payload?["description"] as? String {
+                        postedStringDescriptions[title] = desc
+                    }
                 }
                 nextNumber += 1
                 let response = HTTPURLResponse(
@@ -167,74 +189,31 @@ struct FizzySyncEngineMarkerAdoptionTests {
         let result = try await h.engine.sync()
 
         #expect(result.errors.isEmpty)
-        #expect(postedDescriptionsByTitle["WithDesc"] == "Hello\n\n<!--fk:\(withDescUUID.uuidString)-->")
-        #expect(postedDescriptionsByTitle["NoDesc"] == "<!--fk:\(noDescUUID.uuidString)-->")
+        #expect(postedStringDescriptions["WithDesc"] == "Hello", "verbatim — no marker suffix")
+        #expect(postedTitles.contains("NoDesc"), "NoDesc was posted")
+        #expect(postedStringDescriptions["NoDesc"] == nil, "nil description stays nil — not a bare marker")
     }
 
-    @Test("pull adopts an unpaired local by marker, strips locally, marker persists remotely")
-    func pullAdoptsByMarker() async throws {
+    @Test("store-paired card stays quiet across repeated syncs — no churn")
+    func pairedSteadyStateStaysQuiet() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
-        // Local card whose title and createdAt do NOT match the remote —
-        // the legacy ±60s heuristic cannot pair these; only the marker can.
-        let card = h.cardRepo.createCard(in: h.column, title: "Local title")
-        card.cardDescription = "My body"
-        try h.persistence.viewContext.save()
-        let localUUID = try #require(card.id)
-
-        let remote = remoteCardDict(
-            id: "fzM", number: 9, title: "Remote title",
-            description: "My body\n\n<!--fk:\(localUUID.uuidString)-->",
-            createdAtISO: "2026-01-01T00:00:00Z", lastActiveISO: "2026-01-02T00:00:00Z"
-        )
-        MockURLProtocol.handler = { req in
-            switch (req.httpMethod, req.url?.path) {
-            case ("GET", let p?) where p.hasSuffix("/my/pins"):
-                return (Data("[]".utf8), .ok(for: req))
-            case ("GET", let p?) where p.hasSuffix("/columns"):
-                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
-            case ("GET", let p?) where p.hasSuffix("/cards"):
-                return (jsonData([remote]), .ok(for: req))
-            case ("PUT", _):
-                Issue.record("no strip-PUT — markers persist remotely by design (issue #21)")
-                return (Data(), .response(for: req, status: 500))
-            default:
-                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
-                return (Data(), .response(for: req, status: 500))
-            }
-        }
-
-        let result = try await h.engine.sync()
-
-        #expect(result.errors.isEmpty)
-        #expect(result.itemsCreated == 0, "no pull-created duplicate, no POST")
-        #expect(card.fizzyID == "fzM")
-        #expect(card.fizzyNumber == 9)
-        #expect(card.cardDescription?.contains("<!--fk:") != true, "local copy never contains markers")
-
-        let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
-        #expect(cardCount == 1, "adoption must not duplicate the card locally")
-    }
-
-    @Test("adoption holds across repeated syncs — marker persists remotely, no strip-PUT churn")
-    func adoptionStableWithPersistentMarker() async throws {
-        // Inverts the pre-#21 "strip-PUT failure retries" coverage: there is
-        // no strip-PUT anymore. The remote keeps serving the marker on every
-        // sync and the engine must stay quiet — adopt once, then no PUTs, no
-        // POSTs, no spurious updates.
-        let h = AdoptionHarness()
-        defer { h.tearDown() }
-
-        let card = h.cardRepo.createCard(in: h.column, title: "Local title")
+        let baseline = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
+        let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.cardDescription = "Body"
+        card.modifiedAt = baseline
         try h.persistence.viewContext.save()
-        let localUUID = try #require(card.id)
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzM", fizzyNumber: 9, fizzyUpdatedAt: baseline),
+            for: cardUUID
+        )
 
         let remote = remoteCardDict(
-            id: "fzM", number: 9, title: "Remote title",
-            description: "Body\n\n<!--fk:\(localUUID.uuidString)-->",
-            createdAtISO: "2026-01-01T00:00:00Z", lastActiveISO: "2026-01-02T00:00:00Z"
+            id: "fzM", number: 9, title: "Hero",
+            description: "Body", createdAtISO: "2026-01-01T00:00:00Z",
+            lastActiveISO: "2026-06-01T00:00:00Z"
         )
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
@@ -244,11 +223,8 @@ struct FizzySyncEngineMarkerAdoptionTests {
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (jsonData([remote]), .ok(for: req))
-            case ("PUT", _):
-                Issue.record("no strip-PUT — markers persist remotely by design (issue #21)")
-                return (Data(), .response(for: req, status: 500))
-            case ("POST", _):
-                Issue.record("adopted card must not be POSTed")
+            case ("PUT", _), ("POST", _):
+                Issue.record("steady state must not write: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
                 return (Data(), .response(for: req, status: 500))
             default:
                 Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
@@ -256,31 +232,27 @@ struct FizzySyncEngineMarkerAdoptionTests {
             }
         }
 
-        let first = try await h.engine.sync()
-        #expect(first.errors.isEmpty)
-        #expect(card.fizzyID == "fzM", "marker adoption pairs the card")
-
-        // The marker is still on the remote — the next sync must be a no-op,
-        // not an echo loop (no PUT/POST; handler records any as an issue).
-        let second = try await h.engine.sync()
-        #expect(second.errors.isEmpty)
-        #expect(second.itemsUpdated == 0, "steady state — nothing to update")
-        #expect(card.fizzyID == "fzM")
-        #expect(card.cardDescription?.contains("<!--fk:") != true, "local copy never contains markers")
-
+        for _ in 0..<2 {
+            let result = try await h.engine.sync()
+            #expect(result.errors.isEmpty)
+            #expect(result.itemsUpdated == 0)
+            #expect(result.itemsCreated == 0)
+        }
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1)
     }
 
-    @Test("marker matching no local card → created normally, marker stripped locally, no error")
-    func unownedMarkerCreatesCardNormally() async throws {
+    @Test("remote descriptions import verbatim — no marker stripping on pull")
+    func remoteDescriptionImportsVerbatim() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
-        let strangerUUID = UUID()
+        // Production remotes never contain markers (the server's sanitizer
+        // strips HTML comments on write) — so the engine performs no
+        // stripping of its own. What the server returns is what we store.
         let remote = remoteCardDict(
             id: "fzZ", number: 5, title: "Stray",
-            description: "Body text\n\n<!--fk:\(strangerUUID.uuidString)-->",
+            description: "Body text",
             createdAtISO: "2026-06-01T00:00:00Z"
         )
         MockURLProtocol.handler = { req in
@@ -292,7 +264,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return (jsonData([remote]), .ok(for: req))
             default:
-                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?") — stripping an unowned marker is not our job")
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
                 return (Data(), .response(for: req, status: 500))
             }
         }
@@ -302,75 +274,16 @@ struct FizzySyncEngineMarkerAdoptionTests {
         #expect(result.errors.isEmpty)
         #expect(result.itemsCreated == 1)
         let cards = try h.persistence.viewContext.fetch(Card.fetchRequest())
-        let stray = try #require(cards.first { $0.fizzyID == "fzZ" })
-        #expect(stray.cardDescription == "Body text", "local copies never contain markers")
+        let stray = try #require(cards.first { $0.title == "Stray" })
+        #expect(stray.cardDescription == "Body text")
+        #expect(h.pairingStore.pairing(for: try #require(stray.id))?.fizzyID == "fzZ")
     }
 
-    @Test("marker beats the ±60s heuristic when the heuristic would mismatch")
-    func markerWinsOverHeuristic() async throws {
-        let h = AdoptionHarness()
-        defer { h.tearDown() }
-
-        let remoteCreated = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
-        // Card A: same title, createdAt within ±60s of the remote — the
-        // legacy heuristic would claim it. WRONG owner.
-        let cardA = h.cardRepo.createCard(in: h.column, title: "Dup")
-        cardA.createdAt = remoteCreated.addingTimeInterval(10)
-        // Card B: same title but created 10 minutes away — outside the
-        // heuristic window. It is the true owner per the marker.
-        let cardB = h.cardRepo.createCard(in: h.column, title: "Dup")
-        cardB.createdAt = remoteCreated.addingTimeInterval(-600)
-        try h.persistence.viewContext.save()
-        let ownerUUID = try #require(cardB.id)
-
-        let remote = remoteCardDict(
-            id: "fzR", number: 11, title: "Dup",
-            description: "<!--fk:\(ownerUUID.uuidString)-->",
-            createdAtISO: "2026-06-01T00:00:00Z"
-        )
-        var postCount = 0
-        MockURLProtocol.handler = { req in
-            switch (req.httpMethod, req.url?.path) {
-            case ("GET", let p?) where p.hasSuffix("/my/pins"):
-                return (Data("[]".utf8), .ok(for: req))
-            case ("GET", let p?) where p.hasSuffix("/columns"):
-                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
-            case ("GET", let p?) where p.hasSuffix("/cards"):
-                return (jsonData([remote]), .ok(for: req))
-            case ("PUT", _):
-                Issue.record("no strip-PUT — markers persist remotely by design (issue #21)")
-                return (Data(), .response(for: req, status: 500))
-            case ("POST", _):
-                postCount += 1
-                let response = HTTPURLResponse(
-                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
-                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/12"]
-                )!
-                return (Data(), response)
-            case ("GET", let p?) where p.contains("/cards/12"):
-                let dict = remoteCardDict(
-                    id: "fzNEW", number: 12, title: "Dup",
-                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
-                )
-                return (jsonData(dict), .ok(for: req))
-            default:
-                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
-                return (Data(), .response(for: req, status: 500))
-            }
-        }
-
-        let result = try await h.engine.sync()
-
-        #expect(result.errors.isEmpty)
-        #expect(cardB.fizzyID == "fzR", "marker owner B adopts the remote, not heuristic match A")
-        #expect(cardA.fizzyID == "fzNEW", "A is a genuinely new card → POSTed")
-        #expect(postCount == 1)
-    }
 }
 
-// MARK: - Issue #15: sync resilience
+// MARK: - Issues #15/#21 A′: sync resilience
 
-@Suite("FizzySyncEngine — sync resilience (issue #15)", .serialized)
+@Suite("FizzySyncEngine — sync resilience (issues #15/#21 A′)", .serialized)
 @MainActor
 struct FizzySyncEngineResilienceTests {
 
@@ -407,7 +320,7 @@ struct FizzySyncEngineResilienceTests {
         h.persistence.viewContext.delete(poison)
     }
 
-    @Test("save failure after POST → next sync adopts by marker instead of re-POSTing")
+    @Test("save failure after POST cannot duplicate — the pairing store persists independently")
     func saveFailureDoesNotDuplicateOnNextSync() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
@@ -415,11 +328,11 @@ struct FizzySyncEngineResilienceTests {
         let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.cardDescription = "Body"
         try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
 
-        // Stateful mock: POSTed card joins the remote list verbatim
-        // (marker and all), PUT updates its description.
+        // Stateful sanitizer-faithful mock: POSTed cards join the remote
+        // list with HTML comments stripped (as production Fizzy does).
         var postCount = 0
-        var putCount = 0
         var storedRemote: [String: Any]?
         MockURLProtocol.handler = { req in
             switch (req.httpMethod, req.url?.path) {
@@ -433,12 +346,13 @@ struct FizzySyncEngineResilienceTests {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 postCount += 1
                 let payload = cardWritePayload(of: req)
-                storedRemote = remoteCardDict(
+                var dict = remoteCardDict(
                     id: "fzH", number: 21,
                     title: payload?["title"] as? String ?? "?",
-                    description: payload?["description"] as? String,
-                    createdAtISO: "2026-06-01T00:00:00Z"
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
                 )
+                dict["description"] = sanitizedDescription(payload?["description"])
+                storedRemote = dict
                 let response = HTTPURLResponse(
                     url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
                     headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/21"]
@@ -447,9 +361,8 @@ struct FizzySyncEngineResilienceTests {
             case ("GET", let p?) where p.contains("/cards/21"):
                 return (jsonData(storedRemote!), .ok(for: req))
             case ("PUT", let p?) where p.hasSuffix("/cards/21"):
-                putCount += 1
                 let payload = cardWritePayload(of: req)
-                storedRemote?["description"] = payload?["description"] ?? NSNull()
+                storedRemote?["description"] = sanitizedDescription(payload?["description"])
                 storedRemote?["title"] = payload?["title"] ?? "?"
                 return (jsonData(storedRemote!), .ok(for: req))
             default:
@@ -458,8 +371,8 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        // Sync 1: POST succeeds, but the save fails (poisoned context) —
-        // the in-memory pairing is lost as if the app died before saving.
+        // Sync 1: POST succeeds, but the context save fails (poisoned
+        // context) — unsaved attribute changes are lost as if the app died.
         let poison = Card(context: h.persistence.viewContext)
         poison.id = UUID()
         poison.title = nil
@@ -468,49 +381,45 @@ struct FizzySyncEngineResilienceTests {
         #expect(postCount == 1)
         #expect(first.errors.contains { $0.localizedCaseInsensitiveContains("save") })
 
-        // Simulate process restart: unsaved changes (pairing + poison) gone.
+        // Simulate process restart: unsaved context changes are gone — but
+        // the pairing store already persisted the pairing.
         h.persistence.viewContext.rollback()
-        #expect(card.fizzyID == nil, "pairing was never persisted")
+        #expect(card.fizzyID == nil, "hint attribute was never saved")
+        #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyID == "fzH", "store write survived")
 
-        // Sync 2: the remote card still carries the marker → adopted, not
-        // re-POSTed. This is the end-to-end duplicate-prevention backstop.
+        // Sync 2: no duplicate POST. (The LWW push may PUT — rollback
+        // restored a modifiedAt newer than the stored fizzyUpdatedAt; that
+        // is correct push-my-edit behavior, not duplication.)
         let second = try await h.engine.sync()
-
-        #expect(postCount == 1, "no second POST — marker adoption prevents the duplicate")
+        #expect(postCount == 1, "no second POST — the store prevented the duplicate")
         #expect(second.errors.isEmpty)
-        #expect(card.fizzyID == "fzH")
+        #expect(card.fizzyID == "fzH", "hint healed from the store")
         #expect(card.fizzyNumber == 21)
-        #expect(putCount == 0, "no strip-PUT — markers persist remotely by design (issue #21)")
-        #expect(card.cardDescription == "Body")
 
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1, "exactly one Hero — locally and remotely")
     }
 
-    @Test("CloudKit-clobbered pairing heals by marker — no duplicate POST")
-    func cloudKitClobberHealsWithoutDuplicate() async throws {
+    @Test("CloudKit attribute clobber cannot unpair — the store is the authority, hints heal")
+    func cloudKitClobberCannotUnpair() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
         // Production shape of issue #21: a CloudKit import clobbers ALL
-        // synced pairing fields (fizzyID, fizzyNumber, fizzyUpdatedAt) to
-        // nil/zero after a successful pairing. Re-pair-by-number can't help
-        // (number is gone too) and the card's createdAt is backdated 10
-        // minutes from the remote's so the title±60s orphan heuristic can't
-        // claim the remote either — the persistent marker is the only path
-        // that can heal instead of duplicating.
+        // synced pairing attributes to nil/zero after a successful pairing.
+        // The server strips adoption markers (sanitizer-faithful mock), the
+        // number is zeroed (no re-pair-by-number), and createdAt is
+        // backdated 10 minutes (the title±60s heuristic can't claim the
+        // remote). Only the local pairing store can prevent a duplicate.
         let remoteCreated = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
         let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.cardDescription = "Body"
         card.createdAt = remoteCreated.addingTimeInterval(-600)
         try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
 
-        // Faithful stateful server: POSTed cards join the remote store
-        // verbatim (markers included), PUTs are applied to the stored state.
-        // This keeps the test honest in both worlds: pre-#21 code strips the
-        // marker via PUT during sync 2 and duplicates in sync 3; post-#21
-        // code never strips, so the marker survives and adoption heals.
         var postCount = 0
+        var putCount = 0
         var nextNumber = 20
         var remotesByNumber: [Int: [String: Any]] = [:]
         MockURLProtocol.handler = { req in
@@ -525,12 +434,13 @@ struct FizzySyncEngineResilienceTests {
                 postCount += 1
                 nextNumber += 1
                 let payload = cardWritePayload(of: req)
-                remotesByNumber[nextNumber] = remoteCardDict(
+                var dict = remoteCardDict(
                     id: "fz-\(nextNumber)", number: nextNumber,
                     title: payload?["title"] as? String ?? "?",
-                    description: payload?["description"] as? String,
-                    createdAtISO: "2026-06-01T00:00:00Z"
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
                 )
+                dict["description"] = sanitizedDescription(payload?["description"])
+                remotesByNumber[nextNumber] = dict
                 let response = HTTPURLResponse(
                     url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
                     headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/\(nextNumber)"]
@@ -544,6 +454,7 @@ struct FizzySyncEngineResilienceTests {
                 }
                 return (jsonData(stored), .ok(for: req))
             case ("PUT", let p?) where p.contains("/cards/"):
+                putCount += 1
                 let number = Int((p as NSString).lastPathComponent) ?? 0
                 guard remotesByNumber[number] != nil else {
                     Issue.record("PUT for unknown card number \(number)")
@@ -551,7 +462,7 @@ struct FizzySyncEngineResilienceTests {
                 }
                 let payload = cardWritePayload(of: req)
                 remotesByNumber[number]?["title"] = payload?["title"] ?? "?"
-                remotesByNumber[number]?["description"] = payload?["description"] ?? NSNull()
+                remotesByNumber[number]?["description"] = sanitizedDescription(payload?["description"])
                 return (jsonData(remotesByNumber[number]!), .ok(for: req))
             default:
                 Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
@@ -559,59 +470,61 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        // Sync 1: the local card pairs via POST.
+        // Sync 1: the local card pairs via POST — into the pairing store.
         let first = try await h.engine.sync()
         #expect(first.errors.isEmpty)
         #expect(postCount == 1)
-        #expect(card.fizzyID == "fz-21")
+        #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyID == "fz-21")
+        #expect(card.fizzyID == "fz-21", "hint attributes written at pairing time")
 
-        // Sync 2: a steady-state cycle while the pairing is intact — this is
-        // where pre-#21 code stripped the marker remotely, defeating the net.
+        // Sync 2: steady-state cycle while everything is intact.
         let second = try await h.engine.sync()
         #expect(second.errors.isEmpty)
 
-        // Between syncs: the CloudKit import clobbers the pairing fields.
+        // Between syncs: a CloudKit import clobbers ALL hint attributes.
         card.fizzyID = nil
         card.fizzyNumber = 0
         card.fizzyUpdatedAt = nil
         try h.persistence.viewContext.save()
 
-        // Sync 3: the persistent marker must heal the pairing — never POST.
+        // Sync 3: the store still owns the pairing — never POST.
         let third = try await h.engine.sync()
-
-        #expect(postCount == 1, "no duplicate POST — marker adoption heals the clobbered pairing")
+        #expect(postCount == 1, "no duplicate POST — the pairing store is CloudKit-proof")
         #expect(third.errors.isEmpty)
-        #expect(card.fizzyID == "fz-21", "fizzyID restored from the remote twin")
-        #expect(card.fizzyNumber == 21, "fizzyNumber restored from the remote twin")
-        let remoteTwin = try #require(remotesByNumber[21])
-        let twinLastActive = ISO8601DateFormatter().date(
-            from: try #require(remoteTwin["last_active_at"] as? String)
-        )
-        #expect(card.fizzyUpdatedAt == twinLastActive, "fizzyUpdatedAt restored from the remote twin")
+        #expect(card.fizzyID == "fz-21", "fizzyID hint healed from the store")
+        #expect(card.fizzyNumber == 21, "fizzyNumber hint healed from the store")
         #expect(remotesByNumber.count == 1, "exactly one Hero remotely")
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1, "exactly one Hero locally")
+
+        // Sync 4: hint healing must not have bumped modifiedAt — the next
+        // cycle stays completely quiet (no PUT/POST echo).
+        let putsBefore = putCount
+        let fourth = try await h.engine.sync()
+        #expect(fourth.errors.isEmpty)
+        #expect(postCount == 1)
+        #expect(putCount == putsBefore, "hint healing causes no echo-PUT")
     }
 
-    @Test("LWW push PUT preserves the local edit AND re-embeds the marker (issue #21)")
-    func putReembedsMarkerWithLocalEdit() async throws {
+    @Test("LWW push PUT sends the edited description verbatim — no marker")
+    func putSendsCleanDescription() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
-        // Paired card with a local edit newer than the remote — LWW pushes.
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.cardDescription = "Edited body"
-        card.fizzyID = "fzP"
-        card.fizzyNumber = 9
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = baseline.addingTimeInterval(500)
         try h.persistence.viewContext.save()
-        let localUUID = try #require(card.id)
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzP", fizzyNumber: 9, fizzyUpdatedAt: baseline),
+            for: cardUUID
+        )
 
         let remote = remoteCardDict(
             id: "fzP", number: 9, title: "Hero",
-            description: "Old body\n\n<!--fk:\(localUUID.uuidString)-->",
+            description: "Old body",
             createdAtISO: "2026-01-01T00:00:00Z",
             lastActiveISO: ISO8601DateFormatter().string(from: baseline)
         )
@@ -629,7 +542,7 @@ struct FizzySyncEngineResilienceTests {
                 putDescriptions.append(payload?["description"] as? String ?? "(nil)")
                 var updated = remote
                 updated["title"] = payload?["title"] ?? "?"
-                updated["description"] = payload?["description"] ?? NSNull()
+                updated["description"] = sanitizedDescription(payload?["description"])
                 return (jsonData(updated), .ok(for: req))
             default:
                 Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
@@ -640,21 +553,16 @@ struct FizzySyncEngineResilienceTests {
         let result = try await h.engine.sync()
 
         #expect(result.errors.isEmpty)
-        #expect(putDescriptions.count == 1, "exactly one LWW push PUT")
-        let putBody = try #require(putDescriptions.first)
-        #expect(putBody.contains("Edited body"), "local edit preserved in the PUT payload")
-        #expect(
-            putBody.hasSuffix("<!--fk:\(localUUID.uuidString)-->"),
-            "marker re-embedded — a local edit must not wipe the remote marker (issue #21)"
-        )
+        #expect(putDescriptions == ["Edited body"], "exactly one LWW push PUT, description verbatim")
     }
 
-    @Test("clobbered fizzyID re-pairs via surviving fizzyNumber instead of duplicating")
-    func clobberedFizzyIDRepairsByNumber() async throws {
+    @Test("cold store seeds from a number-only hint (pre-A′ clobber residue)")
+    func coldStoreSeedsByNumberHint() async throws {
         let h = AdoptionHarness()
         defer { h.tearDown() }
 
-        // Simulates a CloudKit merge that nulled fizzyID but left fizzyNumber.
+        // Pre-A′ data shape: fizzyID clobbered to nil, number survived.
+        // Seeding resolves the number against the remote list.
         let baseline = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
         let card = h.cardRepo.createCard(in: h.column, title: "Hero")
         card.fizzyID = nil
@@ -662,6 +570,7 @@ struct FizzySyncEngineResilienceTests {
         card.fizzyUpdatedAt = baseline
         card.modifiedAt = baseline.addingTimeInterval(500)
         try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
 
         let remote = remoteCardDict(
             id: "fz7", number: 7, title: "Hero (renamed remotely)",
@@ -694,12 +603,301 @@ struct FizzySyncEngineResilienceTests {
 
         let result = try await h.engine.sync()
 
-        #expect(postCount == 0, "re-pair, never re-POST")
-        #expect(card.fizzyID == "fz7", "fizzyID restored from the number match")
-        #expect(result.itemsCreated == 0, "no pull-created duplicate")
-        #expect(putPaths == ["/ACCT/cards/7"], "local edit pushed via LWW after re-pairing")
+        #expect(postCount == 0, "seeded pairing — never re-POST")
+        #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyID == "fz7", "store seeded from the number hint")
+        #expect(card.fizzyID == "fz7", "fizzyID hint healed")
+        #expect(result.itemsCreated == 0)
+        #expect(putPaths == ["/ACCT/cards/7"], "local edit pushed via LWW after seeding")
 
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1)
+    }
+
+    @Test("partially-warm store still seeds remaining attribute hints — no duplicate POST")
+    func partialStoreStillSeedsRemainingHints() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // Card A is already in the store (paired post-A′). Card B was paired
+        // pre-A′ — attribute hints only. A store with one entry must STILL
+        // adopt B's hints instead of POSTing a duplicate (partial first
+        // sync after upgrade / late CloudKit import).
+        let baseline = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
+        let cardA = h.cardRepo.createCard(in: h.column, title: "Alpha")
+        cardA.modifiedAt = baseline
+        let cardB = h.cardRepo.createCard(in: h.column, title: "Beta")
+        cardB.fizzyID = "fzB"
+        cardB.fizzyNumber = 8
+        cardB.fizzyUpdatedAt = baseline
+        cardB.modifiedAt = baseline
+        try h.persistence.viewContext.save()
+        let aUUID = try #require(cardA.id)
+        let bUUID = try #require(cardB.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzA", fizzyNumber: 7, fizzyUpdatedAt: baseline),
+            for: aUUID
+        )
+
+        let remoteA = remoteCardDict(
+            id: "fzA", number: 7, title: "Alpha",
+            description: nil, createdAtISO: "2026-05-01T00:00:00Z",
+            lastActiveISO: "2026-06-01T00:00:00Z"
+        )
+        let remoteB = remoteCardDict(
+            id: "fzB", number: 8, title: "Beta",
+            description: nil, createdAtISO: "2026-05-01T00:00:00Z",
+            lastActiveISO: "2026-06-01T00:00:00Z"
+        )
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData([remoteA, remoteB]), .ok(for: req))
+            case ("PUT", _), ("POST", _):
+                Issue.record("hinted card must be adopted, not written: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.isEmpty)
+        #expect(h.pairingStore.pairing(for: bUUID)?.fizzyID == "fzB", "B's hints seeded despite warm store")
+        let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
+        #expect(cardCount == 2, "no local duplicates either")
+    }
+
+    @Test("cold store seeds from full attribute hints — upgrade/reinstall/second device")
+    func coldStoreSeedsFromAttributeHints() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // Pre-A′ paired card: attributes intact, store empty (first launch
+        // of the A′ build — or a second device that got the card via
+        // CloudKit). The sync must adopt the hints, not POST a duplicate.
+        let baseline = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
+        let card = h.cardRepo.createCard(in: h.column, title: "Hero")
+        card.fizzyID = "fz9"
+        card.fizzyNumber = 9
+        card.fizzyUpdatedAt = baseline
+        card.modifiedAt = baseline
+        try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
+        #expect(h.pairingStore.isEmpty)
+
+        let remote = remoteCardDict(
+            id: "fz9", number: 9, title: "Hero",
+            description: nil, createdAtISO: "2026-05-01T00:00:00Z",
+            lastActiveISO: "2026-06-01T00:00:00Z"
+        )
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData([remote]), .ok(for: req))
+            case ("PUT", _), ("POST", _):
+                Issue.record("seeded pairing must not write: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.isEmpty)
+        let seeded = h.pairingStore.pairing(for: cardUUID)
+        #expect(seeded?.fizzyID == "fz9")
+        #expect(seeded?.fizzyNumber == 9)
+        #expect(seeded?.fizzyUpdatedAt == baseline)
+        let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
+        #expect(cardCount == 1)
+    }
+
+    @Test("deleteColumn cascade tombstones from the store and clears pairings — even with clobbered hints")
+    func deleteColumnCascadeUsesStorePairing() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let card = h.cardRepo.createCard(in: h.column, title: "Doomed by cascade")
+        try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzC", fizzyNumber: 34, fizzyUpdatedAt: .now),
+            for: cardUUID
+        )
+        // CloudKit clobbered the hint attributes — the store still knows.
+        card.fizzyID = nil
+        card.fizzyNumber = 0
+
+        h.boardRepo.deleteColumn(h.column)
+
+        let tombstones = try h.persistence.viewContext.fetch(CardTombstone.fetchRequest())
+        #expect(tombstones.map(\.fizzyNumber) == [34], "cascade tombstone number comes from the store")
+        #expect(h.pairingStore.pairing(for: cardUUID) == nil, "pairing removed on cascade delete")
+    }
+
+    @Test("deleteCard tombstones from the store and clears the pairing — even with clobbered hints")
+    func deleteUsesStorePairingWhenHintsClobbered() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let card = h.cardRepo.createCard(in: h.column, title: "Doomed")
+        try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzD", fizzyNumber: 21, fizzyUpdatedAt: .now),
+            for: cardUUID
+        )
+        // CloudKit clobbered the hint attributes — the store still knows.
+        card.fizzyID = nil
+        card.fizzyNumber = 0
+
+        h.cardRepo.deleteCard(card)
+
+        let tombstones = try h.persistence.viewContext.fetch(CardTombstone.fetchRequest())
+        #expect(tombstones.map(\.fizzyNumber) == [21], "tombstone number comes from the store")
+        #expect(h.pairingStore.pairing(for: cardUUID) == nil, "pairing removed on delete")
+    }
+}
+
+// MARK: - Issue #21 A′: first-sync modes pair through the store
+
+@Suite("FizzySyncEngine — first-sync modes pair through the store (issue #21 A′)", .serialized)
+@MainActor
+struct FizzySyncEngineFirstSyncStoreTests {
+
+    @Test("push mode skips store-paired cards and records new pairings in the store")
+    func pushModeUsesStore() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // One card already paired (store only — no attributes), one new.
+        let paired = h.cardRepo.createCard(in: h.column, title: "AlreadyPaired")
+        let fresh = h.cardRepo.createCard(in: h.column, title: "Fresh")
+        try h.persistence.viewContext.save()
+        let pairedUUID = try #require(paired.id)
+        let freshUUID = try #require(fresh.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzOld", fizzyNumber: 3, fizzyUpdatedAt: .now),
+            for: pairedUUID
+        )
+
+        var postedTitles: [String] = []
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                let payload = cardWritePayload(of: req)
+                postedTitles.append(payload?["title"] as? String ?? "?")
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/50"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/50"):
+                let dict = remoteCardDict(
+                    id: "fzNew", number: 50, title: "Fresh",
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
+                )
+                return (jsonData(dict), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .pushLocalToFizzy)
+
+        #expect(result.errors.isEmpty)
+        #expect(postedTitles == ["Fresh"], "store-paired card is not re-POSTed")
+        #expect(h.pairingStore.pairing(for: freshUUID)?.fizzyID == "fzNew", "new pairing recorded in the store")
+        #expect(fresh.fizzyID == "fzNew", "hint attributes written")
+    }
+
+    @Test("replace mode clears the wiped cards' pairings and pairs the pulled ones in the store")
+    func replaceModeResetsStore() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let old = h.cardRepo.createCard(in: h.column, title: "Old")
+        try h.persistence.viewContext.save()
+        let oldUUID = try #require(old.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzGone", fizzyNumber: 1, fizzyUpdatedAt: .now),
+            for: oldUUID
+        )
+
+        let remote = remoteCardDict(
+            id: "fzKeep", number: 2, title: "Kept",
+            description: nil, createdAtISO: "2026-06-01T00:00:00Z"
+        )
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData([remote]), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+
+        #expect(result.errors.isEmpty)
+        #expect(h.pairingStore.pairing(for: oldUUID) == nil, "wiped card's pairing removed")
+        let cards = try h.persistence.viewContext.fetch(Card.fetchRequest())
+        let kept = try #require(cards.first { $0.title == "Kept" })
+        #expect(h.pairingStore.pairing(for: try #require(kept.id))?.fizzyID == "fzKeep")
+    }
+
+    @Test("merge mode pairs pushed cards in the store")
+    func mergeModeRecordsPairings() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let localOnly = h.cardRepo.createCard(in: h.column, title: "LocalOnly")
+        try h.persistence.viewContext.save()
+        let localUUID = try #require(localOnly.id)
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/60"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/60"):
+                let dict = remoteCardDict(
+                    id: "fzMerge", number: 60, title: "LocalOnly",
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
+                )
+                return (jsonData(dict), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+
+        #expect(result.errors.isEmpty)
+        #expect(h.pairingStore.pairing(for: localUUID)?.fizzyID == "fzMerge")
     }
 }

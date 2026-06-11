@@ -290,6 +290,28 @@ All completed work has followed the Red → Green → Refactor workflow:
 
 ---
 
+## ✅ FizzyCardPairingStore — device-local pairing sidecar (issue #21 A′)
+**Date:** 2026-06-11  
+**Status:** Complete (Red → Green)
+
+**🔴 Red Phase:**
+- Created `FenixKanbanTests/Services/Fizzy/FizzyCardPairingStoreTests.swift`
+- 4 tests covering: round-trip set/get/remove, persistence across instances, corrupt-file recovery, allPairings/removeAll
+- Verified build failure: `cannot find 'FizzyCardPairingStore' in scope`
+
+**🟢 Green Phase:**
+- Created `FenixKanban/Core/Services/Fizzy/FizzyCardPairingStore.swift`
+- `FizzyCardPairing` struct: `Codable & Equatable`, fields `fizzyID: String`, `fizzyNumber: Int64`, `fizzyUpdatedAt: Date`
+- `FizzyCardPairingStore` final class: file-backed JSON sidecar, `NSLock`-protected, atomic writes
+- Public API: `init(fileURL:)`, `static let shared`, `isEmpty`, `count`, `pairing(for:)`, `setPairing(_:for:)`, `removePairing(for:)`, `removeAll()`, `allPairings()`
+- All 4 tests pass; sub-second `Date` fidelity verified through JSON round-trip
+
+**Notes:**
+- Rationale: CloudKit imports clobber freshly-written pairing attributes (issue #21); this store lives in Application Support, outside CloudKit/Fizzy server reach
+- Default Codable `Date` encoding (Double `timeIntervalSinceReferenceDate`) preserves sub-second precision — critical for LWW comparisons
+
+---
+
 ## 📞 QUESTIONS FOR TEAM
 
 1. Should we prioritize remaining force unwraps or move to service refactoring?
@@ -2347,3 +2369,300 @@ the new test fails on the missing marker suffix while the rest of the
 suite stays green; hunk restored byte-identical (clean `git diff` on
 `FizzySyncEngine.swift`). **387 tests / 79 suites green** on the
 pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.
+
+**Task 2 (issue #21 plumbing), 2026-06-11:** Threaded `FizzyCardPairingStore`
+through engine, repository, provider, and all test harnesses. Pure DI — no
+behavior changes, engine does not read/write the store yet. `CardRepository`
+gains a defaulted `pairingStore: .shared` parameter (UI call-sites untouched);
+`FizzySyncEngine` gains a required `pairingStore:` parameter (explicit at every
+construction site). `FizzySyncProvider.makeEngine` passes `.shared`. All 11
+harnesses + 8 inline constructions in the four Fizzy engine test files use
+per-test temp-file stores cleaned up in `tearDown`. **391 tests / 80 suites
+green** on the pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.
+
+**Task 3 (issue #21 A′ core), 2026-06-11:** Steady-state sync now keys
+every pairing decision off the device-local `FizzyCardPairingStore` —
+CloudKit attribute clobbers are structurally incapable of unpairing a
+card. New engine helpers: `pairing(for:)`, `recordPairing` (store write
+lands BEFORE `context.save()`, so save failures can't lose a pairing),
+`healHints` (re-writes `fizzyID`/`fizzyNumber` hint attributes without
+bumping `modifiedAt` — no echo-PUTs), and `seedPairingStoreIfCold`
+(cold store adopts legacy attribute hints, resolving number-only
+residue against the remote list). The marker-ADOPTION block in
+`steadyStateSync` and the re-pair-by-number block are deleted (the
+store subsumes both); marker post/put/strip machinery stays until
+Task 4. `reconcilePins`, LWW, soft-delete, orphan-claim, and push all
+consult the store. `FizzySyncProvider` gains an injectable
+`pairingStore` (default `.shared`) so provider tests stop writing the
+real Application Support sidecar.
+
+**RED:** `FizzySyncEngineResilienceTests.cloudKitClobberCannotUnpair`
+— sanitizer-faithful stateful mock (HTML comments stripped on every
+stored write, matching production Fizzy per the 2026-06-10 forensics);
+backdated `createdAt` defeats the heuristic, zeroed number defeats
+re-pair-by-number, sanitizer kills the marker. Failed pre-fix first on
+`(pairing(for:) → nil) == "fz-21"` (store never written), then
+`(postCount → 2) == 1` — the duplicate POST.
+
+**Test rework:** deleted `pullAdoptsByMarker` + `markerWinsOverHeuristic`
+(mechanism gone — server strips markers); `adoptionStableWithPersistentMarker`
+→ `pairedSteadyStateStaysQuiet`; `saveFailureDoesNotDuplicateOnNextSync`
+reworked (store survives the save failure); `clobberedFizzyIDRepairsByNumber`
+→ `coldStoreSeedsByNumberHint`; new `coldStoreSeedsFromAttributeHints`
+(upgrade/reinstall/second-device path). One guard assertion in
+`pullClearsOrPreservesAssignees` retargeted from `card.fizzyUpdatedAt`
+(attribute no longer written in steady state) to the store's
+`fizzyUpdatedAt` — same "pull branch ran" meaning.
+
+**Verification:** **390 tests / 80 suites green** (391 − 2 deleted
++ 1 added) on pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS
+`BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings on both
+platforms.
+
+**Review fix (M1), 2026-06-11:** `seedPairingStoreIfCold` guard was
+all-or-nothing (`pairingStore.isEmpty`) — a partially-warm store
+(partial first sync, late CloudKit import on a second device) skipped
+seeding remaining hint cards, letting the push loop POST duplicates.
+Fix: rename to `seedPairingStoreFromHints`, drop the `isEmpty` guard,
+add a per-card `guard pairing(for: card) == nil else { continue }` so
+already-paired cards are skipped while unpaired hint cards are always
+adopted. RED: `partialStoreStillSeedsRemainingHints` — Issue.record
+fired on a POST for Beta, `result.errors` non-empty, `pairing(for:
+bUUID)` nil, cardCount 3. GREEN: **391 tests / 80 suites**, macOS
+`BUILD SUCCEEDED`, zero warnings.
+
+### Task 4 — Delete adoption-marker machinery (issue #21 A′), 2026-06-11
+
+**Files:** `FenixKanban/Core/Services/Fizzy/FizzySyncEngine.swift`,
+`FenixKanbanTests/Services/Fizzy/FizzySyncEngineAdoptionResilienceTests.swift`
+
+**Test rework (1:1 replacements):** `postCarriesMarker` →
+`postSendsCleanDescription`; `putReembedsMarkerWithLocalEdit` →
+`putSendsCleanDescription`; `unownedMarkerCreatesCardNormally` →
+`remoteDescriptionImportsVerbatim`.
+
+**RED:** `postSendsCleanDescription` failed (`"Hello\n\n<!--fk:…-->"
+!= "Hello"`); `putSendsCleanDescription` failed (`["Edited
+body\n\n<!--fk:…-->"] != ["Edited body"]`). `remoteDescriptionImportsVerbatim`
+passed on arrival (stripping a marker-free description is a no-op).
+
+**Engine changes:** deleted the entire `// MARK: - Adoption marker
+(issue #14)` section (`adoptionMarker(for:)`, `adoptionMarkerPattern`,
+`adoptionMarkerUUID(in:)`, `strippingAdoptionMarker(from:)`);
+simplified `putCard` and `postCard` to send `card.cardDescription`
+verbatim; `applyRemote`: `card.cardDescription = remote.description`
+(deleted the stripping call + comment). No remaining `marker`/`#14`
+references in the engine.
+
+**Grep sweep:** `grep -rn "adoptionMarker\|strippingAdoptionMarker"
+FenixKanban FenixKanbanTests` → no output.
+
+**Verification:** **391 tests / 80 suites green** on pinned iPhone 17
+sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`),
+zero warnings.
+
+---
+
+### Task 5 — Issue #21 A′: first-sync modes pair through the store ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`syncFirstPushLocal`, `syncFirstReplaceLocal`, and `syncFirstMerge` were still
+pairing via raw attribute writes (`card.fizzyID = created.id` etc.) instead of
+the store. This made store-paired cards invisible to the push guard (they had
+nil attributes) and left the replace wipe with stale store entries.
+
+**Changes to `FizzySyncEngine.swift`:**
+- `syncFirstPushLocal`: calls `seedPairingStoreFromHints(localCards:remoteCards:[])` before the loop; loop condition `pairing(for: card) == nil`; POST success → `recordPairing(...)` replacing three attribute writes.
+- `syncFirstReplaceLocal`: in the wipe loop, `if let id = card.id { pairingStore.removePairing(for: id) }` before `context.delete(card)`. Pull half already pairs via `applyRemote → recordPairing` (Task 3).
+- `syncFirstMerge`: after both fetches + localCards built, `seedPairingStoreFromHints(localCards:remoteCards:)`; push-loop condition `pairing(for: card) == nil && !remoteTitlesLower.contains(...)`; POST success → `recordPairing(...)`.
+
+**New tests** — `FizzySyncEngineFirstSyncStoreTests` in `FizzySyncEngineAdoptionResilienceTests.swift` (reuses `AdoptionHarness`):
+- `pushModeUsesStore`: store-paired card not re-POSTed; new card recorded; `fizzyID` hint healed.
+- `replaceModeResetsStore`: wiped card's pairing removed; pulled card recorded.
+- `mergeModeRecordsPairings`: pushed card recorded in the store.
+
+**RED:** `pushModeUsesStore` failed (`postedTitles == ["AlreadyPaired", "Fresh"]` instead of `["Fresh"]`; `fizzyID == nil`); `replaceModeResetsStore` failed (pairing not removed); `mergeModeRecordsPairings` failed (`fizzyID == nil`).
+
+**Verification:** **394 tests / 81 suites green** on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### Task 6 — Issue #21 A′: delete path reads the pairing store ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`CardRepository.deleteCard` was calling `CardTombstone.record(for: card, in:)` which read `card.fizzyNumber` directly — the CloudKit-clobberable hint attribute. A clobbered number (zeroed) meant no tombstone → the deletion never reached the Fizzy server.
+
+**Root fix:** `CardTombstone.record(for:in:)` → `record(number:in:)` (takes a plain `Int64`). `deleteCard` resolves the number via the pairing store first, falling back to the hint attribute for pre-A′ data: `card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber`. After recording the tombstone, `pairingStore.removePairing(for:)` clears the entry.
+
+**Caller sweep:** `grep -rn "CardTombstone.record" FenixKanban FenixKanbanTests` found two callers:
+1. `CardRepository.deleteCard` — updated to new signature + store lookup (primary fix).
+2. `BoardRepository.deleteColumn` (cascade delete of a column's cards) — does not hold a `pairingStore`; adapted to `record(number: card.fizzyNumber, in:)` using the hint attribute directly (cascade delete is a less critical path; store-unaware but functionally equivalent to the pre-A′ behavior).
+
+**Files changed:**
+- `FenixKanban/Core/Persistence/CardTombstone+CoreDataClass.swift`: signature `record(for:in:)` → `record(number:in:)`
+- `FenixKanban/Core/Repositories/CardRepository.swift`: `deleteCard` — store-first number lookup + pairing removal
+- `FenixKanban/Core/Repositories/BoardRepository.swift`: `deleteColumn` cascade — adapted to new `record(number:in:)` signature
+
+**New test** — appended to `FizzySyncEngineResilienceTests` in `FizzySyncEngineAdoptionResilienceTests.swift`:
+- `deleteUsesStorePairingWhenHintsClobbered`: card with store pairing (fizzyNumber 21) but clobbered attributes (fizzyNumber=0); `deleteCard` called; tombstone has number 21; pairing removed from store.
+
+**RED observed:** `tombstones.map(\.fizzyNumber) == []` (empty — old `record(for:)` read zeroed attribute → nil guard returned); pairing still present.
+
+**Verification:** **395 tests / 81 suites green** (+1 test) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### Task 6b — Issue #21 A′: column-delete cascade uses pairing store (review follow-on) ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`BoardRepository.deleteColumn`'s card cascade loop was reading `card.fizzyNumber` directly (the hint attribute). If CloudKit clobbered a card's hints when its column was deleted: number → 0 → no tombstone → remote twin never DELETEd → AND the pairing-store entry was never removed → on next sync the remote card had no live local owner → pull loop re-imported it → deleted card RESURRECTED. Also, even with intact hints, `deleteColumn` never called `removePairing` → store entries leaked.
+
+**Root fix:** Injected `FizzyCardPairingStore` into `BoardRepository` (same pattern as `CardRepository`). Updated the cascade loop in `deleteColumn` to resolve the number store-first with hint fallback (identical expression to `deleteCard`) and call `pairingStore.removePairing(for:)` for each card.
+
+**`AdoptionHarness` updated:** `boardRepo` now constructed with `pairingStore: pairingStore` so test isolation is correct.
+
+**Warning fix (folded in):** Changed `let noDesc = h.cardRepo.createCard(...)` → `_ = h.cardRepo.createCard(...)` in `postSendsCleanDescription` (test-target unused-binding warning).
+
+**Files changed:**
+- `FenixKanban/Core/Repositories/BoardRepository.swift`: added `pairingStore` property + injected init; updated `deleteColumn` cascade
+- `FenixKanbanTests/Services/Fizzy/FizzySyncEngineAdoptionResilienceTests.swift`: new test + harness update + warning fix
+
+**New test** — `deleteColumnCascadeUsesStorePairing`: column with one card, store pairing (fizzyNumber 34) but clobbered attributes (fizzyNumber=0); `deleteColumn` called; tombstone has number 34; pairing removed.
+
+**RED observed:** Build error `extra argument 'pairingStore' in call` — `BoardRepository` did not yet accept the parameter.
+
+**Verification:** **396 tests / 81 suites green** (+1 test vs Task 6) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### 41. Issue #21 A′ — Local-Only Card Pairing Store: Complete Close-Out ✅
+
+**Date:** 2026-06-11
+**Plan:** `docs/superpowers/plans/2026-06-11-21-aprime-local-pairing-store.md`
+**Commits (Tasks 1–6b):** `81ae764` + `899e514` (T1), `cc9e597` (T2), `3b49746` + `c1e2614` (T3 RED/GREEN), `3cb2b22` (review M1: per-card hint seeding), `bd76e97` (T4), `72cc3d8` (T5), `753c70e` (T6), `b07f022` (T6b)
+
+**Forensic finding — Option B void:**
+Live forensics on 2026-06-10 confirmed that Fizzy's ActionText sanitizer strips
+HTML comments **on write** — not at read time. Of 41 cards that had received a
+marker POST, zero retained the marker in the database. This made the entire
+`// MARK: - Adoption marker (issue #14)` machinery a structural no-op against
+production from day one. The Option B approach (commits `e7d64d2`/`83842bb`/
+`ad4586f`) was "harmless but ineffective" per the captain's ruling. Option A
+(device-local store) is the only durable path.
+
+**A′ design (no Core Data model change — stays at v8):**
+
+- `FizzyCardPairingStore` (JSON sidecar in Application Support, atomic writes,
+  `NSLock`-protected, `@unchecked Sendable`): the single authority on which local
+  card UUID maps to which remote `fizzyID` / `fizzyNumber`. Neither CloudKit nor
+  the Fizzy server can reach this file. Sub-second `Date` fidelity preserved via
+  the default Codable `Double` encoding (never `.iso8601` — LWW comparisons
+  require exact precision through the JSON round-trip).
+
+- CloudKit attributes `fizzyID` / `fizzyNumber` demoted to a **self-healing hint
+  channel**: written at pairing time, re-healed every steady-state sync
+  (`healHints` — never bumps `modifiedAt`; no echo-PUTs), read only by the UI's
+  per-card routes and for cold-store seeding. `fizzyUpdatedAt` is now
+  store-only (the attribute carries it as a bootstrap hint, but steady-state
+  reads come from `FizzyCardPairing.fizzyUpdatedAt`).
+
+- `seedPairingStoreFromHints` (renamed from `seedPairingStoreIfCold` after review
+  M1): runs per-card rather than all-or-nothing, so a partially-warm store (partial
+  first sync, second device receiving hints via CloudKit) still adopts every
+  unpaired hint card. Number-only residue (fizzyID clobbered to nil) resolves
+  against the remote list.
+
+- Save-failure duplication **structurally dead**: `recordPairing` writes to the
+  store BEFORE `context.save()`. A failed save can no longer lose a pairing.
+
+- Delete/cascade paths tombstone from the store: `CardRepository.deleteCard` and
+  `BoardRepository.deleteColumn` both resolve `fizzyNumber` from the store first,
+  falling back to the hint attribute. `removePairing` is called on every delete so
+  store entries never leak.
+
+- Marker machinery **deleted**: the entire `MARK: - Adoption marker (issue #14)`
+  section removed from `FizzySyncEngine.swift`. `putCard` and `postCard` send
+  `card.cardDescription` verbatim. `applyRemote` stores `remote.description`
+  verbatim. No `<!--fk:UUID-->` anywhere in the engine.
+
+**Sanitizer-faithful mock policy (new project standard):**
+Any test that exercises a write→read round-trip through a stateful mock MUST pass
+stored description writes through `sanitizedDescription` (strips HTML comments via
+the same regex Fizzy applies on write). The `cloudKitClobberCannotUnpair` flagship
+test established the pattern; `saveFailureDoesNotDuplicateOnNextSync` was reworked
+to the same standard. The lesson from the slug-with-`/` bug (entry #UAT fix) now
+extends to the sanitizer: a mock that does not strip on write can certify a
+fictional server and let real-API bugs past a green test suite.
+
+**Test rework map:**
+
+| Old test | Fate | New test |
+|---|---|---|
+| `pullAdoptsByMarker` | DELETED — server strips markers, mechanism void | (covered by flagship below) |
+| `markerWinsOverHeuristic` | DELETED — no markers | (covered by flagship below) |
+| `adoptionStableWithPersistentMarker` | REWORKED | `pairedSteadyStateStaysQuiet` |
+| `saveFailureDoesNotDuplicateOnNextSync` | REWORKED (sanitizing mock) | same name |
+| `cloudKitClobberHealsWithoutDuplicate` | REWORKED | `cloudKitClobberCannotUnpair` (flagship) |
+| `clobberedFizzyIDRepairsByNumber` | REWORKED | `coldStoreSeedsByNumberHint` |
+| `postCarriesMarker` | REWORKED | `postSendsCleanDescription` |
+| `putReembedsMarkerWithLocalEdit` | REWORKED | `putSendsCleanDescription` |
+| `unownedMarkerCreatesCardNormally` | REWORKED | `remoteDescriptionImportsVerbatim` |
+| NEW | ADDED | `coldStoreSeedsFromAttributeHints` (upgrade/reinstall/second-device) |
+| NEW (T5) | ADDED | `pushModeUsesStore`, `replaceModeResetsStore`, `mergeModeRecordsPairings` |
+| NEW (T6) | ADDED | `deleteUsesStorePairingWhenHintsClobbered` |
+| NEW (T6b) | ADDED | `deleteColumnCascadeUsesStorePairing` |
+
+**Flagship test — `cloudKitClobberCannotUnpair`:**
+Sanitizer-faithful stateful server + all three hint attributes clobbered to nil/zero
+between sync 2 and sync 3 + createdAt backdated 10 minutes (defeats the title±60s
+orphan heuristic) + fizzyNumber zeroed (defeats re-pair-by-number) + sanitizer kills
+any marker: sync 3 produces zero POSTs (the store is the authority), hint attributes
+heal, and sync 4 is completely quiet (zero PUTs — hint healing does not bump
+`modifiedAt`).
+
+**Review fixes:**
+
+- **M1 (per-card seeding, commit `3cb2b22`):** `seedPairingStoreIfCold`'s `isEmpty`
+  guard was all-or-nothing; a partially-warm store skipped remaining hint cards →
+  duplicate POSTs on partial-first-sync or second-device scenarios. Fixed to per-card
+  `guard pairing(for: card) == nil`, renamed `seedPairingStoreFromHints`. RED test
+  `partialStoreStillSeedsRemainingHints` confirmed via Issue.record on the spurious POST.
+
+- **6b cascade (commit `b07f022`):** `BoardRepository.deleteColumn`'s cascade loop
+  read `card.fizzyNumber` directly (hint attribute) and never called `removePairing` →
+  clobbered hints → no tombstone → remote card survived → resurrected on next sync.
+  Fixed by injecting `FizzyCardPairingStore` into `BoardRepository`. Mutation-checked:
+  reverting the cascade store-lookup made `deleteColumnCascadeUsesStorePairing` fail
+  while all other tests stayed green.
+
+- **Unused-var warning (folded into 6b):** `let noDesc = ...` → `_ = ...` in
+  `postSendsCleanDescription`.
+
+**What was deleted:**
+- Entire `// MARK: - Adoption marker (issue #14)` section from `FizzySyncEngine`:
+  `adoptionMarker(for:)`, `adoptionMarkerPattern`, `adoptionMarkerUUID(in:)`,
+  `strippingAdoptionMarker(from:)`.
+- `needsMarkerStrip` logic and `stripMarkerRemotely` from the LWW loop.
+- The marker-adoption block from `steadyStateSync` (replaced by
+  `seedPairingStoreFromHints` + store-keyed pairing).
+- The re-pair-by-number block from `steadyStateSync` (subsumed by seeding).
+- `CardTombstone.record(for:in:)` (replaced by `record(number:in:)` — takes
+  a resolved `Int64`, not a managed object with a potentially clobbered attribute).
+
+**Doc sweep (Task 7):**
+- `FizzySyncEngine.swift` header: updated from the stale "Phase 4a only" note to
+  accurately describe the full engine, naming `FizzyCardPairingStore` as a
+  constructor dependency alongside `FizzyAuthState` and `FizzyBoardMapping`; explains
+  the authority/hint-channel split.
+- `FizzyAuthStatusView.swift`: one-line comment on `cardsSyncedCount` — the
+  `fizzyID != nil` predicate counts via hint attributes (healed every sync; cosmetic
+  and eventually consistent, issue #21 A′).
+- `TDD_IMPLEMENTATION_STATUS.md`: doubled `---` separator (lines 291–293 pre-fix)
+  removed; this entry written.
+
+**Final verification:** **396 tests / 81 suites green** on pinned iPhone 17 sim
+(`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), **zero warnings
+on both platforms**.

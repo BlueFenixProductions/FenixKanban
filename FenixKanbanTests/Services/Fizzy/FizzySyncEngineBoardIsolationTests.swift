@@ -17,13 +17,18 @@ struct FizzySyncEngineBoardIsolationTests {
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
         let suiteName: String
+        let pairingStore: FizzyCardPairingStore
 
         @MainActor
         init() {
             MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             let boardRepo = BoardRepository(context: persistence.viewContext)
-            let cardRepo = CardRepository(context: persistence.viewContext)
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
+            let cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
 
             var built: [Board] = []
             for b in 0..<3 {
@@ -59,13 +64,14 @@ struct FizzySyncEngineBoardIsolationTests {
 
             engine = FizzySyncEngine(
                 client: client, authState: authState, mapping: mapping,
-                context: persistence.viewContext
+                context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
             MockURLProtocol.reset()
         }
 
