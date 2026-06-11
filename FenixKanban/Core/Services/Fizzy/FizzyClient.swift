@@ -156,8 +156,14 @@ final class FizzyClient: Sendable {
 
         switch http.statusCode {
         case 201:
+            // Resolve against baseURL: the live server sends RELATIVE
+            // Locations for some resources (boards — Rails *_path style)
+            // and absolute ones for others (cards). A bare URL(string:)
+            // yields a scheme-less URL that URLSession rejects with
+            // -1002 "unsupported URL" (found in live UAT, 2026-06-11).
+            // relativeTo: is a no-op for absolute Location strings.
             guard let locationString = http.value(forHTTPHeaderField: "Location"),
-                  let location = URL(string: locationString) else {
+                  let location = URL(string: locationString, relativeTo: baseURL)?.absoluteURL else {
                 throw FizzyError.unexpectedStatus(201)
             }
             return try await followLocation(location, as: T.self)

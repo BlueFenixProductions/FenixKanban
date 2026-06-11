@@ -2681,3 +2681,17 @@ pairing against a fresh empty remote board (Playground-first testing,
 captain's directive) needs no web UI. `mapping.clear()` and
 `client.createBoard` were already test-locked. **397 tests / 81 suites
 green**; macOS zero warnings.
+
+### #43 — Resolve relative Location headers against baseURL (live UAT find, 2026-06-11)
+
+Live "New Fizzy Board…" failed with URLError -1002 "unsupported URL": the
+real server answers board creation with a RELATIVE Location (Rails *_path
+style) while cards get absolute URLs — and the existing
+`createBoardFollowsLocation` test mocked only the absolute shape (the
+wire-shape rule, now in header form). RED:
+`createBoardFollowsRelativeLocation` — the mock-served GET went out
+scheme-less (`/ACCT/boards/…`), the exact -1002 condition (issues record
+as «unknown» from the URLProtocol thread; suite red regardless). GREEN:
+`post()` resolves `URL(string:relativeTo: baseURL).absoluteURL` — a no-op
+for absolute Locations. **398 tests / 81 suites green**; macOS zero
+warnings.

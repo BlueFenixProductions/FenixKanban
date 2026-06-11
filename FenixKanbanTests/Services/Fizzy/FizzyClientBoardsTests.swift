@@ -142,6 +142,31 @@ struct FizzyClientBoardsTests {
         #expect(MockURLProtocol.requests.count == 2)
     }
 
+    @Test("create follows a RELATIVE Location header (live-server shape, 2026-06-11 UAT)")
+    func createBoardFollowsRelativeLocation() async throws {
+        // The real fizzy server answers board creation with a relative
+        // Location (Rails *_path style) — unlike card creation, which sends
+        // an absolute URL. URL(string:) alone yields a scheme-less URL that
+        // URLSession rejects with -1002 "unsupported URL"; the client must
+        // resolve it against baseURL.
+        let detail = try loadFixture("board_detail_doc")
+        MockURLProtocol.handler = { req in
+            if req.httpMethod == "POST" {
+                return (Data(), .response(
+                    for: req, status: 201,
+                    headers: ["Location": "/ACCT/boards/03f5v9zkft4hj9qq0lsn9ohcm"]
+                ))
+            }
+            #expect(req.httpMethod == "GET")
+            #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/03f5v9zkft4hj9qq0lsn9ohcm")
+            return (detail, .ok(for: req))
+        }
+
+        let created = try await makeClient().createBoard(FizzyBoardWrite(name: "My new board"))
+        #expect(created.id == "03f5v9zkft4hj9qq0lsn9ohcm")
+        #expect(MockURLProtocol.requests.count == 2)
+    }
+
     // MARK: - Update board
 
     @Test("PUT /:account/boards/:id sends {board:{…}} and returns the updated board")
