@@ -2332,3 +2332,18 @@ PUTs now recorded).
 **Verification:** **386 tests / 79 suites green** (385 + 1 new) on
 pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS `BUILD SUCCEEDED`,
 zero warnings.
+
+**Review fix (M1), 2026-06-10:** review of the GREEN commit (83842bb)
+found `putCard`'s marker re-embed had zero coverage — the retargeting
+removed the suite's only PUT-body description assertion, so reverting
+that hunk left all 386 tests green while the local-edit marker-wipe
+hazard returned. Added
+`FizzySyncEngineResilienceTests.putReembedsMarkerWithLocalEdit`: a
+paired card with `modifiedAt > fizzyUpdatedAt` syncs, the LWW push
+PUTs, and the captured PUT body's `description` must both preserve the
+edited text and end with `<!--fk:UUID-->`. Mutation-checked: with the
+re-embed hunk temporarily reverted (bare `cardDescription` in the PUT)
+the new test fails on the missing marker suffix while the rest of the
+suite stays green; hunk restored byte-identical (clean `git diff` on
+`FizzySyncEngine.swift`). **387 tests / 79 suites green** on the
+pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.

@@ -593,6 +593,62 @@ struct FizzySyncEngineResilienceTests {
         #expect(cardCount == 1, "exactly one Hero locally")
     }
 
+    @Test("LWW push PUT preserves the local edit AND re-embeds the marker (issue #21)")
+    func putReembedsMarkerWithLocalEdit() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // Paired card with a local edit newer than the remote — LWW pushes.
+        let baseline = Date(timeIntervalSince1970: 1_000_000)
+        let card = h.cardRepo.createCard(in: h.column, title: "Hero")
+        card.cardDescription = "Edited body"
+        card.fizzyID = "fzP"
+        card.fizzyNumber = 9
+        card.fizzyUpdatedAt = baseline
+        card.modifiedAt = baseline.addingTimeInterval(500)
+        try h.persistence.viewContext.save()
+        let localUUID = try #require(card.id)
+
+        let remote = remoteCardDict(
+            id: "fzP", number: 9, title: "Hero",
+            description: "Old body\n\n<!--fk:\(localUUID.uuidString)-->",
+            createdAtISO: "2026-01-01T00:00:00Z",
+            lastActiveISO: ISO8601DateFormatter().string(from: baseline)
+        )
+        var putDescriptions: [String] = []
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData([remote]), .ok(for: req))
+            case ("PUT", let p?) where p.hasSuffix("/cards/9"):
+                let payload = cardWritePayload(of: req)
+                putDescriptions.append(payload?["description"] as? String ?? "(nil)")
+                var updated = remote
+                updated["title"] = payload?["title"] ?? "?"
+                updated["description"] = payload?["description"] ?? NSNull()
+                return (jsonData(updated), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.sync()
+
+        #expect(result.errors.isEmpty)
+        #expect(putDescriptions.count == 1, "exactly one LWW push PUT")
+        let putBody = try #require(putDescriptions.first)
+        #expect(putBody.contains("Edited body"), "local edit preserved in the PUT payload")
+        #expect(
+            putBody.hasSuffix("<!--fk:\(localUUID.uuidString)-->"),
+            "marker re-embedded — a local edit must not wipe the remote marker (issue #21)"
+        )
+    }
+
     @Test("clobbered fizzyID re-pairs via surviving fizzyNumber instead of duplicating")
     func clobberedFizzyIDRepairsByNumber() async throws {
         let h = AdoptionHarness()
