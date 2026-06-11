@@ -105,8 +105,12 @@ final class CardRepository: CardRepositoryProtocol {
         card.column?.modifiedAt = now
         card.column?.board?.modifiedAt = now
         // Fizzy-paired cards leave a tombstone so the deletion propagates to
-        // the server on the next sync (issue #11).
-        CardTombstone.record(for: card, in: context)
+        // the server on the next sync (issue #11). The number comes from the
+        // pairing store (the authority — issue #21 A′), falling back to the
+        // hint attribute for pre-A′ data whose store was never seeded.
+        let number = card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber
+        CardTombstone.record(number: number, in: context)
+        if let id = card.id { pairingStore.removePairing(for: id) }
         context.delete(card)
         save()
     }

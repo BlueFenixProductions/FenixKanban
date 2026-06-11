@@ -9,10 +9,10 @@ public class CardTombstone: NSManagedObject {
     /// that were never paired — Fizzy addresses card routes by `number`, so a
     /// card without one has nothing to delete remotely.
     @discardableResult
-    static func record(for card: Card, in context: NSManagedObjectContext) -> CardTombstone? {
-        guard card.fizzyNumber != 0 else { return nil }
+    static func record(number: Int64, in context: NSManagedObjectContext) -> CardTombstone? {
+        guard number != 0 else { return nil }
         let tombstone = CardTombstone(context: context)
-        tombstone.fizzyNumber = card.fizzyNumber
+        tombstone.fizzyNumber = number
         tombstone.deletedAt = Date()
         return tombstone
     }

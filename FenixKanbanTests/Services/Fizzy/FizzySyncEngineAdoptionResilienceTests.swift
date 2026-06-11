@@ -723,6 +723,29 @@ struct FizzySyncEngineResilienceTests {
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1)
     }
+
+    @Test("deleteCard tombstones from the store and clears the pairing — even with clobbered hints")
+    func deleteUsesStorePairingWhenHintsClobbered() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let card = h.cardRepo.createCard(in: h.column, title: "Doomed")
+        try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzD", fizzyNumber: 21, fizzyUpdatedAt: .now),
+            for: cardUUID
+        )
+        // CloudKit clobbered the hint attributes — the store still knows.
+        card.fizzyID = nil
+        card.fizzyNumber = 0
+
+        h.cardRepo.deleteCard(card)
+
+        let tombstones = try h.persistence.viewContext.fetch(CardTombstone.fetchRequest())
+        #expect(tombstones.map(\.fizzyNumber) == [21], "tombstone number comes from the store")
+        #expect(h.pairingStore.pairing(for: cardUUID) == nil, "pairing removed on delete")
+    }
 }
 
 // MARK: - Issue #21 A′: first-sync modes pair through the store

@@ -97,7 +97,7 @@ final class BoardRepository: BoardRepositoryProtocol {
         // removes the column's cards, so paired cards get tombstones too.
         ColumnTombstone.record(for: column, in: context)
         for card in (column.cards as? Set<Card>) ?? [] {
-            CardTombstone.record(for: card, in: context)
+            CardTombstone.record(number: card.fizzyNumber, in: context)
         }
         context.delete(column)
         save()

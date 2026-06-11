@@ -2487,3 +2487,29 @@ nil attributes) and left the replace wipe with stale store entries.
 **RED:** `pushModeUsesStore` failed (`postedTitles == ["AlreadyPaired", "Fresh"]` instead of `["Fresh"]`; `fizzyID == nil`); `replaceModeResetsStore` failed (pairing not removed); `mergeModeRecordsPairings` failed (`fizzyID == nil`).
 
 **Verification:** **394 tests / 81 suites green** on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### Task 6 — Issue #21 A′: delete path reads the pairing store ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`CardRepository.deleteCard` was calling `CardTombstone.record(for: card, in:)` which read `card.fizzyNumber` directly — the CloudKit-clobberable hint attribute. A clobbered number (zeroed) meant no tombstone → the deletion never reached the Fizzy server.
+
+**Root fix:** `CardTombstone.record(for:in:)` → `record(number:in:)` (takes a plain `Int64`). `deleteCard` resolves the number via the pairing store first, falling back to the hint attribute for pre-A′ data: `card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber`. After recording the tombstone, `pairingStore.removePairing(for:)` clears the entry.
+
+**Caller sweep:** `grep -rn "CardTombstone.record" FenixKanban FenixKanbanTests` found two callers:
+1. `CardRepository.deleteCard` — updated to new signature + store lookup (primary fix).
+2. `BoardRepository.deleteColumn` (cascade delete of a column's cards) — does not hold a `pairingStore`; adapted to `record(number: card.fizzyNumber, in:)` using the hint attribute directly (cascade delete is a less critical path; store-unaware but functionally equivalent to the pre-A′ behavior).
+
+**Files changed:**
+- `FenixKanban/Core/Persistence/CardTombstone+CoreDataClass.swift`: signature `record(for:in:)` → `record(number:in:)`
+- `FenixKanban/Core/Repositories/CardRepository.swift`: `deleteCard` — store-first number lookup + pairing removal
+- `FenixKanban/Core/Repositories/BoardRepository.swift`: `deleteColumn` cascade — adapted to new `record(number:in:)` signature
+
+**New test** — appended to `FizzySyncEngineResilienceTests` in `FizzySyncEngineAdoptionResilienceTests.swift`:
+- `deleteUsesStorePairingWhenHintsClobbered`: card with store pairing (fizzyNumber 21) but clobbered attributes (fizzyNumber=0); `deleteCard` called; tombstone has number 21; pairing removed from store.
+
+**RED observed:** `tombstones.map(\.fizzyNumber) == []` (empty — old `record(for:)` read zeroed attribute → nil guard returned); pairing still present.
+
+**Verification:** **395 tests / 81 suites green** (+1 test) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
