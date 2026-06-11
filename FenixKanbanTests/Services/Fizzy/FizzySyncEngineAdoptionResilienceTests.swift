@@ -499,6 +499,112 @@ struct FizzySyncEngineResilienceTests {
         #expect(cardCount == 1, "exactly one Hero — locally and remotely")
     }
 
+    @Test("CloudKit-clobbered pairing heals by marker — no duplicate POST")
+    func cloudKitClobberHealsWithoutDuplicate() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // Production shape of issue #21: a CloudKit import clobbers ALL
+        // synced pairing fields (fizzyID, fizzyNumber, fizzyUpdatedAt) to
+        // nil/zero after a successful pairing. Re-pair-by-number can't help
+        // (number is gone too) and the card's createdAt is backdated 10
+        // minutes from the remote's so the title±60s orphan heuristic can't
+        // claim the remote either — the persistent marker is the only path
+        // that can heal instead of duplicating.
+        let remoteCreated = ISO8601DateFormatter().date(from: "2026-06-01T00:00:00Z")!
+        let card = h.cardRepo.createCard(in: h.column, title: "Hero")
+        card.cardDescription = "Body"
+        card.createdAt = remoteCreated.addingTimeInterval(-600)
+        try h.persistence.viewContext.save()
+
+        // Faithful stateful server: POSTed cards join the remote store
+        // verbatim (markers included), PUTs are applied to the stored state.
+        // This keeps the test honest in both worlds: pre-#21 code strips the
+        // marker via PUT during sync 2 and duplicates in sync 3; post-#21
+        // code never strips, so the marker survives and adoption heals.
+        var postCount = 0
+        var nextNumber = 20
+        var remotesByNumber: [Int: [String: Any]] = [:]
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData(Array(remotesByNumber.values)), .ok(for: req))
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                postCount += 1
+                nextNumber += 1
+                let payload = cardWritePayload(of: req)
+                remotesByNumber[nextNumber] = remoteCardDict(
+                    id: "fz-\(nextNumber)", number: nextNumber,
+                    title: payload?["title"] as? String ?? "?",
+                    description: payload?["description"] as? String,
+                    createdAtISO: "2026-06-01T00:00:00Z"
+                )
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/\(nextNumber)"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/"):
+                let number = Int((p as NSString).lastPathComponent) ?? 0
+                guard let stored = remotesByNumber[number] else {
+                    Issue.record("GET for unknown card number \(number)")
+                    return (Data(), .response(for: req, status: 404))
+                }
+                return (jsonData(stored), .ok(for: req))
+            case ("PUT", let p?) where p.contains("/cards/"):
+                let number = Int((p as NSString).lastPathComponent) ?? 0
+                guard remotesByNumber[number] != nil else {
+                    Issue.record("PUT for unknown card number \(number)")
+                    return (Data(), .response(for: req, status: 404))
+                }
+                let payload = cardWritePayload(of: req)
+                remotesByNumber[number]?["title"] = payload?["title"] ?? "?"
+                remotesByNumber[number]?["description"] = payload?["description"] ?? NSNull()
+                return (jsonData(remotesByNumber[number]!), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        // Sync 1: the local card pairs via POST.
+        let first = try await h.engine.sync()
+        #expect(first.errors.isEmpty)
+        #expect(postCount == 1)
+        #expect(card.fizzyID == "fz-21")
+
+        // Sync 2: a steady-state cycle while the pairing is intact — this is
+        // where pre-#21 code stripped the marker remotely, defeating the net.
+        let second = try await h.engine.sync()
+        #expect(second.errors.isEmpty)
+
+        // Between syncs: the CloudKit import clobbers the pairing fields.
+        card.fizzyID = nil
+        card.fizzyNumber = 0
+        card.fizzyUpdatedAt = nil
+        try h.persistence.viewContext.save()
+
+        // Sync 3: the persistent marker must heal the pairing — never POST.
+        let third = try await h.engine.sync()
+
+        #expect(postCount == 1, "no duplicate POST — marker adoption heals the clobbered pairing")
+        #expect(third.errors.isEmpty)
+        #expect(card.fizzyID == "fz-21", "fizzyID restored from the remote twin")
+        #expect(card.fizzyNumber == 21, "fizzyNumber restored from the remote twin")
+        let remoteTwin = try #require(remotesByNumber[21])
+        let twinLastActive = ISO8601DateFormatter().date(
+            from: try #require(remoteTwin["last_active_at"] as? String)
+        )
+        #expect(card.fizzyUpdatedAt == twinLastActive, "fizzyUpdatedAt restored from the remote twin")
+        #expect(remotesByNumber.count == 1, "exactly one Hero remotely")
+        let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
+        #expect(cardCount == 1, "exactly one Hero locally")
+    }
+
     @Test("clobbered fizzyID re-pairs via surviving fizzyNumber instead of duplicating")
     func clobberedFizzyIDRepairsByNumber() async throws {
         let h = AdoptionHarness()
