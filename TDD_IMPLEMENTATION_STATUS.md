@@ -2462,3 +2462,28 @@ FenixKanban FenixKanbanTests` → no output.
 **Verification:** **391 tests / 80 suites green** on pinned iPhone 17
 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`),
 zero warnings.
+
+---
+
+### Task 5 — Issue #21 A′: first-sync modes pair through the store ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`syncFirstPushLocal`, `syncFirstReplaceLocal`, and `syncFirstMerge` were still
+pairing via raw attribute writes (`card.fizzyID = created.id` etc.) instead of
+the store. This made store-paired cards invisible to the push guard (they had
+nil attributes) and left the replace wipe with stale store entries.
+
+**Changes to `FizzySyncEngine.swift`:**
+- `syncFirstPushLocal`: calls `seedPairingStoreFromHints(localCards:remoteCards:[])` before the loop; loop condition `pairing(for: card) == nil`; POST success → `recordPairing(...)` replacing three attribute writes.
+- `syncFirstReplaceLocal`: in the wipe loop, `if let id = card.id { pairingStore.removePairing(for: id) }` before `context.delete(card)`. Pull half already pairs via `applyRemote → recordPairing` (Task 3).
+- `syncFirstMerge`: after both fetches + localCards built, `seedPairingStoreFromHints(localCards:remoteCards:)`; push-loop condition `pairing(for: card) == nil && !remoteTitlesLower.contains(...)`; POST success → `recordPairing(...)`.
+
+**New tests** — `FizzySyncEngineFirstSyncStoreTests` in `FizzySyncEngineAdoptionResilienceTests.swift` (reuses `AdoptionHarness`):
+- `pushModeUsesStore`: store-paired card not re-POSTed; new card recorded; `fizzyID` hint healed.
+- `replaceModeResetsStore`: wiped card's pairing removed; pulled card recorded.
+- `mergeModeRecordsPairings`: pushed card recorded in the store.
+
+**RED:** `pushModeUsesStore` failed (`postedTitles == ["AlreadyPaired", "Fresh"]` instead of `["Fresh"]`; `fizzyID == nil`); `replaceModeResetsStore` failed (pairing not removed); `mergeModeRecordsPairings` failed (`fizzyID == nil`).
+
+**Verification:** **394 tests / 81 suites green** on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.

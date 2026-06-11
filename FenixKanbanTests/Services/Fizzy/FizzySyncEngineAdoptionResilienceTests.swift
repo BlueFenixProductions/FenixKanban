@@ -724,3 +724,134 @@ struct FizzySyncEngineResilienceTests {
         #expect(cardCount == 1)
     }
 }
+
+// MARK: - Issue #21 A′: first-sync modes pair through the store
+
+@Suite("FizzySyncEngine — first-sync modes pair through the store (issue #21 A′)", .serialized)
+@MainActor
+struct FizzySyncEngineFirstSyncStoreTests {
+
+    @Test("push mode skips store-paired cards and records new pairings in the store")
+    func pushModeUsesStore() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        // One card already paired (store only — no attributes), one new.
+        let paired = h.cardRepo.createCard(in: h.column, title: "AlreadyPaired")
+        let fresh = h.cardRepo.createCard(in: h.column, title: "Fresh")
+        try h.persistence.viewContext.save()
+        let pairedUUID = try #require(paired.id)
+        let freshUUID = try #require(fresh.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzOld", fizzyNumber: 3, fizzyUpdatedAt: .now),
+            for: pairedUUID
+        )
+
+        var postedTitles: [String] = []
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                let payload = cardWritePayload(of: req)
+                postedTitles.append(payload?["title"] as? String ?? "?")
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/50"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/50"):
+                let dict = remoteCardDict(
+                    id: "fzNew", number: 50, title: "Fresh",
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
+                )
+                return (jsonData(dict), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .pushLocalToFizzy)
+
+        #expect(result.errors.isEmpty)
+        #expect(postedTitles == ["Fresh"], "store-paired card is not re-POSTed")
+        #expect(h.pairingStore.pairing(for: freshUUID)?.fizzyID == "fzNew", "new pairing recorded in the store")
+        #expect(fresh.fizzyID == "fzNew", "hint attributes written")
+    }
+
+    @Test("replace mode clears the wiped cards' pairings and pairs the pulled ones in the store")
+    func replaceModeResetsStore() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let old = h.cardRepo.createCard(in: h.column, title: "Old")
+        try h.persistence.viewContext.save()
+        let oldUUID = try #require(old.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzGone", fizzyNumber: 1, fizzyUpdatedAt: .now),
+            for: oldUUID
+        )
+
+        let remote = remoteCardDict(
+            id: "fzKeep", number: 2, title: "Kept",
+            description: nil, createdAtISO: "2026-06-01T00:00:00Z"
+        )
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return (jsonData([remote]), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+
+        #expect(result.errors.isEmpty)
+        #expect(h.pairingStore.pairing(for: oldUUID) == nil, "wiped card's pairing removed")
+        let cards = try h.persistence.viewContext.fetch(Card.fetchRequest())
+        let kept = try #require(cards.first { $0.title == "Kept" })
+        #expect(h.pairingStore.pairing(for: try #require(kept.id))?.fizzyID == "fzKeep")
+    }
+
+    @Test("merge mode pairs pushed cards in the store")
+    func mergeModeRecordsPairings() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let localOnly = h.cardRepo.createCard(in: h.column, title: "LocalOnly")
+        try h.persistence.viewContext.save()
+        let localUUID = try #require(localOnly.id)
+
+        MockURLProtocol.handler = { req in
+            switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/columns"):
+                return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.hasSuffix("/cards"):
+                return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("POST", let p?) where p.hasSuffix("/cards"):
+                let response = HTTPURLResponse(
+                    url: req.url!, statusCode: 201, httpVersion: "HTTP/1.1",
+                    headerFields: ["Location": "https://fizzy.bluefenix.net/ACCT/cards/60"]
+                )!
+                return (Data(), response)
+            case ("GET", let p?) where p.contains("/cards/60"):
+                let dict = remoteCardDict(
+                    id: "fzMerge", number: 60, title: "LocalOnly",
+                    description: nil, createdAtISO: "2026-06-01T00:00:00Z"
+                )
+                return (jsonData(dict), .ok(for: req))
+            default:
+                Issue.record("unexpected: \(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
+                return (Data(), .response(for: req, status: 500))
+            }
+        }
+
+        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+
+        #expect(result.errors.isEmpty)
+        #expect(h.pairingStore.pairing(for: localUUID)?.fizzyID == "fzMerge")
+    }
+}

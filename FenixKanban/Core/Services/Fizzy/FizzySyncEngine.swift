@@ -370,22 +370,21 @@ final class FizzySyncEngine {
     // MARK: - Mode implementations
 
     private func syncFirstPushLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
-        // Push mode: POST every local card on the paired board. We don't
-        // pull anything from remote in Phase 4a — pre-existing remote cards
-        // (if any) stay untouched and become local cards in Phase 4b's
-        // steady-state sync.
+        // Push mode: POST every local card on the paired board that isn't
+        // already paired in the store. Adopt legacy attribute hints before
+        // deciding what to POST (no remote list in push mode — number-only
+        // hints can't resolve here).
         var result = FizzySyncResult()
         let columns = (localBoard.columns as? Set<Column>) ?? Set<Column>()
         let cards: [Card] = columns.flatMap { column in
             (column.cards as? Set<Card>) ?? Set<Card>()
         }
+        seedPairingStoreFromHints(localCards: cards, remoteCards: [])
 
-        for card in cards where card.fizzyID == nil {
+        for card in cards where pairing(for: card) == nil {
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
-                card.fizzyID = created.id
-                card.fizzyNumber = Int64(created.number)
-                card.fizzyUpdatedAt = created.lastActiveAt
+                recordPairing(for: card, fizzyID: created.id, number: Int64(created.number), updatedAt: created.lastActiveAt)
                 result.itemsCreated += 1
             } catch let error as FizzyError {
                 result.errors.append("Push '\(card.title ?? "(untitled)")': \(error)")
@@ -401,12 +400,14 @@ final class FizzySyncEngine {
     private func syncFirstReplaceLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
         var result = FizzySyncResult()
 
-        // 1. Wipe local cards on the paired board.
+        // 1. Wipe local cards on the paired board (and clear their pairings
+        //    from the store so stale entries don't ghost later syncs).
         let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
         let localCards: [Card] = localColumns.flatMap { column -> [Card] in
             (column.cards as? Set<Card>).map { Array($0) } ?? []
         }
         for card in localCards {
+            if let id = card.id { pairingStore.removePairing(for: id) }
             context.delete(card)
             result.itemsDeleted += 1
         }
@@ -460,6 +461,10 @@ final class FizzySyncEngine {
             (column.cards as? Set<Card>).map { Array($0) } ?? []
         }
 
+        // Adopt legacy attribute hints — after both sides are fetched so
+        // number-only hints can resolve against the remote list.
+        seedPairingStoreFromHints(localCards: localCards, remoteCards: remoteCards)
+
         // Lower-cased title sets for collision detection.
         let localTitleMap: [String: String] = Dictionary(
             localCards.compactMap { card -> (String, String)? in
@@ -504,14 +509,12 @@ final class FizzySyncEngine {
             result.itemsCreated += 1
         }
 
-        // Push local-only cards (nil fizzyID, not a collision).
-        for card in localCards where card.fizzyID == nil
+        // Push local-only cards (unpaired in the store, not a collision).
+        for card in localCards where pairing(for: card) == nil
                                 && !remoteTitlesLower.contains(card.title?.lowercased() ?? "") {
             do {
                 let created = try await postCard(card, toBoardID: fizzyBoardID)
-                card.fizzyID = created.id
-                card.fizzyNumber = Int64(created.number)
-                card.fizzyUpdatedAt = created.lastActiveAt
+                recordPairing(for: card, fizzyID: created.id, number: Int64(created.number), updatedAt: created.lastActiveAt)
                 result.itemsCreated += 1
             } catch let error as FizzyError {
                 result.errors.append("Push '\(card.title ?? "(untitled)")': \(error)")
