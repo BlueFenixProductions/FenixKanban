@@ -38,6 +38,8 @@ struct FizzyAuthStatusView: View {
         return formatter.localizedString(for: lastSync, relativeTo: .now)
     }
 
+    // fizzyID hint attributes are healed every sync by FizzySyncEngine;
+    // this count is cosmetic and eventually consistent (issue #21 A′).
     private var cardsSyncedCount: Int {
         guard let id = provider.mappingRef.localBoardID else { return 0 }
         let request: NSFetchRequest<Card> = Card.fetchRequest()

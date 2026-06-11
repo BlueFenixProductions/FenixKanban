@@ -290,8 +290,6 @@ All completed work has followed the Red → Green → Refactor workflow:
 
 ---
 
----
-
 ## ✅ FizzyCardPairingStore — device-local pairing sidecar (issue #21 A′)
 **Date:** 2026-06-11  
 **Status:** Complete (Red → Green)
@@ -2537,3 +2535,134 @@ nil attributes) and left the replace wipe with stale store entries.
 **RED observed:** Build error `extra argument 'pairingStore' in call` — `BoardRepository` did not yet accept the parameter.
 
 **Verification:** **396 tests / 81 suites green** (+1 test vs Task 6) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### 41. Issue #21 A′ — Local-Only Card Pairing Store: Complete Close-Out ✅
+
+**Date:** 2026-06-11
+**Plan:** `docs/superpowers/plans/2026-06-11-21-aprime-local-pairing-store.md`
+**Commits (Tasks 1–6b):** `81ae764` + `899e514` (T1), `cc9e597` (T2), `3b49746` + `c1e2614` (T3 RED/GREEN), `3cb2b22` (review M1: per-card hint seeding), `bd76e97` (T4), `72cc3d8` (T5), `753c70e` (T6), `b07f022` (T6b)
+
+**Forensic finding — Option B void:**
+Live forensics on 2026-06-10 confirmed that Fizzy's ActionText sanitizer strips
+HTML comments **on write** — not at read time. Of 41 cards that had received a
+marker POST, zero retained the marker in the database. This made the entire
+`// MARK: - Adoption marker (issue #14)` machinery a structural no-op against
+production from day one. The Option B approach (commits `e7d64d2`/`83842bb`/
+`ad4586f`) was "harmless but ineffective" per the captain's ruling. Option A
+(device-local store) is the only durable path.
+
+**A′ design (no Core Data model change — stays at v8):**
+
+- `FizzyCardPairingStore` (JSON sidecar in Application Support, atomic writes,
+  `NSLock`-protected, `@unchecked Sendable`): the single authority on which local
+  card UUID maps to which remote `fizzyID` / `fizzyNumber`. Neither CloudKit nor
+  the Fizzy server can reach this file. Sub-second `Date` fidelity preserved via
+  the default Codable `Double` encoding (never `.iso8601` — LWW comparisons
+  require exact precision through the JSON round-trip).
+
+- CloudKit attributes `fizzyID` / `fizzyNumber` demoted to a **self-healing hint
+  channel**: written at pairing time, re-healed every steady-state sync
+  (`healHints` — never bumps `modifiedAt`; no echo-PUTs), read only by the UI's
+  per-card routes and for cold-store seeding. `fizzyUpdatedAt` is now
+  store-only (the attribute carries it as a bootstrap hint, but steady-state
+  reads come from `FizzyCardPairing.fizzyUpdatedAt`).
+
+- `seedPairingStoreFromHints` (renamed from `seedPairingStoreIfCold` after review
+  M1): runs per-card rather than all-or-nothing, so a partially-warm store (partial
+  first sync, second device receiving hints via CloudKit) still adopts every
+  unpaired hint card. Number-only residue (fizzyID clobbered to nil) resolves
+  against the remote list.
+
+- Save-failure duplication **structurally dead**: `recordPairing` writes to the
+  store BEFORE `context.save()`. A failed save can no longer lose a pairing.
+
+- Delete/cascade paths tombstone from the store: `CardRepository.deleteCard` and
+  `BoardRepository.deleteColumn` both resolve `fizzyNumber` from the store first,
+  falling back to the hint attribute. `removePairing` is called on every delete so
+  store entries never leak.
+
+- Marker machinery **deleted**: the entire `MARK: - Adoption marker (issue #14)`
+  section removed from `FizzySyncEngine.swift`. `putCard` and `postCard` send
+  `card.cardDescription` verbatim. `applyRemote` stores `remote.description`
+  verbatim. No `<!--fk:UUID-->` anywhere in the engine.
+
+**Sanitizer-faithful mock policy (new project standard):**
+Any test that exercises a write→read round-trip through a stateful mock MUST pass
+stored description writes through `sanitizedDescription` (strips HTML comments via
+the same regex Fizzy applies on write). The `cloudKitClobberCannotUnpair` flagship
+test established the pattern; `saveFailureDoesNotDuplicateOnNextSync` was reworked
+to the same standard. The lesson from the slug-with-`/` bug (entry #UAT fix) now
+extends to the sanitizer: a mock that does not strip on write can certify a
+fictional server and let real-API bugs past a green test suite.
+
+**Test rework map:**
+
+| Old test | Fate | New test |
+|---|---|---|
+| `pullAdoptsByMarker` | DELETED — server strips markers, mechanism void | (covered by flagship below) |
+| `markerWinsOverHeuristic` | DELETED — no markers | (covered by flagship below) |
+| `adoptionStableWithPersistentMarker` | REWORKED | `pairedSteadyStateStaysQuiet` |
+| `saveFailureDoesNotDuplicateOnNextSync` | REWORKED (sanitizing mock) | same name |
+| `cloudKitClobberHealsWithoutDuplicate` | REWORKED | `cloudKitClobberCannotUnpair` (flagship) |
+| `clobberedFizzyIDRepairsByNumber` | REWORKED | `coldStoreSeedsByNumberHint` |
+| `postCarriesMarker` | REWORKED | `postSendsCleanDescription` |
+| `putReembedsMarkerWithLocalEdit` | REWORKED | `putSendsCleanDescription` |
+| `unownedMarkerCreatesCardNormally` | REWORKED | `remoteDescriptionImportsVerbatim` |
+| NEW | ADDED | `coldStoreSeedsFromAttributeHints` (upgrade/reinstall/second-device) |
+| NEW (T5) | ADDED | `pushModeUsesStore`, `replaceModeResetsStore`, `mergeModeRecordsPairings` |
+| NEW (T6) | ADDED | `deleteUsesStorePairingWhenHintsClobbered` |
+| NEW (T6b) | ADDED | `deleteColumnCascadeUsesStorePairing` |
+
+**Flagship test — `cloudKitClobberCannotUnpair`:**
+Sanitizer-faithful stateful server + all three hint attributes clobbered to nil/zero
+between sync 2 and sync 3 + createdAt backdated 10 minutes (defeats the title±60s
+orphan heuristic) + fizzyNumber zeroed (defeats re-pair-by-number) + sanitizer kills
+any marker: sync 3 produces zero POSTs (the store is the authority), hint attributes
+heal, and sync 4 is completely quiet (zero PUTs — hint healing does not bump
+`modifiedAt`).
+
+**Review fixes:**
+
+- **M1 (per-card seeding, commit `3cb2b22`):** `seedPairingStoreIfCold`'s `isEmpty`
+  guard was all-or-nothing; a partially-warm store skipped remaining hint cards →
+  duplicate POSTs on partial-first-sync or second-device scenarios. Fixed to per-card
+  `guard pairing(for: card) == nil`, renamed `seedPairingStoreFromHints`. RED test
+  `partialStoreStillSeedsRemainingHints` confirmed via Issue.record on the spurious POST.
+
+- **6b cascade (commit `b07f022`):** `BoardRepository.deleteColumn`'s cascade loop
+  read `card.fizzyNumber` directly (hint attribute) and never called `removePairing` →
+  clobbered hints → no tombstone → remote card survived → resurrected on next sync.
+  Fixed by injecting `FizzyCardPairingStore` into `BoardRepository`. Mutation-checked:
+  reverting the cascade store-lookup made `deleteColumnCascadeUsesStorePairing` fail
+  while all other tests stayed green.
+
+- **Unused-var warning (folded into 6b):** `let noDesc = ...` → `_ = ...` in
+  `postSendsCleanDescription`.
+
+**What was deleted:**
+- Entire `// MARK: - Adoption marker (issue #14)` section from `FizzySyncEngine`:
+  `adoptionMarker(for:)`, `adoptionMarkerPattern`, `adoptionMarkerUUID(in:)`,
+  `strippingAdoptionMarker(from:)`.
+- `needsMarkerStrip` logic and `stripMarkerRemotely` from the LWW loop.
+- The marker-adoption block from `steadyStateSync` (replaced by
+  `seedPairingStoreFromHints` + store-keyed pairing).
+- The re-pair-by-number block from `steadyStateSync` (subsumed by seeding).
+- `CardTombstone.record(for:in:)` (replaced by `record(number:in:)` — takes
+  a resolved `Int64`, not a managed object with a potentially clobbered attribute).
+
+**Doc sweep (Task 7):**
+- `FizzySyncEngine.swift` header: updated from the stale "Phase 4a only" note to
+  accurately describe the full engine, naming `FizzyCardPairingStore` as a
+  constructor dependency alongside `FizzyAuthState` and `FizzyBoardMapping`; explains
+  the authority/hint-channel split.
+- `FizzyAuthStatusView.swift`: one-line comment on `cardsSyncedCount` — the
+  `fizzyID != nil` predicate counts via hint attributes (healed every sync; cosmetic
+  and eventually consistent, issue #21 A′).
+- `TDD_IMPLEMENTATION_STATUS.md`: doubled `---` separator (lines 291–293 pre-fix)
+  removed; this entry written.
+
+**Final verification:** **396 tests / 81 suites green** on pinned iPhone 17 sim
+(`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), **zero warnings
+on both platforms**.

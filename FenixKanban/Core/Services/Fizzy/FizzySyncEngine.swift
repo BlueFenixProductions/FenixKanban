@@ -1,18 +1,20 @@
 import Foundation
 import CoreData
 
-/// Orchestrates one-shot first-sync runs between a paired local FenixKanban
-/// board and the corresponding Fizzy board.
+/// Orchestrates first-sync and steady-state sync between a paired local
+/// FenixKanban board and the corresponding Fizzy board.
 ///
 /// Composition is deliberate: the engine owns no Keychain or UserDefaults
-/// access of its own — it consumes the Phase 2 `FizzyAuthState` and
-/// `FizzyBoardMapping` instances injected at construction. Likewise, all
-/// HTTP goes through `FizzyClient`. This keeps the engine fully testable
+/// access of its own — it consumes the `FizzyAuthState`, `FizzyBoardMapping`,
+/// and `FizzyCardPairingStore` instances injected at construction. Likewise,
+/// all HTTP goes through `FizzyClient`. This keeps the engine fully testable
 /// with `MockURLProtocol` and synthetic auth/mapping fixtures.
 ///
-/// Phase 4a covers the three `FirstSyncMode` variants only. Steady-state
-/// diff + LWW conflict resolution + soft-delete + 401 handling land in
-/// Phase 4b.
+/// `FizzyCardPairingStore` is the single authority on card pairing (issue #21
+/// A′). CloudKit-synced attributes `fizzyID`/`fizzyNumber` are demoted to a
+/// self-healing hint channel: written at pairing time and re-healed every sync
+/// for the UI's per-card routes and multi-device bootstrap, but never read for
+/// sync decisions (except to seed a cold store on upgrade/reinstall).
 @MainActor
 final class FizzySyncEngine {
 
