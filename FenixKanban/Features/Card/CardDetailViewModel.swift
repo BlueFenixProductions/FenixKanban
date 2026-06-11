@@ -19,6 +19,7 @@ final class CardDetailViewModel: ObservableObject {
 
     private let cardRepository: CardRepository
     private let labelRepository: LabelRepository
+    private var observerToken: (any NSObjectProtocol)?
     let fizzyClient: FizzyClient?
 
     /// Present only for fizzy-paired cards with a live client — drives the
@@ -51,6 +52,44 @@ final class CardDetailViewModel: ObservableObject {
         } else {
             self.stepsViewModel = nil
         }
+        observeCardChanges(context: context)
+    }
+
+    deinit {
+        if let token = observerToken {
+            NotificationCenter.default.removeObserver(token)
+        }
+    }
+
+    /// The four sync-authoritative snapshot fields (labels, assignees, watch,
+    /// pin) go stale when a sync or CloudKit merge lands while the detail
+    /// sheet is open — the next save() would write the stale labels set back
+    /// over a remote addition (#20). Re-read them whenever this card changes
+    /// underneath us. Text-edit fields (title, description, dueDate,
+    /// isCompleted) stay untouched: refreshing those would clobber
+    /// in-progress typing (documented LWW).
+    private func observeCardChanges(context: NSManagedObjectContext) {
+        observerToken = NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextObjectsDidChange,
+            object: context,
+            queue: .main
+        ) { [weak self] notification in
+            MainActor.assumeIsolated {
+                self?.refreshSnapshotFields(from: notification)
+            }
+        }
+    }
+
+    private func refreshSnapshotFields(from notification: Notification) {
+        guard let userInfo = notification.userInfo else { return }
+        let changed = [NSUpdatedObjectsKey, NSRefreshedObjectsKey]
+            .compactMap { userInfo[$0] as? Set<NSManagedObject> }
+            .reduce(Set<NSManagedObject>()) { $0.union($1) }
+        guard changed.contains(card), !card.isDeleted, card.managedObjectContext != nil else { return }
+        selectedLabels = card.labels as? Set<Label> ?? []
+        assignees = card.assignees
+        isWatched = card.isWatched
+        isPinned = card.isPinned
     }
 
     func save() {
