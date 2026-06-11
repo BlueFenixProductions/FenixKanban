@@ -2513,3 +2513,27 @@ nil attributes) and left the replace wipe with stale store entries.
 **RED observed:** `tombstones.map(\.fizzyNumber) == []` (empty — old `record(for:)` read zeroed attribute → nil guard returned); pairing still present.
 
 **Verification:** **395 tests / 81 suites green** (+1 test) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### Task 6b — Issue #21 A′: column-delete cascade uses pairing store (review follow-on) ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`BoardRepository.deleteColumn`'s card cascade loop was reading `card.fizzyNumber` directly (the hint attribute). If CloudKit clobbered a card's hints when its column was deleted: number → 0 → no tombstone → remote twin never DELETEd → AND the pairing-store entry was never removed → on next sync the remote card had no live local owner → pull loop re-imported it → deleted card RESURRECTED. Also, even with intact hints, `deleteColumn` never called `removePairing` → store entries leaked.
+
+**Root fix:** Injected `FizzyCardPairingStore` into `BoardRepository` (same pattern as `CardRepository`). Updated the cascade loop in `deleteColumn` to resolve the number store-first with hint fallback (identical expression to `deleteCard`) and call `pairingStore.removePairing(for:)` for each card.
+
+**`AdoptionHarness` updated:** `boardRepo` now constructed with `pairingStore: pairingStore` so test isolation is correct.
+
+**Warning fix (folded in):** Changed `let noDesc = h.cardRepo.createCard(...)` → `_ = h.cardRepo.createCard(...)` in `postSendsCleanDescription` (test-target unused-binding warning).
+
+**Files changed:**
+- `FenixKanban/Core/Repositories/BoardRepository.swift`: added `pairingStore` property + injected init; updated `deleteColumn` cascade
+- `FenixKanbanTests/Services/Fizzy/FizzySyncEngineAdoptionResilienceTests.swift`: new test + harness update + warning fix
+
+**New test** — `deleteColumnCascadeUsesStorePairing`: column with one card, store pairing (fizzyNumber 34) but clobbered attributes (fizzyNumber=0); `deleteColumn` called; tombstone has number 34; pairing removed.
+
+**RED observed:** Build error `extra argument 'pairingStore' in call` — `BoardRepository` did not yet accept the parameter.
+
+**Verification:** **396 tests / 81 suites green** (+1 test vs Task 6) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.

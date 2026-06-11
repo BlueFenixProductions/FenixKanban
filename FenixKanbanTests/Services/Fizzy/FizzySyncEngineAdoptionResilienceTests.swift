@@ -23,11 +23,11 @@ private struct AdoptionHarness {
     init() {
         MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
-        boardRepo = BoardRepository(context: persistence.viewContext)
         pairingStore = FizzyCardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
         )
+        boardRepo = BoardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         board = boardRepo.createBoard(name: "Roadmap")
         column = boardRepo.createColumn(in: board, name: "Triage")
@@ -144,7 +144,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
 
         let withDesc = h.cardRepo.createCard(in: h.column, title: "WithDesc")
         withDesc.cardDescription = "Hello"
-        let noDesc = h.cardRepo.createCard(in: h.column, title: "NoDesc")
+        _ = h.cardRepo.createCard(in: h.column, title: "NoDesc")
         try h.persistence.viewContext.save()
 
         // Maps title → posted description string (absent/NSNull description left absent from the dict).
@@ -722,6 +722,29 @@ struct FizzySyncEngineResilienceTests {
         #expect(seeded?.fizzyUpdatedAt == baseline)
         let cardCount = try h.persistence.viewContext.count(for: Card.fetchRequest())
         #expect(cardCount == 1)
+    }
+
+    @Test("deleteColumn cascade tombstones from the store and clears pairings — even with clobbered hints")
+    func deleteColumnCascadeUsesStorePairing() async throws {
+        let h = AdoptionHarness()
+        defer { h.tearDown() }
+
+        let card = h.cardRepo.createCard(in: h.column, title: "Doomed by cascade")
+        try h.persistence.viewContext.save()
+        let cardUUID = try #require(card.id)
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzC", fizzyNumber: 34, fizzyUpdatedAt: .now),
+            for: cardUUID
+        )
+        // CloudKit clobbered the hint attributes — the store still knows.
+        card.fizzyID = nil
+        card.fizzyNumber = 0
+
+        h.boardRepo.deleteColumn(h.column)
+
+        let tombstones = try h.persistence.viewContext.fetch(CardTombstone.fetchRequest())
+        #expect(tombstones.map(\.fizzyNumber) == [34], "cascade tombstone number comes from the store")
+        #expect(h.pairingStore.pairing(for: cardUUID) == nil, "pairing removed on cascade delete")
     }
 
     @Test("deleteCard tombstones from the store and clears the pairing — even with clobbered hints")

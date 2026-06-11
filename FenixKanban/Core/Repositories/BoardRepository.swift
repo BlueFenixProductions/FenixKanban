@@ -14,9 +14,11 @@ protocol BoardRepositoryProtocol {
 
 final class BoardRepository: BoardRepositoryProtocol {
     private let context: NSManagedObjectContext
+    private let pairingStore: FizzyCardPairingStore
 
-    init(context: NSManagedObjectContext) {
+    init(context: NSManagedObjectContext, pairingStore: FizzyCardPairingStore = .shared) {
         self.context = context
+        self.pairingStore = pairingStore
     }
 
     func fetchAllBoards() -> [Board] {
@@ -97,7 +99,11 @@ final class BoardRepository: BoardRepositoryProtocol {
         // removes the column's cards, so paired cards get tombstones too.
         ColumnTombstone.record(for: column, in: context)
         for card in (column.cards as? Set<Card>) ?? [] {
-            CardTombstone.record(number: card.fizzyNumber, in: context)
+            // The number comes from the pairing store (the authority — issue #21 A′),
+            // falling back to the hint attribute for pre-A′ data whose store was never seeded.
+            let number = card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber
+            CardTombstone.record(number: number, in: context)
+            if let id = card.id { pairingStore.removePairing(for: id) }
         }
         context.delete(column)
         save()
