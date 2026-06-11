@@ -219,4 +219,23 @@ struct FizzySyncProviderTests {
         h.provider.mappingRef.setLastSync(.now)
         #expect(h.provider.lastSyncDate(for: UUID()) != nil)
     }
+
+    @Test("changePairing clears the board mapping but keeps the token (issue #18)")
+    func changePairingKeepsToken() {
+        let h = Harness(); defer { h.tearDown() }
+
+        h.authState.setAccessToken("tok")
+        h.authState.setAccountSlug("ACCT")
+        h.provider.mappingRef.setPairing(localBoardID: UUID(), fizzyBoardID: "FB1")
+        h.provider.mappingRef.setLastSync(.now)
+        #expect(h.provider.mappingRef.isPaired)
+
+        h.provider.changePairing()
+
+        #expect(!h.provider.mappingRef.isPaired)
+        #expect(h.provider.mappingRef.localBoardID == nil)
+        #expect(h.provider.mappingRef.fizzyBoardID == nil)
+        #expect(h.provider.mappingRef.lastSyncAt == nil)
+        #expect(h.provider.isAuthenticated, "re-pairing must never cost the token — minting a new one needs email, which may be unavailable")
+    }
 }

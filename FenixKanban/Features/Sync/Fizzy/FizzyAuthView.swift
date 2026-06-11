@@ -43,7 +43,13 @@ struct FizzyAuthView: View {
                     showsReauthBanner: resolved == .pairedNoToken,
                     onReauthRequested: { forceVerify = true },
                     onSignOutRequested: handleSignOut,
-                    onSyncFinished: { refreshTrigger = UUID() }
+                    onSyncFinished: { refreshTrigger = UUID() },
+                    onRepairRequested: {
+                        // Token survives — only the board pair resets; the
+                        // phase recompute routes to FizzyAuthPairView.
+                        provider.changePairing()
+                        refreshTrigger = UUID()
+                    }
                 )
             }
         }

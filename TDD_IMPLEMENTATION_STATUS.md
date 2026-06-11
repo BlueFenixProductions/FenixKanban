@@ -2666,3 +2666,18 @@ heal, and sync 4 is completely quiet (zero PUTs — hint healing does not bump
 **Final verification:** **396 tests / 81 suites green** on pinned iPhone 17 sim
 (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), **zero warnings
 on both platforms**.
+
+### #42 — Re-pair without sign-out + create remote board from pair view (issue #18 slice 0, 2026-06-11)
+
+UAT-driven: Susanoo's mapping pointed at a deleted local board with no UI
+escape that didn't cost the token (and fizzy's email magic-links are down,
+so a lost token is unrecoverable). RED: `changePairingKeepsToken`
+(FizzySyncProviderTests) — `FizzySyncProvider.changePairing` didn't exist.
+GREEN: `changePairing()` clears the mapping only; `FizzyAuthStatusView`
+gains "Change Board Pairing…" (confirm alert → `onRepairRequested` →
+phase recompute → pair view); `FizzyAuthPairView` gains "New Fizzy
+Board…" (alert + TextField → `client.createBoard` → reload + select) so
+pairing against a fresh empty remote board (Playground-first testing,
+captain's directive) needs no web UI. `mapping.clear()` and
+`client.createBoard` were already test-locked. **397 tests / 81 suites
+green**; macOS zero warnings.

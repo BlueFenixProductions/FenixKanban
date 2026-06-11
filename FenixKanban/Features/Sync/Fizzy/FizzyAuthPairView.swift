@@ -26,6 +26,10 @@ struct FizzyAuthPairView: View {
     @State private var pairTask: Task<Void, Never>?
     @State private var showDestructiveConfirm = false
 
+    @State private var showCreateBoard = false
+    @State private var newBoardName = ""
+    @State private var isCreatingBoard = false
+
     private var pickedLocalBoard: Board? {
         guard let id = pickedLocalBoardID else { return nil }
         return localBoards.first { $0.id == id }
@@ -101,6 +105,24 @@ struct FizzyAuthPairView: View {
                         Text(remote.name).tag(remote.id as String?)
                     }
                 }
+                Button {
+                    newBoardName = ""
+                    showCreateBoard = true
+                } label: {
+                    HStack {
+                        if isCreatingBoard { ProgressView().controlSize(.small) }
+                        SwiftUI.Label("New Fizzy Board…", systemImage: "plus.circle")
+                    }
+                }
+                .disabled(isCreatingBoard || isSyncing)
+            }
+            .alert("New Fizzy Board", isPresented: $showCreateBoard) {
+                TextField("Board name", text: $newBoardName)
+                Button("Cancel", role: .cancel) {}
+                Button("Create") { Task { await createRemoteBoard() } }
+                    .disabled(newBoardName.trimmingCharacters(in: .whitespaces).isEmpty)
+            } message: {
+                Text("Creates an empty board on Fizzy and selects it for pairing.")
             }
 
             Section {
@@ -244,6 +266,31 @@ struct FizzyAuthPairView: View {
             remoteBoards = try await provider.fetchRemoteBoards()
         } catch {
             loadError = "\(error)"
+        }
+    }
+
+    /// Creates an empty board on Fizzy and selects it in the picker —
+    /// pairing a local board with a fresh remote twin (issue #18) no longer
+    /// requires the Fizzy web UI.
+    @MainActor
+    private func createRemoteBoard() async {
+        let name = newBoardName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        guard let client = provider.makeClient() else {
+            pairError = "Provider isn't authenticated — sign in first."
+            return
+        }
+        isCreatingBoard = true
+        defer { isCreatingBoard = false }
+        do {
+            let created = try await client.createBoard(FizzyBoardWrite(name: name))
+            await loadRemoteBoards()
+            pickedFizzyBoardID = created.id
+            pairError = nil
+        } catch let error as FizzyError {
+            pairError = "Create board failed: \(error)"
+        } catch {
+            pairError = "Create board failed: \(error.localizedDescription)"
         }
     }
 

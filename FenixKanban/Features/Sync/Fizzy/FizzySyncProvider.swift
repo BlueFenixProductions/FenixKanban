@@ -64,6 +64,14 @@ final class FizzySyncProvider: BoardSyncProvider {
         mapping.clear()
     }
 
+    /// Clears the board pairing while keeping the Keychain token (issue
+    /// #18 re-pair flow). Re-pairing must never cost the token — minting a
+    /// new one requires the email flow, which may be unavailable. The UI
+    /// routes back to `FizzyAuthPairView` after calling this.
+    func changePairing() {
+        mapping.clear()
+    }
+
     /// `GET /:account/boards` — maps the Fizzy DTOs to the generic
     /// `RemoteBoard` shape the picker UI consumes.
     func fetchRemoteBoards() async throws -> [RemoteBoard] {
