@@ -78,7 +78,11 @@ struct BackgroundRefreshTests {
         let elapsed = ContinuousClock.now - start
 
         // Should return well within a 5-second observation window
-        #expect(elapsed < .seconds(5))
+        // Generous bound: CI runners stall scheduling under load (observed
+        // 5.96s for a ~2s budget). The behavioral claim is "completes near
+        // the budget, not at the provider's 300s block" — a deterministic
+        // ManualClock rewrite follows once #46 merges (mission task #32).
+        #expect(elapsed < .seconds(20))
     }
 
     // MARK: (d) does not run when unpaired
