@@ -71,6 +71,9 @@ targets:
           - "**/.DS_Store"
           - "Fixtures/**/*.json"
           - "Fixtures/**/*.md"
+      # FizzyctlCommand is tested here directly (no @testable import needed —
+      # it's a plain Swift file with no target-specific linkage).
+      - path: tools/fizzyctl/FizzyctlCommand.swift
     resources:
       - path: FenixKanbanTests/Fixtures
     dependencies:
@@ -86,6 +89,37 @@ targets:
         Release:
           "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/Contents/MacOS/FenixKanban"
           "BUNDLE_LOADER[sdk=macosx*]": "$(TEST_HOST)"
+
+  fizzyctl:
+    type: tool
+    platform: macOS
+    sources:
+      - path: tools/fizzyctl
+      # Foundation-only Fizzy client files shared from the main app target.
+      # Each file imports only Foundation — verified via grep on 2026-06-12.
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Boards.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+CardActions.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Comments.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Directory.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyError.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyResponse.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Boards.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+CardActions.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Comments.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Directory.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.fizzyctl
+        PRODUCT_NAME: fizzyctl
+        GENERATE_INFOPLIST_FILE: YES
+        # Override project-level SDKROOT (iphoneos) for this macOS-only tool.
+        SDKROOT: macosx
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        SUPPORTED_PLATFORMS: macosx
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGNING_ALLOWED: NO
 
 # XcodeGen owns the shared FenixKanban scheme so `make generate` no longer
 # drops the tracked file. `scripts/add-ui-test-target.rb` overlays
@@ -106,6 +140,17 @@ schemes:
       config: Debug
     profile:
       config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  fizzyctl:
+    build:
+      targets:
+        fizzyctl: all
+    run:
+      config: Debug
     analyze:
       config: Debug
     archive:
