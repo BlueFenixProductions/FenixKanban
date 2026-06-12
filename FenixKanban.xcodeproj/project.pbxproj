@@ -20,6 +20,7 @@
 		1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */; };
 		1CB04CF828EEDBD05FD6D100 /* FirstSyncModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D613029DDB577CD954C47EEC /* FirstSyncModeTests.swift */; };
 		1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */; };
+		233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */; };
 		24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */; };
 		27984FA5AFF59944FC4885BE /* FizzyAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139288734275D3EB49C0F400 /* FizzyAuthView.swift */; };
 		27FBE181E269E549EEF69233 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4655A9176AC7C9288D8920FE /* SettingsView.swift */; };
@@ -62,6 +63,7 @@
 		4EE391539AF6711C5060C0E7 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BB675BD426DD316D476C37 /* BoardView.swift */; };
 		5039163B9D594E4E35237796 /* GoldZoneChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */; };
 		514361CF37BCE7CEB710CCD8 /* FizzyAuthStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824D0B1348180DDDB6480B5D /* FizzyAuthStatusView.swift */; };
+		52518B243D944207DE9AE664 /* MockURLProtocolIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D083862CEB4C83C96107CE6 /* MockURLProtocolIsolationTests.swift */; };
 		577A21A946600DF0FCF63140 /* LabelEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9408D41208AD8931538011B8 /* LabelEditorSheet.swift */; };
 		5784E51B2890575C8CD43F0C /* CardFizzyAttributesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4320EF6E55D4289D8090AF3A /* CardFizzyAttributesTests.swift */; };
 		5795522A430FAB8B0D9E3425 /* FizzyAuthPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24019D9090EA00DA9C7D193 /* FizzyAuthPhase.swift */; };
@@ -142,7 +144,6 @@
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
 		DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */; };
-		A100000000000000000010AA /* MockURLProtocolIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000010BB /* MockURLProtocolIsolationTests.swift */; };
 		E28CEDF04F9DC799CB8AA774 /* AssigneePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1B9186731B8F85F0294268 /* AssigneePickerView.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
 		E7142545CF6A399053654C8C /* FizzySyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263A4B64EBC1D39BF38D2CDC /* FizzySyncEngine.swift */; };
@@ -192,8 +193,10 @@
 		0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthStateTests.swift; sourceTree = "<group>"; };
 		139288734275D3EB49C0F400 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
 		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
+		177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEnginePullPlacementTests.swift; sourceTree = "<group>"; };
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
 		1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 2.xcdatamodel"; sourceTree = "<group>"; };
+		1D083862CEB4C83C96107CE6 /* MockURLProtocolIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocolIsolationTests.swift; sourceTree = "<group>"; };
 		1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepository.swift; sourceTree = "<group>"; };
 		1E738ED3A6BBDD9FDA17CE8D /* FizzyClient+Boards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Boards.swift"; sourceTree = "<group>"; };
 		1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
@@ -296,7 +299,6 @@
 		B641E69411C4F09DB4A6E2DD /* BoardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListView.swift; sourceTree = "<group>"; };
 		B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationModelLoading.swift; sourceTree = "<group>"; };
 		B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
-		A100000000000000000010BB /* MockURLProtocolIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocolIsolationTests.swift; sourceTree = "<group>"; };
 		B7B208793EC15D6679B2543D /* FenixKanban 8.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 8.xcdatamodel"; sourceTree = "<group>"; };
 		BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV6Tests.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
@@ -726,10 +728,11 @@
 				90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */,
 				DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */,
 				51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */,
+				177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */,
 				3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */,
 				D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */,
 				B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */,
-				A100000000000000000010BB /* MockURLProtocolIsolationTests.swift */,
+				1D083862CEB4C83C96107CE6 /* MockURLProtocolIsolationTests.swift */,
 				09EACADBB67BFDA43E39C6E2 /* SyncResultTests.swift */,
 			);
 			path = Fizzy;
@@ -1115,6 +1118,7 @@
 				BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */,
 				F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */,
 				A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */,
+				233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */,
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,
 				321C0D7DB3CF3DD8D9ECD6B4 /* FizzySyncMappingTests.swift in Sources */,
 				E9E42C62557AFB457356C145 /* FizzySyncProviderTests.swift in Sources */,
@@ -1123,7 +1127,7 @@
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
 				7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */,
 				DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */,
-				A100000000000000000010AA /* MockURLProtocolIsolationTests.swift in Sources */,
+				52518B243D944207DE9AE664 /* MockURLProtocolIsolationTests.swift in Sources */,
 				43CF64EA2977EEE9323333DB /* NavigationModelTests.swift in Sources */,
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
 				3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */,
