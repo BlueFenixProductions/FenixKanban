@@ -61,41 +61,73 @@ struct BackgroundRefreshTests {
     }
 
     // MARK: (b) reports failure when provider never returns (times out)
+    //
+    // Rewritten in #71 to use ManualClock: instead of waiting real wall-clock
+    // milliseconds for the 100 ms budget to expire, we:
+    //   1. Start performBackgroundRefresh() in a detached task so the test can
+    //      drive the clock concurrently.
+    //   2. Wait for the budget-deadline sleeper to register with the clock.
+    //   3. Advance past the budget — wakes the deadline task immediately.
+    //   4. Await the coordinator result — deterministic, zero wall-clock wait.
 
     @Test("returns false when provider does not complete before budget expires")
     func reportsFailureOnTimeout() async throws {
+        let clock = ManualClock()
         let spy = NeverReturnSpy()
         let coordinator = BackgroundRefreshCoordinator(
             provider: spy,
-            budgetSeconds: 0.1   // 100 ms budget for testing
+            budgetSeconds: 30,
+            clock: clock
         )
 
-        let result = await coordinator.performBackgroundRefresh()
+        // Launch coordinator in a separate task so we can drive the clock.
+        let refreshTask = Task { @MainActor in
+            await coordinator.performBackgroundRefresh()
+        }
+
+        // Wait until the budget-deadline sleep has registered with the clock,
+        // then advance past it — just like SyncSchedulerTests does.
+        await clock.waitForSleeper()
+        await clock.advance(by: .seconds(31))
+
+        let result = await refreshTask.value
 
         #expect(spy.callCount == 1)
         #expect(result == false)
     }
 
-    // MARK: (c) respects the time budget — completes within budget + small slack
+    // MARK: (c) budget-deadline sleep is registered before coordinator returns
+    //
+    // Replaces the old wall-clock elapsed assertion (`elapsed < .seconds(20)`),
+    // which was inherently racy under CI load (observed 5.96 s for a 5 s bound).
+    // The new test proves the *structure*: the coordinator registers exactly one
+    // sleep with the injected clock (the budget deadline), and advancing past it
+    // causes performBackgroundRefresh to return false — i.e., the coordinator
+    // is clock-driven, not spinning.
 
-    @Test("completes within budget even when provider would block forever")
-    func respectsTimeBudget() async throws {
+    @Test("coordinator registers budget deadline sleep and returns false on clock advance")
+    func budgetDeadlineSleepIsDrivenByClock() async throws {
+        let clock = ManualClock()
         let spy = NeverReturnSpy()
         let coordinator = BackgroundRefreshCoordinator(
             provider: spy,
-            budgetSeconds: 0.1   // 100 ms budget
+            budgetSeconds: 30,
+            clock: clock
         )
 
-        let start = ContinuousClock.now
-        _ = await coordinator.performBackgroundRefresh()
-        let elapsed = ContinuousClock.now - start
+        let refreshTask = Task { @MainActor in
+            await coordinator.performBackgroundRefresh()
+        }
 
-        // Should return well within a 5-second observation window
-        // Generous bound: CI runners stall scheduling under load (observed
-        // 5.96s for a ~2s budget). The behavioral claim is "completes near
-        // the budget, not at the provider's 300s block" — a deterministic
-        // ManualClock rewrite follows once #46 merges (mission task #32).
-        #expect(elapsed < .seconds(20))
+        // The coordinator must register a sleep on the clock (the budget timer).
+        await clock.waitForSleeper()
+
+        // Advancing past the budget wakes the deadline task → coordinator
+        // returns false without any real time passing.
+        await clock.advance(by: .seconds(31))
+
+        let result = await refreshTask.value
+        #expect(result == false)
     }
 
     // MARK: (d) does not run when unpaired
