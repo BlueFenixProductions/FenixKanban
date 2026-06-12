@@ -156,6 +156,36 @@ final class BoardViewModel: ObservableObject {
         toggleGolden(for: card)
     }
 
+    // MARK: - Lifecycle filter (#34 default A)
+
+    /// Board-level toggle — persisted globally via AppStorage; @AppStorage
+    /// cannot be a stored property on a non-View type, so we proxy through a
+    /// computed property backed by UserDefaults directly.
+    ///
+    /// Per-board persistence would require a per-board settings mechanism that
+    /// does not yet exist; @AppStorage global was chosen (reported in PR body).
+    var showClosedCards: Bool {
+        get { UserDefaults.standard.bool(forKey: "showClosedCards") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "showClosedCards")
+            objectWillChange.send()
+        }
+    }
+
+    /// Returns the cards that should be visible in `column` given the current
+    /// `showClosed` preference. Active cards are always shown; closed/notNow
+    /// are hidden by default and visible when the toggle is on.
+    func visibleCards(in column: Column, showClosed: Bool) -> [Card] {
+        column.sortedCards.filter { card in
+            switch card.lifecycleStatus {
+            case .active:
+                return true
+            case .closed, .notNow:
+                return showClosed
+            }
+        }
+    }
+
     private func observeChanges() {
         observerToken = NotificationCenter.default.addObserver(
             forName: .NSManagedObjectContextDidSave,
