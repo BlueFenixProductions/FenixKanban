@@ -14,15 +14,26 @@ final class NeverReturnSpy: SyncTriggering {
 
     func triggerSync() async {
         callCount += 1
-        do {
-            // Block for a very long time; the coordinator's budget Task
-            // will cancel this child when the deadline is hit.
-            try await Task.sleep(for: .seconds(300))
-        } catch {
-            // CancellationError arrives here — record it so tests can assert
-            didObserveCancellation = true
+        // Block on a continuation that releases the moment the coordinator
+        // cancels this child — no real sleep anywhere. A 300s Task.sleep
+        // here outlived suite teardown on starved CI runners and tripped
+        // the test-runner watchdog (crash-restart, zero failing tests).
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+                if Task.isCancelled {
+                    cont.resume()
+                } else {
+                    self.blocked = cont
+                }
+            }
+        } onCancel: {
+            self.didObserveCancellation = true
+            self.blocked?.resume()
+            self.blocked = nil
         }
     }
+
+    private var blocked: CheckedContinuation<Void, Never>?
 }
 
 // MARK: - Tests
