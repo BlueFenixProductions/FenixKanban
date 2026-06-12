@@ -38,3 +38,6 @@ Config/Development.xcconfig
 
 # Local LM Studio tooling (PR summary harness output, etc.)
 .lmstudio/
+
+# Live Fizzy API credentials for the integration harness (copy from .env.example)
+.env
