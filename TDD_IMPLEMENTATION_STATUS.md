@@ -2795,3 +2795,15 @@ execution.
 **three consecutive parallel runs green** (pinned iPhone 17 sim
 `1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+### #48 — Fizzy Sync Engine Card Pull Refactor (2026-06-12)
+
+Switched card pull from the board‑wide list endpoint to per‑column GET `/boards/:id/columns/:col/cards`. Cards now land in their source column keyed by Fizzy column ID, with a name fallback. The board-wide list carries no column data, so pulls previously landed in an arbitrary column.
+
+Implemented steady‑state pull logic that applies remote column moves without echo‑push, ensuring local state stays in sync with server changes. During first sync, we replace/merge local columns with Fizzy column IDs to maintain identity across sessions.
+
+Deletion handling now verifies card existence via the single‑card endpoint: a 404 confirms deletion, 200 indicates survival, and unverifiable cards are retained. Per‑column lists exclude closed or non‑current cards, so missing cards are reliably detected.
+
+Added a push loop guard that skips context‑deleted cards, fixing a latent resurrection bug where soft‑deleted cards were re‑POSTed. Updated legacy test to align with the verified‑deletion contract.
+
+All 413/413 tests pass on a pinned iPhone 17 simulator, and the macOS build compiles with zero warnings.
