@@ -1,5 +1,9 @@
 # Apple Technology Overviews — Adoption Reference for iOS 26 / macOS 26
 
+> **2026-06-12 update:** the Liquid Glass section now carries an iOS 27 / macOS 27 (WWDC 2026)
+> delta subsection, fetched live from Apple docs + beta release notes. Deployment floor for this
+> repo remains **iOS 26 / macOS 26**; any 27-only API must be gated `#available(iOS 27, *)`.
+
 _Compiled: 2026-05-25_
 
 This is a synthesized, action-oriented reference distilled from Apple's official
@@ -197,6 +201,54 @@ the underlying content.
 - For custom elements: test under each setting. Verify color contrast remains adequate when
   transparency is reduced and when content scrolls behind controls.
 - Provide an increased-contrast variant for each light/dark custom color you ship.
+
+### iOS 27 / macOS 27 deltas — WWDC 2026 (fetched live 2026-06-12)
+
+Sources: [Adopting Liquid Glass](https://developer.apple.com/documentation/TechnologyOverviews/adopting-liquid-glass) (current rev),
+[GlassEffectContainer](https://developer.apple.com/documentation/swiftui/glasseffectcontainer),
+[iOS & iPadOS 27 Beta Release Notes](https://developer.apple.com/go/?id=ios-27-rn),
+WWDC26 coverage ([MacRumors](https://www.macrumors.com/2026/06/10/how-liquid-glass-is-changing-in-ios-27/)).
+
+**Material/behavior changes (automatic — no recompile required for system-API adopters):**
+
+- The material now diffuses complex content more aggressively (readability fix), and elements get
+  a darkened edge + brighter specular highlights for separation. Apps already on system components
+  or `glassEffect` inherit this **at runtime on 27**, even when built with the 26 SDK.
+- Scroll-under: a uniform toolbar backing now appears when content scrolls beneath floating bars.
+  Automatic for standard toolbars; tune only via the existing scroll edge effect APIs.
+- **New user-facing transparency slider** (Settings): ultra-clear ↔ fully tinted. This widens the
+  accessibility test matrix: custom-glass surfaces must stay legible across the slider range, not
+  just under Reduce Transparency / Increase Contrast.
+
+**API surface:**
+
+- `glassEffect(_:in:)` / `GlassEffectContainer` (both `introducedAt: 26.0`): **no signature
+  changes, no deprecations** in the 27 SDKs. Compositing-pipeline improvements propagate
+  automatically. Mixed SwiftUI/UIKit apps should audit `GlassEffectContainer` boundaries for
+  coherent morphing (FenixKanban is pure SwiftUI — not affected).
+- SwiftUI on macOS 27 / iPadOS 27 **hides menu item symbol images by default** in most contexts
+  (menu bar, context menus); a new API surfaces icons for key actions. Audit FK's macOS menu bar
+  commands after moving to the 27 SDK.
+- New picker style for tab-based navigation/content selection (27 SDKs).
+- 27.0-SDK fix worth knowing: `controlSize`/`buttonSizing`/`menuIndicatorVisibility` etc.
+  environment values now reset correctly in sheets and popovers.
+
+**Icons:**
+
+- Sharper rendering on 27 with **selective refraction** annotations. Icon Composer adds
+  multi-layer glass, refraction/content-effect annotation, and previews of how an icon
+  back-deploys to earlier OS releases. (Re-export of the FK icon is optional polish, not required.)
+
+**Repo policy (Captain's ruling, 2026-06-12):**
+
+- Deployment targets stay **iOS 26 / macOS 26**. The 27 deltas above do not require the 27 SDK at
+  runtime for the glass improvements, so there is **no floor-raise pressure**. Any future use of
+  27-only API (new picker style, menu-icon surfacing) gates behind `#available(iOS 27, *)` /
+  `#available(macOS 27, *)`. If a future delta makes raising the floor tempting, file a
+  `gray-area` + `needs-captain` issue — do not bump targets.
+- Local toolchain reality (2026-06-12): Xcode 26.5 only, no iOS 27 simulator runtime. The
+  transparency-slider test matrix entry is **deferred** until an Xcode 27 beta lands on the
+  Mac mini; tracked in the mission log.
 
 ---
 

@@ -3,6 +3,9 @@ import SwiftUI
 struct ColumnView: View {
     let column: Column
     let cards: [Card]
+    /// Forwarded from `BoardView`; `true` when the board's Fizzy pairing is
+    /// active so `CardView` can show sync badges.
+    var boardIsPaired: Bool = false
     let onAddCard: () -> Void
     let onDeleteCard: (Card) -> Void
     let onSelectCard: (Card) -> Void
@@ -81,7 +84,7 @@ struct ColumnView: View {
                 GlassEffectContainer(spacing: 6) {
                     LazyVStack(spacing: 6) {
                         ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
-                            CardView(card: card, columnColor: columnColor)
+                            CardView(card: card, columnColor: columnColor, boardIsPaired: boardIsPaired)
                                 .draggable(card.id?.uuidString ?? "") {
                                     CardView(card: card, columnColor: columnColor)
                                         .frame(width: 250)
