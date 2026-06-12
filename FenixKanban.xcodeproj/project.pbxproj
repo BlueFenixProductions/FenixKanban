@@ -138,6 +138,7 @@
 		AD4DAC969973666BD0A6DADC /* CoreDataMigrationV8Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A81AFE70D5624FFC49D0D56 /* CoreDataMigrationV8Tests.swift */; };
 		AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */; };
 		AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22CB144486430B2801DB56B /* FizzyDTOTests.swift */; };
+		B5E32C89B552064B2F4DA094 /* LivePlaygroundRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870D6BACC9C7C7F961F93FEF /* LivePlaygroundRestoreTests.swift */; };
 		B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC4B924D7DFBA06A00FC4F3 /* OpenCardIntentTests.swift */; };
 		B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1964FFB87532CE5ED41070 /* BoardRowView.swift */; };
 		B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E468616D12A084C045616D44 /* FenixKanbanTests.swift */; };
@@ -309,6 +310,7 @@
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
 		86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColumnTombstone+CoreDataClass.swift"; sourceTree = "<group>"; };
 		86FBA9DD9858555EF014B034 /* ToggleGoldenIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntent.swift; sourceTree = "<group>"; };
+		870D6BACC9C7C7F961F93FEF /* LivePlaygroundRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaygroundRestoreTests.swift; sourceTree = "<group>"; };
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
 		8A25B0D029F52671883DC255 /* FizzyDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyDTOs.swift; sourceTree = "<group>"; };
 		8BBA8E6B155CEA2FD11BA076 /* Date+Relative.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Relative.swift"; sourceTree = "<group>"; };
@@ -785,6 +787,7 @@
 		9BD9DED15478EB6A47DB67C0 /* Live */ = {
 			isa = PBXGroup;
 			children = (
+				870D6BACC9C7C7F961F93FEF /* LivePlaygroundRestoreTests.swift */,
 				F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */,
 				61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */,
 			);
@@ -1283,6 +1286,7 @@
 				D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */,
 				BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
+				B5E32C89B552064B2F4DA094 /* LivePlaygroundRestoreTests.swift in Sources */,
 				9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */,
 				EE3AE5B8CCA089F5BAF7595B /* LiveTestEnv.swift in Sources */,
 				7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */,
