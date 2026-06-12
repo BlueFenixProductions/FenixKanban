@@ -58,12 +58,12 @@ After the test board exists, the polluted ~40-card Fizzy board can be manually c
 
 ## Remaining UAT (against the test board pair)
 
-| # | Item                                                          | Notes                                                            |
+| # | Item                                                          | Status                                                           |
 | - | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| 4 | Toggle `golden` flag in Fizzy → Sync Now → check locally      | Ready to run as soon as test boards exist.                       |
-| 5 | First-sync mode `.replace` with confirmation alert            | Destructive. Confirm card count message, then confirm wipe.      |
-| 6 | Revoke token in Fizzy admin → Sync Now → 401 banner → re-verify | Tests `FizzyError.unauthorized` + `forceVerify` recovery path.   |
-| 7 | Sign Out → re-pair to same Fizzy board with `.merge`           | Tests orphan-claim re-bind by `title + createdAt`.               |
+| 4 | Toggle `golden` flag in Fizzy → syncFirst replaceLocal → `isGolden == true` | **Automated** — `LiveUATTests/LiveUATPullGoldenTests` (PASS, 2026-06-12) |
+| 5 | First-sync mode `.replace` with confirmation alert            | **Automated** — `LivePlaygroundRestoreTests` (restore E2E suite) |
+| 6 | Garbage token → `sync()` throws `.unauthorized` → authState cleared | **Automated** — `LiveUATTests/LiveUAT401RecoveryTests` (PASS, 2026-06-12) |
+| 7 | Sign Out (board-mapping clear) → re-pair → `mergeIfNoConflicts` → zero remote creates | **Automated** — `LiveUATTests/LiveUATRePairMergeTests` (suite written 2026-06-12; requires `FIZZY_ALLOW_MUTATION=1`) |
 
 Full UAT details: `docs/superpowers/plans/2026-05-26-fizzy-phase-5-ui.md`, Manual UAT section.
 
