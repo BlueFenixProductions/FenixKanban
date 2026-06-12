@@ -52,7 +52,8 @@ final class CardDetailViewModel: ObservableObject {
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
         if card.fizzyNumber > 0, let client = fizzyClient {
-            self.stepsViewModel = CardStepsViewModel(cardNumber: Int(card.fizzyNumber), client: client)
+            let stepRepo = StepRepository(context: context)
+            self.stepsViewModel = CardStepsViewModel(card: card, client: client, repository: stepRepo)
             self.commentsViewModel = CardCommentsViewModel(
                 cardFizzyNumber: card.fizzyNumber,
                 client: client,
