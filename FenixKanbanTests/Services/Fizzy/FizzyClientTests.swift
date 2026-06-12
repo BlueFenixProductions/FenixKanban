@@ -493,6 +493,70 @@ struct FizzyClientRetryTests {
         _ = try await client.get("/boards", as: [FizzyBoard].self)
         #expect(attempt == 3)
     }
+
+    // MARK: — 429 Retry-After backoff (task #57)
+
+    @Test("429 with Retry-After header retries then succeeds — exactly 2 requests")
+    func rateLimitedWithRetryAfterThenSucceeds() async throws {
+        // First response: 429 + Retry-After: 1 → sleep(min(1s,30s)) and retry.
+        // Second response: 200 → call succeeds.
+        // Expected: exactly 2 requests recorded, no throw.
+        var attempt = 0
+        mock.handler = { req in
+            attempt += 1
+            if attempt == 1 {
+                return (Data(), .response(for: req, status: 429, headers: ["Retry-After": "1"]))
+            }
+            return ("[]".data(using: .utf8)!, .ok(for: req))
+        }
+
+        let client = makeClient()
+        _ = try await client.get("/boards", as: [FizzyBoard].self)
+        #expect(mock.requests.count == 2)
+    }
+
+    @Test("persistent 429 exhausts shared attempt budget then throws rateLimited")
+    func persistentRateLimitedExhausBudget() async throws {
+        // All responses are 429. The budget is 4 total (initial + 3 retries,
+        // same as 5xx/URLError). After exhaustion, performWithRetry must throw
+        // .rateLimited — never loop forever.
+        mock.handler = { req in
+            return (Data(), .response(for: req, status: 429, headers: ["Retry-After": "1"]))
+        }
+
+        let client = makeClient()
+        do {
+            _ = try await client.get("/boards", as: [FizzyBoard].self)
+            Issue.record("expected .rateLimited throw")
+        } catch let error as FizzyError {
+            // 4 total requests: attempt 0, 1, 2, 3
+            #expect(mock.requests.count == 4)
+            if case .rateLimited = error {
+                // ok — correct error type
+            } else {
+                Issue.record("expected .rateLimited, got \(error)")
+            }
+        }
+    }
+
+    @Test("429 without Retry-After header still retries using ladder delay")
+    func rateLimitedWithoutRetryAfterStillRetries() async throws {
+        // Missing Retry-After → fall back to the existing ladder delay.
+        // The call must still retry (not throw immediately).
+        var attempt = 0
+        mock.handler = { req in
+            attempt += 1
+            if attempt == 1 {
+                // No Retry-After header
+                return (Data(), .response(for: req, status: 429))
+            }
+            return ("[]".data(using: .utf8)!, .ok(for: req))
+        }
+
+        let client = makeClient()
+        _ = try await client.get("/boards", as: [FizzyBoard].self)
+        #expect(mock.requests.count == 2)
+    }
 }
 
 @Suite("FizzyClient — Link-header pagination")
