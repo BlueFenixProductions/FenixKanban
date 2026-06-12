@@ -167,6 +167,7 @@
 		FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */; };
 		FD67D2436B58C8ECCB4073AB /* FizzyClientCommentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C48C9144B3593287090B842 /* FizzyClientCommentsTests.swift */; };
 		FDE100082D4EC59095D416DD /* BoardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */; };
+		FE02DAB0229879D619CBFD25 /* CardLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F71A7D0BFBA7DD53B71816A /* CardLifecycleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -201,6 +202,7 @@
 		1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepository.swift; sourceTree = "<group>"; };
 		1E738ED3A6BBDD9FDA17CE8D /* FizzyClient+Boards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Boards.swift"; sourceTree = "<group>"; };
 		1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
+		1F71A7D0BFBA7DD53B71816A /* CardLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLifecycleTests.swift; sourceTree = "<group>"; };
 		1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceModeTests.swift; sourceTree = "<group>"; };
 		2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
 		236DA19A55EE9EA81DE3FE89 /* FizzyBoardMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyBoardMapping.swift; sourceTree = "<group>"; };
@@ -450,6 +452,7 @@
 		2ADAD06F0584C897CBB97668 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				1F71A7D0BFBA7DD53B71816A /* CardLifecycleTests.swift */,
 				046EA11DE8B20663921E3177 /* CloudKitModelCompatibilityTests.swift */,
 				BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */,
 				65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */,
@@ -1104,6 +1107,7 @@
 				24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */,
 				5784E51B2890575C8CD43F0C /* CardFizzyAttributesTests.swift in Sources */,
 				7217E9831E28A4081879F59C /* CardGoldenTicketTests.swift in Sources */,
+				FE02DAB0229879D619CBFD25 /* CardLifecycleTests.swift in Sources */,
 				48B42F3CCACF3FBA3E7F8922 /* CardRepositoryGoldenSortTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
 				393B0EA42CCAAC5559A50522 /* CardStepsViewModelTests.swift in Sources */,
