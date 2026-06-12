@@ -2796,14 +2796,6 @@ execution.
 `1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
 
-### #58 — Foreground auto-refresh + sync visibility (2026-06-12)
-
-Introduced foreground auto-sync (every 300 s while the scene is `.active`) and a set of observable sync-state surfaces so the user always knows what Fizzy is doing. The work is organized around a minimal protocol seam (`SyncTriggering`: two requirements — `isPaired` and `triggerSync()`) that keeps `SyncScheduler` free of any Fizzy internals. `FizzySyncProvider` conforms via a small extension; tests inject a `SyncSpy` that records calls without touching the network.
-
-`SyncScheduler` is `@Observable @MainActor` and owns a `Task` loop that sleeps `interval` seconds before calling the provider. Two reentrancy guards prevent double-work: the scheduler's `isSyncing` flag short-circuits the tick when the previous call hasn't returned, and `FizzySyncEngine`'s own pre-existing guard returns an empty result if the HTTP phase races through. `SyncActivityState` (also `@Observable`) carries `phase` (idle / syncing / error(String)) and `lastSyncAt`; it is exposed directly on the scheduler and forwarded into `SyncSettingsView` so the Auto-Sync section shows live status without an `@EnvironmentObject`. Cloud badges on `CardView` resolve via `CardSyncBadgeState.resolve(hasPairing:boardIsPaired:)` — a pure static function that reads `FizzyCardPairingStore.shared` at body-evaluation time, keeping all badge logic off the view layer and in testable code.
-
-RED: `SyncSchedulerTests` — 8 tests covering (a) fires after interval while active, (b) suspends when inactive, (c) no double-fire when in-flight, (d) no fire when unpaired; plus `CardSyncBadgeStateTests` — 4 badge-resolution cases. All failed with `cannot find type 'SyncTriggering'/'SyncScheduler'/'CardSyncBadgeState' in scope`. GREEN: all 421 tests / 86 suites pass (pinned sim `1CCA4B1C…`, parallel); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
-
 ### #47 — Mission setup: union-merge status log + .env scaffolding (2026-06-12)
 
 Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to allow parallel PRs to append status sections without merge conflicts. Created `.env.example` containing placeholders for Fizzy API credentials and test knobs, and updated `.gitignore` to exclude the actual `.env` file. These changes are documentation‑only; no code was modified. CI build and test gates remain unchanged, ensuring the PR passes standard checks before merging.
