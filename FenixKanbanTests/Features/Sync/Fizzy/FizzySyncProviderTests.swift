@@ -11,6 +11,7 @@ struct FizzySyncProviderTests {
     /// + MockURLProtocol-backed FizzyClient. Returns a configured provider
     /// for the test to exercise.
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
@@ -20,7 +21,6 @@ struct FizzySyncProviderTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
 
             let prefix = "test.fizzy.provider.\(UUID().uuidString)"
@@ -30,9 +30,7 @@ struct FizzySyncProviderTests {
             mappingDefaults = UserDefaults(suiteName: suiteName)!
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
 
             // Temp-file pairing store — the provider's engines must never
             // write the developer's real Application Support sidecar.
@@ -55,7 +53,6 @@ struct FizzySyncProviderTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -140,7 +137,7 @@ struct FizzySyncProviderTests {
           {"id":"FB2","name":"Private","all_access":false,"created_at":"2026-05-25T00:00:00Z","auto_postpone_period_in_days":3,"url":null,"creator":{"id":"U1","name":"Chris","role":"admin","active":true,"email_address":"c@e","created_at":"2026-05-25T00:00:00Z","url":null}}
         ]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/boards"):
                 return (json.data(using: .utf8)!, .ok(for: req))
@@ -179,7 +176,7 @@ struct FizzySyncProviderTests {
         // loop creates exactly one local card. itemsCreated must therefore
         // arrive at the public SyncResult as 1 — that proves the field carries
         // through rather than being mapped from the wrong source.
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))

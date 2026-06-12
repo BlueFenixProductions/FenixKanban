@@ -7,15 +7,13 @@ import Foundation
 
 private final class FixtureLocatorCardActions {}
 
-@Suite("FizzyClient — card actions", .serialized)
+@Suite("FizzyClient — card actions")
 struct FizzyClientCardActionsTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -77,7 +75,7 @@ struct FizzyClientCardActionsTests {
         // Fixture card_detail_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/cards.md, section "GET /:account_slug/cards/:card_number".
         let data = try loadFixture("card_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/1")
             return (data, .ok(for: req))
@@ -99,32 +97,32 @@ struct FizzyClientCardActionsTests {
 
     @Test("DELETE /:account/cards/:number deletes the card")
     func deleteCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/7")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().deleteCard(number: 7)
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     // MARK: - Closure
 
     @Test("POST /closure closes a card (204, no body)")
     func closeCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/closure")
             #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer t")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().closeCard(number: 4)
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("DELETE /closure reopens a card")
     func reopenCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/closure")
             return (Data(), .response(for: req, status: 204))
@@ -134,7 +132,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("action POST surfaces HTTP errors as FizzyError")
     func actionPostErrorMapping() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 404)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 404)) }
         await #expect(throws: FizzyError.notFound) {
             try await makeClient().closeCard(number: 999)
         }
@@ -144,7 +142,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("POST /not_now postpones a card")
     func postponeCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/not_now")
             return (Data(), .response(for: req, status: 204))
@@ -157,7 +155,7 @@ struct FizzyClientCardActionsTests {
     @Test("POST /triage sends column_id body")
     func triageCard() async throws {
         let body = LockedBox<[String: String]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/triage")
             #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -170,7 +168,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("DELETE /triage sends a card back to triage")
     func untriageCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/triage")
             return (Data(), .response(for: req, status: 204))
@@ -184,7 +182,7 @@ struct FizzyClientCardActionsTests {
     func moveCardToBoard() async throws {
         let data = try loadFixture("card_detail_doc")
         let body = LockedBox<[String: String]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/board")
             body.value = self.jsonBody(of: req)
@@ -199,7 +197,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("POST /watch subscribes the current user")
     func watchCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/watch")
             return (Data(), .response(for: req, status: 204))
@@ -209,7 +207,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("DELETE /watch unsubscribes the current user")
     func unwatchCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/watch")
             return (Data(), .response(for: req, status: 204))
@@ -221,7 +219,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("POST /goldness marks a card golden")
     func markGolden() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/goldness")
             return (Data(), .response(for: req, status: 204))
@@ -231,7 +229,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("DELETE /goldness removes golden status")
     func unmarkGolden() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/goldness")
             return (Data(), .response(for: req, status: 204))
@@ -243,7 +241,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("POST /pin pins a card")
     func pinCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/pin")
             return (Data(), .response(for: req, status: 204))
@@ -253,7 +251,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("DELETE /pin unpins a card")
     func unpinCard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/pin")
             return (Data(), .response(for: req, status: 204))
@@ -267,7 +265,7 @@ struct FizzyClientCardActionsTests {
         // docs/api/sections/pins.md, section "GET /:account_slug/my/pins".
         // Note: unlike /my/identity, this /my path IS account-scoped per docs.
         let data = try loadFixture("pins_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/my/pins")
             #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer t")
@@ -286,7 +284,7 @@ struct FizzyClientCardActionsTests {
     @Test("POST /taggings sends tag_title body")
     func toggleTag() async throws {
         let body = LockedBox<[String: String]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/taggings")
             #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -302,7 +300,7 @@ struct FizzyClientCardActionsTests {
     @Test("POST /assignments sends assignee_id body")
     func toggleAssignment() async throws {
         let body = LockedBox<[String: String]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/assignments")
             body.value = self.jsonBody(of: req)
@@ -316,7 +314,7 @@ struct FizzyClientCardActionsTests {
 
     @Test("DELETE /image removes the card header image")
     func deleteCardImage() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/4/image")
             return (Data(), .response(for: req, status: 204))

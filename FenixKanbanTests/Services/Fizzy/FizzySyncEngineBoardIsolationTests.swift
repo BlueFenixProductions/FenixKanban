@@ -11,6 +11,7 @@ struct FizzySyncEngineBoardIsolationTests {
     /// Pairs board[0] with fizzy `FB1`. Returns the configured engine + harnesses
     /// for asserting on the OTHER boards.
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boards: [Board]
         let engine: FizzySyncEngine
@@ -21,7 +22,6 @@ struct FizzySyncEngineBoardIsolationTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             let boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -53,9 +53,7 @@ struct FizzySyncEngineBoardIsolationTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: built[0].id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -72,7 +70,6 @@ struct FizzySyncEngineBoardIsolationTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
 
         func cardCount(on board: Board) -> Int {
@@ -86,7 +83,7 @@ struct FizzySyncEngineBoardIsolationTests {
     func pushIsolates() async throws {
         let h = Harness(); defer { h.tearDown() }
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 let response = HTTPURLResponse(
@@ -133,7 +130,7 @@ struct FizzySyncEngineBoardIsolationTests {
           {"id":"fz2","number":2,"title":"R2","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/2"}
         ]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (columnsJSON.data(using: .utf8)!, .ok(for: req))
@@ -155,7 +152,7 @@ struct FizzySyncEngineBoardIsolationTests {
     func mergeIsolates() async throws {
         let h = Harness(); defer { h.tearDown() }
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 let body = """
@@ -193,7 +190,7 @@ struct FizzySyncEngineBoardIsolationTests {
     func steadyStateIsolates() async throws {
         let h = Harness(); defer { h.tearDown() }
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))

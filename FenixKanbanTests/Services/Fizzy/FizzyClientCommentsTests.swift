@@ -7,15 +7,13 @@ import Foundation
 
 private final class FixtureLocatorComments {}
 
-@Suite("FizzyClient — comments, reactions & steps", .serialized)
+@Suite("FizzyClient — comments, reactions & steps")
 struct FizzyClientCommentsTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -80,7 +78,7 @@ struct FizzyClientCommentsTests {
         // docs/api/sections/comments.md, section
         // "GET /:account_slug/cards/:card_number/comments".
         let data = try loadFixture("comments_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments")
             #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer t")
@@ -101,7 +99,7 @@ struct FizzyClientCommentsTests {
     @Test("GET /comments follows Link rel=\"next\" pagination")
     func commentsListPaginates() async throws {
         let data = try loadFixture("comments_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.url?.query == nil {
                 let headers = ["Link": "<https://fizzy.bluefenix.net/ACCT/cards/3/comments?page=2>; rel=\"next\""]
                 return (data, .ok(for: req, headers: headers))
@@ -112,7 +110,7 @@ struct FizzyClientCommentsTests {
 
         let comments = try await makeClient().comments(cardNumber: 3)
         #expect(comments.count == 2)
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     // MARK: - Comments: detail
@@ -123,7 +121,7 @@ struct FizzyClientCommentsTests {
         // docs/api/sections/comments.md, section
         // "GET /:account_slug/cards/:card_number/comments/:comment_id".
         let data = try loadFixture("comment_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz")
             return (data, .ok(for: req))
@@ -142,7 +140,7 @@ struct FizzyClientCommentsTests {
     func createComment() async throws {
         let data = try loadFixture("comment_doc")
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.httpMethod == "POST" {
                 #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments")
                 #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -158,14 +156,14 @@ struct FizzyClientCommentsTests {
         let comment = try await makeClient().createComment(cardNumber: 3, body: "This looks great!")
         #expect(body.value?["comment"] as? [String: String] == ["body": "This looks great!"])
         #expect(comment.id == "03f5v9zo9qlcwwpyc0ascnikz")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     @Test("POST /comments includes created_at override when provided")
     func createCommentWithCreatedAtOverride() async throws {
         let data = try loadFixture("comment_doc")
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.httpMethod == "POST" {
                 body.value = self.jsonObject(of: req)
                 let headers = ["Location": "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz"]
@@ -191,7 +189,7 @@ struct FizzyClientCommentsTests {
     func updateComment() async throws {
         let data = try loadFixture("comment_doc")
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz")
             body.value = self.jsonObject(of: req)
@@ -211,18 +209,18 @@ struct FizzyClientCommentsTests {
 
     @Test("DELETE /comments/:id deletes the comment (204)")
     func deleteComment() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().deleteComment(cardNumber: 3, id: "03f5v9zo9qlcwwpyc0ascnikz")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("comment endpoints surface HTTP errors as FizzyError")
     func commentErrorMapping() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 404)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 404)) }
         await #expect(throws: FizzyError.notFound) {
             try await makeClient().comment(cardNumber: 3, id: "missing")
         }
@@ -236,7 +234,7 @@ struct FizzyClientCommentsTests {
         // docs/api/sections/reactions.md, section
         // "GET /:account_slug/cards/:card_number/reactions" (Card Reactions).
         let data = try loadFixture("card_reactions_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/reactions")
             return (data, .ok(for: req))
@@ -254,7 +252,7 @@ struct FizzyClientCommentsTests {
     @Test("POST /reactions sends wrapped content body and accepts bare 201")
     func addCardReaction() async throws {
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/reactions")
             #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -263,12 +261,12 @@ struct FizzyClientCommentsTests {
         }
         try await makeClient().addCardReaction(cardNumber: 3, content: "Great 👍")
         #expect(body.value?["reaction"] as? [String: String] == ["content": "Great 👍"])
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("DELETE /reactions/:id removes a card reaction (204)")
     func deleteCardReaction() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/reactions/03f5v9zo9qlcwwpyc0ascnikz")
             return (Data(), .response(for: req, status: 204))
@@ -284,7 +282,7 @@ struct FizzyClientCommentsTests {
         // docs/api/sections/reactions.md, section
         // "GET /:account_slug/cards/:card_number/comments/:comment_id/reactions".
         let data = try loadFixture("comment_reactions_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz/reactions")
             return (data, .ok(for: req))
@@ -304,7 +302,7 @@ struct FizzyClientCommentsTests {
     @Test("POST /comments/:id/reactions sends wrapped content body (201)")
     func addCommentReaction() async throws {
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz/reactions")
             body.value = self.jsonObject(of: req)
@@ -320,7 +318,7 @@ struct FizzyClientCommentsTests {
 
     @Test("DELETE /comments/:id/reactions/:id removes a comment reaction (204)")
     func deleteCommentReaction() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz/reactions/03f5v9zo9qlcwwpyc0ascnikz")
             return (Data(), .response(for: req, status: 204))
@@ -340,7 +338,7 @@ struct FizzyClientCommentsTests {
         // docs/api/sections/steps.md, section
         // "GET /:account_slug/cards/:card_number/steps/:step_id".
         let data = try loadFixture("step_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/steps/03f5v9zo9qlcwwpyc0ascnikz")
             return (data, .ok(for: req))
@@ -356,7 +354,7 @@ struct FizzyClientCommentsTests {
     func createStep() async throws {
         let data = try loadFixture("step_doc")
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.httpMethod == "POST" {
                 #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/steps")
                 body.value = self.jsonObject(of: req)
@@ -372,7 +370,7 @@ struct FizzyClientCommentsTests {
         #expect(body.value?["step"] as? NSDictionary == ["content": "Write tests"])
         #expect(step.id == "03f5v9zo9qlcwwpyc0ascnikz")
         #expect(step.content == "Write tests")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     @Test("PUT /steps/:id sends only provided fields and returns the updated step")
@@ -381,7 +379,7 @@ struct FizzyClientCommentsTests {
         let updatedJSON = Data("""
         {"id": "03f5v9zo9qlcwwpyc0ascnikz", "content": "Write tests", "completed": true}
         """.utf8)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/steps/03f5v9zo9qlcwwpyc0ascnikz")
             body.value = self.jsonObject(of: req)
@@ -401,13 +399,13 @@ struct FizzyClientCommentsTests {
 
     @Test("DELETE /steps/:id deletes the step (204)")
     func deleteStep() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/3/steps/03f5v9zo9qlcwwpyc0ascnikz")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().deleteStep(cardNumber: 3, id: "03f5v9zo9qlcwwpyc0ascnikz")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 }
 

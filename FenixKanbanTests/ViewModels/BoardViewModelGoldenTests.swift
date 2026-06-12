@@ -68,13 +68,13 @@ struct BoardViewModelGoldenTests {
 @Suite("BoardViewModel golden push", .serialized)
 @MainActor
 struct BoardViewModelGoldenPushTests {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let card: Card
     let unpairedCard: Card
     let viewModel: BoardViewModel
 
     init() {
-        MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let cardRepo = CardRepository(context: persistence.viewContext)
@@ -86,13 +86,11 @@ struct BoardViewModelGoldenPushTests {
         unpairedCard = cardRepo.createCard(in: column, title: "Unpaired")
         try! persistence.viewContext.save()
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: URLSession(configuration: config),
+            urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
         viewModel = BoardViewModel(board: board, context: persistence.viewContext, fizzyClient: client)
@@ -100,22 +98,21 @@ struct BoardViewModelGoldenPushTests {
 
     @Test("board golden toggle on a paired card pushes goldness")
     func boardTogglePushesGoldness() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         viewModel.toggleGolden(for: card)
         #expect(card.isGolden == true)
         // The board push is fire-and-forget — await it with a bounded yield loop.
         var spins = 0
-        while MockURLProtocol.requests.isEmpty && spins < 1000 { await Task.yield(); spins += 1 }
-        let req = MockURLProtocol.requests.first
+        while mock.requests.isEmpty && spins < 1000 { await Task.yield(); spins += 1 }
+        let req = mock.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/9/goldness") == true)
         #expect(card.isGolden == true)  // successful push must not revert
-        MockURLProtocol.reset()
     }
 
     @Test("board golden push failure silently reverts the card")
     func boardTogglePushFailureReverts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
         viewModel.toggleGolden(for: card)
@@ -124,16 +121,13 @@ struct BoardViewModelGoldenPushTests {
         var spins = 0
         while card.isGolden && spins < 1000 { await Task.yield(); spins += 1 }
         #expect(card.isGolden == false)
-        MockURLProtocol.reset()
     }
 
     @Test("board golden toggle on an unpaired card stays local, zero network")
     func boardToggleUnpairedNoNetwork() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         viewModel.toggleGolden(for: unpairedCard)
         #expect(unpairedCard.isGolden == true)
         for _ in 0..<50 { await Task.yield() }
-        #expect(MockURLProtocol.requests.isEmpty)
+        #expect(mock.requests.isEmpty)
     }
 }

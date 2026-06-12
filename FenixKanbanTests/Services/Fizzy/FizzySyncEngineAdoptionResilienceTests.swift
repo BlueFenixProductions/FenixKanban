@@ -9,6 +9,7 @@ import Foundation
 /// Harness pattern used throughout FizzySyncEngineTests.swift.
 @MainActor
 private struct AdoptionHarness {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let boardRepo: BoardRepository
     let cardRepo: CardRepository
@@ -21,7 +22,6 @@ private struct AdoptionHarness {
     let pairingStore: FizzyCardPairingStore
 
     init() {
-        MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         pairingStore = FizzyCardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
@@ -43,9 +43,7 @@ private struct AdoptionHarness {
         let mapping = FizzyBoardMapping(defaults: mappingDefaults)
         mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t", accountSlug: "ACCT",
@@ -62,7 +60,6 @@ private struct AdoptionHarness {
         authState.clear()
         mappingDefaults.removePersistentDomain(forName: suiteName)
         try? FileManager.default.removeItem(at: pairingStore.fileURL)
-        MockURLProtocol.reset()
     }
 }
 
@@ -151,7 +148,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
         var postedStringDescriptions: [String: String] = [:]
         var postedTitles: Set<String> = []
         var nextNumber = 40
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -215,7 +212,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
             description: "Body", createdAtISO: "2026-01-01T00:00:00Z",
             lastActiveISO: "2026-06-01T00:00:00Z"
         )
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -255,7 +252,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
             description: "Body text",
             createdAtISO: "2026-06-01T00:00:00Z"
         )
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -298,7 +295,7 @@ struct FizzySyncEngineResilienceTests {
         poison.id = UUID()
         poison.title = nil
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -334,7 +331,7 @@ struct FizzySyncEngineResilienceTests {
         // list with HTML comments stripped (as production Fizzy does).
         var postCount = 0
         var storedRemote: [String: Any]?
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -422,7 +419,7 @@ struct FizzySyncEngineResilienceTests {
         var putCount = 0
         var nextNumber = 20
         var remotesByNumber: [Int: [String: Any]] = [:]
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -529,7 +526,7 @@ struct FizzySyncEngineResilienceTests {
             lastActiveISO: ISO8601DateFormatter().string(from: baseline)
         )
         var putDescriptions: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -579,7 +576,7 @@ struct FizzySyncEngineResilienceTests {
         )
         var postCount = 0
         var putPaths: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -648,7 +645,7 @@ struct FizzySyncEngineResilienceTests {
             description: nil, createdAtISO: "2026-05-01T00:00:00Z",
             lastActiveISO: "2026-06-01T00:00:00Z"
         )
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -696,7 +693,7 @@ struct FizzySyncEngineResilienceTests {
             description: nil, createdAtISO: "2026-05-01T00:00:00Z",
             lastActiveISO: "2026-06-01T00:00:00Z"
         )
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -794,7 +791,7 @@ struct FizzySyncEngineFirstSyncStoreTests {
         )
 
         var postedTitles: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 let payload = cardWritePayload(of: req)
@@ -841,7 +838,7 @@ struct FizzySyncEngineFirstSyncStoreTests {
             id: "fzKeep", number: 2, title: "Kept",
             description: nil, createdAtISO: "2026-06-01T00:00:00Z"
         )
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
@@ -871,7 +868,7 @@ struct FizzySyncEngineFirstSyncStoreTests {
         try h.persistence.viewContext.save()
         let localUUID = try #require(localOnly.id)
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 return (triageColumnsJSON.data(using: .utf8)!, .ok(for: req))
