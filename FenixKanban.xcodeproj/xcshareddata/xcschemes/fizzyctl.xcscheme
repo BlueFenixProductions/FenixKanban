@@ -15,23 +15,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "29B0805C04158CE223599CD4"
-               BuildableName = "FenixKanban.app"
-               BlueprintName = "FenixKanban"
-               ReferencedContainer = "container:FenixKanban.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "NO"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "62212B85E018F8DAAD57EB30"
-               BuildableName = "FenixKanbanTests.xctest"
-               BlueprintName = "FenixKanbanTests"
+               BlueprintIdentifier = "5FBE7EC4307D66DC5CD8CF44"
+               BuildableName = "fizzyctl"
+               BlueprintName = "fizzyctl"
                ReferencedContainer = "container:FenixKanban.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,27 +32,14 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "29B0805C04158CE223599CD4"
-            BuildableName = "FenixKanban.app"
-            BlueprintName = "FenixKanban"
+            BlueprintIdentifier = "5FBE7EC4307D66DC5CD8CF44"
+            BuildableName = "fizzyctl"
+            BlueprintName = "fizzyctl"
             ReferencedContainer = "container:FenixKanban.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "62212B85E018F8DAAD57EB30"
-               BuildableName = "FenixKanbanTests.xctest"
-               BlueprintName = "FenixKanbanTests"
-               ReferencedContainer = "container:FenixKanban.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -82,9 +55,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "29B0805C04158CE223599CD4"
-            BuildableName = "FenixKanban.app"
-            BlueprintName = "FenixKanban"
+            BlueprintIdentifier = "5FBE7EC4307D66DC5CD8CF44"
+            BuildableName = "fizzyctl"
+            BlueprintName = "fizzyctl"
             ReferencedContainer = "container:FenixKanban.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -101,14 +74,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "29B0805C04158CE223599CD4"
-            BuildableName = "FenixKanban.app"
-            BlueprintName = "FenixKanban"
+            BlueprintIdentifier = "5FBE7EC4307D66DC5CD8CF44"
+            BuildableName = "fizzyctl"
+            BlueprintName = "fizzyctl"
             ReferencedContainer = "container:FenixKanban.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

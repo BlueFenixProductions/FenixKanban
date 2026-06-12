@@ -34,6 +34,18 @@ final class FizzySyncEngine {
     /// calls return an empty `FizzySyncResult` immediately.
     private var isSyncing = false
 
+    /// Per-column card-list cache for ETag-conditional pulls (task #61).
+    /// Keyed by request path; in-memory by design (cold start re-fetches
+    /// once, then steady-state polling 304s). Holding the cards alongside
+    /// the etag keeps the remote universe complete on a 304, which is what
+    /// lets the soft-delete and LWW logic run unchanged.
+    private struct CardListCacheEntry {
+        var etag: String
+        var singlePage: Bool
+        var cards: [FizzyCard]
+    }
+    private var cardListCache: [String: CardListCacheEntry] = [:]
+
     init(
         client: FizzyClient,
         authState: FizzyAuthState,
@@ -239,17 +251,28 @@ final class FizzySyncEngine {
             // else: both equal or remote stale → no-op.
         }
 
-        // Soft-delete: paired local cards missing from the per-column lists.
-        // Those lists exclude closed/not-now cards, so absence is NOT proof
-        // of deletion — confirm via the single-card endpoint. Only a 404
-        // deletes locally; an alive card (closed/postponed on the server)
-        // survives untouched until lifecycle mapping lands (#13). A card we
-        // can't verify (no number, network error) is kept for a later cycle.
+        // Soft-delete / lifecycle: paired local cards missing from the
+        // per-column lists. Those lists exclude closed/not-now cards, so
+        // absence is NOT proof of deletion — confirm via the single-card
+        // endpoint. 404 deletes locally; an alive card transitions to the
+        // wire lifecycle state (#13): closed → .closed, postponed → .notNow.
+        // Content from the detail doc applies only under the usual LWW gate
+        // (local untouched) — a local edit made while the card was closed
+        // must not be clobbered. A card we can't verify (no number, network
+        // error) is kept for a later cycle.
         for (fizzyID, card) in pairedByFizzyID where remoteByID[fizzyID] == nil {
             guard let p = pairing(for: card), p.fizzyNumber > 0 else { continue }
             do {
-                _ = try await client.card(number: Int(p.fizzyNumber))
-                continue // alive but unlisted (closed / not-now) — keep
+                let detail = try await client.card(number: Int(p.fizzyNumber))
+                let localModified = card.modifiedAt ?? .distantPast
+                if detail.lastActiveAt > p.fizzyUpdatedAt && localModified <= p.fizzyUpdatedAt {
+                    applyRemote(detail, to: card) // full pull incl. lifecycle
+                    result.itemsUpdated += 1
+                } else if card.lifecycleStatus != detail.wireLifecycleStatus {
+                    // Local content is newer — transition lifecycle only.
+                    card.lifecycleStatus = detail.wireLifecycleStatus
+                    result.itemsUpdated += 1
+                }
             } catch FizzyError.notFound {
                 if let id = card.id { pairingStore.removePairing(for: id) }
                 context.delete(card)
@@ -737,10 +760,32 @@ final class FizzySyncEngine {
     /// NOTE: these lists exclude closed/not-now cards, so absence here is
     /// not proof of server-side deletion — the soft-delete path must confirm
     /// via `GET /cards/:number` before deleting locally.
+    ///
+    /// ETag-conditional (task #61): each column's list is fetched with
+    /// `If-None-Match` when the previous response was single-page; a 304
+    /// reuses the cached card list, so the returned "universe" is always
+    /// complete and the LWW / soft-delete / push logic downstream runs
+    /// unchanged. The cache is in-memory by design — a cold start simply
+    /// re-fetches once.
     private func fetchRemoteCards(boardID: String, remoteColumns: [FizzyColumn]) async throws -> [FizzyCard] {
         var cards: [FizzyCard] = []
         for column in remoteColumns {
-            cards += try await client.cards(boardID: boardID, columnID: column.id)
+            let path = "/boards/\(boardID)/columns/\(column.id)/cards"
+            let cached = cardListCache[path]
+            // Conditional only when the prior response was single-page —
+            // page-1-ETag semantics across pages are unverified (probe B3-4).
+            let conditionalETag = (cached?.singlePage == true) ? cached?.etag : nil
+            let result = try await client.getAllPagesWithETag(path, etag: conditionalETag, as: [FizzyCard].self)
+            if let fresh = result.items {
+                cards += fresh
+                if let etag = result.etag {
+                    cardListCache[path] = CardListCacheEntry(etag: etag, singlePage: result.singlePage, cards: fresh)
+                } else {
+                    cardListCache[path] = nil
+                }
+            } else if let cached {
+                cards += cached.cards // 304 — unchanged since the last cycle
+            }
         }
         var seen = Set<String>()
         return cards.filter { seen.insert($0.id).inserted }
@@ -764,6 +809,8 @@ final class FizzySyncEngine {
     }
 
     // MARK: - Apply remote → local
+
+    // MARK: - Wire lifecycle mapping (#13)
 
     /// Writes the synced fields from a `FizzyCard` onto a local `Card`.
     /// Maps every remote tag to a local `Label` (find-or-create by
@@ -792,6 +839,14 @@ final class FizzySyncEngine {
             if card.assignees != mapped {
                 card.assignees = mapped
             }
+        }
+
+        // Lifecycle (#13): wire closed/postponed map to the local status.
+        // Cards in column lists carry closed:false/postponed:false (active);
+        // the single-card doc is the truth for unlisted cards. The accessor
+        // stamps/clears closedAt on transitions.
+        if card.lifecycleStatus != remote.wireLifecycleStatus {
+            card.lifecycleStatus = remote.wireLifecycleStatus
         }
     }
 
@@ -859,5 +914,16 @@ final class FizzySyncEngine {
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
         return (try? context.fetch(request))?.first
+    }
+}
+
+/// Sync-layer mapping from the wire `closed`/`postponed` fields to the local
+/// lifecycle enum. Lives here (not on the DTO file) so the Foundation-only
+/// DTO sources stay reusable by fizzyctl, which doesn't link CoreData.
+extension FizzyCard {
+    var wireLifecycleStatus: CardLifecycleStatus {
+        if closed == true { return .closed }
+        if postponed == true { return .notNow }
+        return .active
     }
 }
