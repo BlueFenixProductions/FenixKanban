@@ -95,8 +95,20 @@ struct FizzySyncEnginePullPlacementTests {
         if let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "Fixtures/fizzy") {
             return try Data(contentsOf: url)
         }
-        let url = try #require(bundle.url(forResource: name, withExtension: "json"))
-        return try Data(contentsOf: url)
+        if let flatURL = bundle.url(forResource: name, withExtension: "json") {
+            return try Data(contentsOf: flatURL)
+        }
+        // Source-directory fallback (matches FizzyDTOTests.loadFixture):
+        // …/FenixKanbanTests/Services/Fizzy/ThisFile.swift → …/FenixKanbanTests/Fixtures/fizzy/
+        let fixturePath = URL(fileURLWithPath: #file)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Fixtures").appendingPathComponent("fizzy")
+            .appendingPathComponent("\(name).json")
+        if FileManager.default.fileExists(atPath: fixturePath.path) {
+            return try Data(contentsOf: fixturePath)
+        }
+        Issue.record("Could not locate fixture \(name).json (last tried \(fixturePath.path))")
+        throw CocoaError(.fileNoSuchFile)
     }
 
     /// Routes requests the way the live server shapes them:
@@ -327,7 +339,13 @@ struct FizzySyncEnginePullPlacementTests {
 
         let result = try await h.engine.sync()
         #expect(result.itemsDeleted == 1)
+        #expect(result.errors.isEmpty)
         #expect(h.allLocalCards().isEmpty, "a 404'd remote card must be deleted locally")
+        // Resurrection guard: the deleted card must NOT be POSTed back by the
+        // push loop (its pairing was removed mid-cycle; the pre-delete
+        // localCards snapshot still contains it).
+        #expect(!h.mock.requests.contains { $0.httpMethod == "POST" },
+                "a just-deleted card must not be pushed back to the server")
     }
 }
 
