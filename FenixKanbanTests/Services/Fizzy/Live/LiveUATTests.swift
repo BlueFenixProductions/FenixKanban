@@ -26,8 +26,11 @@ struct LiveUAT401RecoveryTests {
     @Test("garbage-token sync throws .unauthorized and clears authState")
     func garbageTokenClearsAuthState() async throws {
         // Isolated auth state with a garbage token.
+        // useKeychain: false — clone simulators used by xcodebuild live-tests
+        // don't have an active Keychain session; in-memory storage avoids the
+        // silent write failure that would cause isConfigured to return false.
         let prefix = "test.uat6.\(UUID().uuidString)"
-        let authState = FizzyAuthState(keyPrefix: prefix)
+        let authState = FizzyAuthState(keyPrefix: prefix, useKeychain: false)
         authState.setAccessToken("garbage-token-intentionally-invalid")
         authState.setAccountSlug(LiveTestEnv.accountSlug)
         defer { authState.clear() }
@@ -54,6 +57,13 @@ struct LiveUAT401RecoveryTests {
                 .appendingPathComponent("fk-uat6-pairings-\(UUID().uuidString).json")
         )
         defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
+
+        // Verify Keychain writes succeeded before proceeding — a silent write
+        // failure would cause the engine to return early (isConfigured guard)
+        // without ever hitting the network, giving a false pass on the
+        // post-sync authState.clear() assertions.
+        try #require(authState.isConfigured,
+            "Keychain write failed — cannot test 401 recovery without a configured authState")
 
         // Live client with garbage token pointed at real base URL.
         let client = FizzyClient(
@@ -93,13 +103,14 @@ struct LiveUAT401RecoveryTests {
 /// UAT Items 4 and 7 — exercised against the Sandbox-2 board with
 /// [itest]-prefixed sacrificial cards, cleaned up in defer blocks.
 /// Gated on both isConfigured and allowsMutation.
-@Suite("Live: UAT Item 4 — pull golden flag", .enabled(if: LiveTestEnv.isConfigured && LiveTestEnv.allowsMutation), .serialized)
+@Suite("Live: UAT Item 4 — pull golden flag", .enabled(if: LiveTestEnv.isConfigured), .serialized)
 @MainActor
 struct LiveUATPullGoldenTests {
 
     // MARK: - Item 4: golden flag pulled from remote
 
-    @Test("create card, mark golden remotely, syncFirst replaceLocal → isGolden == true locally")
+    @Test("create card, mark golden remotely, syncFirst replaceLocal → isGolden == true locally",
+          .enabled(if: LiveTestEnv.isConfigured && LiveTestEnv.allowsMutation))
     func pullGoldenFlagFromRemote() async throws {
         let client = LiveTestEnv.makeClient()
 
@@ -137,7 +148,8 @@ struct LiveUATPullGoldenTests {
         let context = persistence.viewContext
 
         let prefix = "test.uat4.\(UUID().uuidString)"
-        let authState = FizzyAuthState(keyPrefix: prefix)
+        // useKeychain: false — see Item 6 comment above.
+        let authState = FizzyAuthState(keyPrefix: prefix, useKeychain: false)
         authState.setAccessToken(LiveTestEnv.token)
         authState.setAccountSlug(LiveTestEnv.accountSlug)
         defer { authState.clear() }
@@ -157,6 +169,10 @@ struct LiveUATPullGoldenTests {
                 .appendingPathComponent("fk-uat4-pairings-\(UUID().uuidString).json")
         )
         defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
+
+        // Guard: Keychain write must succeed before syncFirst.
+        try #require(authState.isConfigured,
+            "Keychain write failed — cannot test golden-flag pull without a configured authState")
 
         let liveClient = LiveTestEnv.makeClient()
         let engine = FizzySyncEngine(
@@ -182,13 +198,14 @@ struct LiveUATPullGoldenTests {
     }
 }
 
-@Suite("Live: UAT Item 7 — re-pair merge, zero remote creates", .enabled(if: LiveTestEnv.isConfigured && LiveTestEnv.allowsMutation), .serialized)
+@Suite("Live: UAT Item 7 — re-pair merge, zero remote creates", .enabled(if: LiveTestEnv.isConfigured), .serialized)
 @MainActor
 struct LiveUATRePairMergeTests {
 
     // MARK: - Item 7: sign-out → re-pair → merge creates no remote duplicates
 
-    @Test("re-pair after board-mapping clear: mergeIfNoConflicts creates zero remote cards")
+    @Test("re-pair after board-mapping clear: mergeIfNoConflicts creates zero remote cards",
+          .enabled(if: LiveTestEnv.isConfigured && LiveTestEnv.allowsMutation))
     func rePairMergeCreatesNoRemoteCards() async throws {
         let client = LiveTestEnv.makeClient()
 
@@ -211,7 +228,8 @@ struct LiveUATRePairMergeTests {
         let context = persistence.viewContext
 
         let prefix = "test.uat7.\(UUID().uuidString)"
-        let authState = FizzyAuthState(keyPrefix: prefix)
+        // useKeychain: false — see Item 6 comment above.
+        let authState = FizzyAuthState(keyPrefix: prefix, useKeychain: false)
         authState.setAccessToken(LiveTestEnv.token)
         authState.setAccountSlug(LiveTestEnv.accountSlug)
         defer { authState.clear() }
@@ -226,6 +244,10 @@ struct LiveUATRePairMergeTests {
                 .appendingPathComponent("fk-uat7-pairings-\(UUID().uuidString).json")
         )
         defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
+
+        // Guard: Keychain write must succeed before syncFirst.
+        try #require(authState.isConfigured,
+            "Keychain write failed — cannot test re-pair merge without a configured authState")
 
         let localBoard = BoardRepository(context: context).createBoard(name: "UAT7 Board")
         try context.save()
@@ -285,8 +307,9 @@ struct LiveUATRePairMergeTests {
         )
 
         // --- Verify: no local duplicates ---
+        // Card has no direct `board` relationship — traverse via column.board.
         let cardRequest: NSFetchRequest<Card> = Card.fetchRequest()
-        cardRequest.predicate = NSPredicate(format: "board == %@", localBoard)
+        cardRequest.predicate = NSPredicate(format: "column.board == %@", localBoard)
         let allLocalCards = try context.fetch(cardRequest)
         let titleCounts = Dictionary(grouping: allLocalCards, by: { $0.title ?? "" })
         let duplicates = titleCounts.filter { $0.value.count > 1 }.keys
