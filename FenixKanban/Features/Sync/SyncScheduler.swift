@@ -95,8 +95,21 @@ final class SyncScheduler {
               !isSyncing else { return }
         isSyncing = true
         activityState.markSyncing()
-        await provider.triggerSync()
-        activityState.markIdle(syncedAt: Date())
+        // Delegate to the provider variant that routes outcomes to activityState.
+        // The provider marks .error on thrown errors or non-empty result.errors;
+        // it advances lastSyncAt on partial-failure cycles (the cycle ran).
+        if let fizzyProvider = provider as? FizzySyncProvider {
+            await fizzyProvider.triggerSync(activityState: activityState)
+            // If the provider left the phase as .syncing (no error, no update),
+            // transition to idle.
+            if case .syncing = activityState.phase {
+                activityState.markIdle(syncedAt: activityState.lastSyncAt)
+            }
+        } else {
+            // Non-Fizzy providers (test spy, future providers) use the plain path.
+            await provider.triggerSync()
+            activityState.markIdle(syncedAt: Date())
+        }
         isSyncing = false
     }
 }

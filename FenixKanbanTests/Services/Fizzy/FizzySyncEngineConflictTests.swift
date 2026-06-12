@@ -203,7 +203,22 @@ struct FizzySyncEngineConflictTests {
         let board = ConflictBoard(remoteCardsJSON: "[\(remoteCardJSON)]")
         h.mock.handler = { try board.handler($0) }
 
+        // Diagnostic: verify harness preconditions
+        #expect(h.authState.isConfigured, "authState must be configured before sync")
+        #expect(h.pairingStore.pairing(for: card.id!) != nil, "pairing must be stored before sync")
+        let pairing = h.pairingStore.pairing(for: card.id!)!
+        #expect(pairing.fizzyID == "fz9", "fizzyID must be fz9")
+        #expect(card.modifiedAt == ConflictHarness.t0.addingTimeInterval(120),
+                "card.modifiedAt must be t0+120 before sync")
+        #expect((card.modifiedAt ?? .distantPast) > pairing.fizzyUpdatedAt,
+                "localModified must be > watermark")
+
         let result = try await h.engine.sync()
+
+        // Also check errors to understand what happened
+        if !result.errors.isEmpty {
+            Issue.record("sync returned errors: \(result.errors)")
+        }
 
         // conflict emitted
         #expect(result.conflicts.count == 1, "expected 1 conflict, got \(result.conflicts.count)")

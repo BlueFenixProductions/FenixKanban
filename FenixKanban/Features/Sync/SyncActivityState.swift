@@ -30,6 +30,11 @@ final class SyncActivityState {
     var lastSyncAt: Date?
     /// The last error message, preserved across subsequent idle transitions.
     var lastError: String?
+    /// Number of local push operations that failed in the last cycle
+    /// (cards with local edits that could not be sent to the server).
+    var pendingPushCount: Int = 0
+    /// Number of open LWW conflicts requiring user resolution.
+    var conflictCount: Int = 0
 
     func markSyncing() {
         phase = .syncing
@@ -46,5 +51,12 @@ final class SyncActivityState {
     func markError(_ message: String) {
         phase = .error(message)
         lastError = message
+    }
+
+    /// Updates derived counts from a completed sync result and the conflict store.
+    /// `lastSyncAt` is advanced unconditionally (the cycle ran; the badge is separate).
+    func update(from result: FizzySyncResult, conflictStore: FizzyConflictStore) {
+        pendingPushCount = result.errors.filter { $0.hasPrefix("Push update") }.count
+        conflictCount = conflictStore.count
     }
 }

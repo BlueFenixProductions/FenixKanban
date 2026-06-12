@@ -25,6 +25,9 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// builds (issue #21 A′). Injectable so tests never touch the real
     /// Application Support sidecar.
     private let pairingStore: FizzyCardPairingStore
+    /// Device-local conflict store. Injectable so tests never touch the real
+    /// Application Support sidecar.
+    private let conflictStore: FizzyConflictStore
 
     init(
         authState: FizzyAuthState,
@@ -32,7 +35,8 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         persistence: PersistenceController,
         urlSession: URLSession = .shared,
         clock: any Clock<Duration> & Sendable = ContinuousClock(),
-        pairingStore: FizzyCardPairingStore = .shared
+        pairingStore: FizzyCardPairingStore = .shared,
+        conflictStore: FizzyConflictStore = .shared
     ) {
         self.authState = authState
         self.mapping = mapping
@@ -40,6 +44,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         self.urlSession = urlSession
         self.clock = clock
         self.pairingStore = pairingStore
+        self.conflictStore = conflictStore
     }
 
     /// `true` when both token and slug are present in the Keychain.
@@ -124,6 +129,30 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         authState.isConfigured && mapping.isPaired
     }
 
+    /// Fires one sync cycle via the engine and routes results to the provided
+    /// `activityState` (called by the scheduler's `fireTick`).
+    ///
+    /// Errors (thrown or non-empty result.errors) mark `activityState` as
+    /// `.error` rather than `.idle`; `lastSyncAt` advances on partial failures
+    /// because the cycle ran. Also re-posts pending comments.
+    func triggerSync(activityState: SyncActivityState) async {
+        guard let engine = makeEngine() else { return }
+        do {
+            let result = try await engine.sync()
+            activityState.update(from: result, conflictStore: conflictStore)
+            if !result.errors.isEmpty {
+                let summary = result.errors.first ?? "Sync error"
+                activityState.markError(summary)
+            }
+            // lastSyncAt advances even on partial-failure cycles (cycle ran)
+            activityState.lastSyncAt = .now
+        } catch {
+            activityState.markError(error.localizedDescription)
+            // Note: lastSyncAt is NOT advanced — the cycle did not complete.
+        }
+        await retryPendingComments()
+    }
+
     /// Fires one sync cycle via the engine. Silently absorbs errors so the
     /// scheduler's loop doesn't crash on transient failures; errors are
     /// surfaced through `activityState` on the scheduler.
@@ -161,6 +190,25 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
                 // Leave pending; will be retried on the next tick.
             }
         }
+    }
+
+    // MARK: - Conflict resolution (task #70)
+
+    /// All currently open conflicts, for the UI to display.
+    func conflicts() -> [ConflictRecord] {
+        conflictStore.all
+    }
+
+    /// Keep-mine resolution: PUT local title/desc, advance watermark, clear record.
+    func resolveKeepMine(cardID: UUID) async throws {
+        guard let engine = makeEngine() else { return }
+        try await engine.resolveKeepMine(cardID: cardID)
+    }
+
+    /// Take-theirs resolution: re-fetch remote, apply, clear record.
+    func resolveTakeTheirs(cardID: UUID) async throws {
+        guard let engine = makeEngine() else { return }
+        try await engine.resolveTakeTheirs(cardID: cardID)
     }
 
     // MARK: - Internal accessors (used by FizzyAuthView sub-views)
@@ -203,7 +251,8 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
             authState: authState,
             mapping: mapping,
             context: persistence.viewContext,
-            pairingStore: pairingStore
+            pairingStore: pairingStore,
+            conflictStore: conflictStore
         )
     }
 }

@@ -24,10 +24,36 @@ struct SyncSettingsView: View {
                 Text("Sync your boards with cards on remote services.")
             }
 
+            // Conflict review row (task #70)
+            conflictSection
+
             // Phase 6: Sync activity status section
             syncStatusSection
         }
         .navigationTitle("Board Sync")
+    }
+
+    // MARK: - Conflict section (task #70)
+
+    @ViewBuilder
+    private var conflictSection: some View {
+        let count = syncScheduler.activityState.conflictCount
+        if count > 0 {
+            if let fizzy = registry.providers.first(where: { $0 is FizzySyncProvider }) as? FizzySyncProvider {
+                Section {
+                    NavigationLink {
+                        ConflictListView(provider: fizzy)
+                    } label: {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text("\(count) conflict\(count == 1 ? "" : "s") need review")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Sync status section
