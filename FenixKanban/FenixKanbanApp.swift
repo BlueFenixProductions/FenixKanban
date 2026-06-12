@@ -2,6 +2,9 @@ import AppIntents
 import CoreData
 import StoreKit
 import SwiftUI
+#if os(iOS)
+import BackgroundTasks
+#endif
 
 @main
 struct FenixKanbanApp: App {
@@ -12,6 +15,13 @@ struct FenixKanbanApp: App {
     @State private var syncScheduler: SyncScheduler
     @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
     @Environment(\.scenePhase) private var scenePhase
+    #if os(iOS)
+    @State private var bgRefreshCoordinator: BackgroundRefreshCoordinator
+    #endif
+
+    /// BGAppRefreshTask identifier for Fizzy board sync.
+    /// Must match `BGTaskSchedulerPermittedIdentifiers` in Info-Partial.plist.
+    static let bgRefreshIdentifier = "com.bluefenixproductions.FenixKanban.fizzy-refresh"
 
     init() {
         let launchArgs = ProcessInfo.processInfo.arguments
@@ -65,6 +75,15 @@ struct FenixKanbanApp: App {
         // @Observable (not ObservableObject). `_syncScheduler` follows the
         // same pattern as `_navigator` above.
         _syncScheduler = State(wrappedValue: SyncScheduler(provider: fizzyProvider))
+
+        // Task #62: background refresh coordinator (iOS-only).
+        // Shares the same FizzySyncProvider so background cycles use identical
+        // auth/mapping/persistence as foreground cycles.
+        #if os(iOS)
+        _bgRefreshCoordinator = State(
+            wrappedValue: BackgroundRefreshCoordinator(provider: fizzyProvider)
+        )
+        #endif
     }
 
     var body: some Scene {
@@ -87,8 +106,52 @@ struct FenixKanbanApp: App {
         }
         .onChange(of: scenePhase) { _, newPhase in
             syncScheduler.setSceneActive(newPhase == .active)
+            #if os(iOS)
+            // Schedule the next background refresh whenever the app moves
+            // to background (covers both initial background and re-background
+            // after the task handler fires).
+            if newPhase == .background {
+                FenixKanbanApp.submitBackgroundRefreshRequest()
+            }
+            #endif
+        }
+        #if os(iOS)
+        // BGAppRefreshTask handler. The system wakes the app, SwiftUI calls
+        // this closure, and we race one sync cycle against the 25 s budget.
+        // After each run we reschedule so the cycle repeats.
+        .backgroundTask(.appRefresh(FenixKanbanApp.bgRefreshIdentifier)) {
+            let success = await bgRefreshCoordinator.performBackgroundRefresh()
+            // Reschedule regardless of success so the next wake is always
+            // pending. (Failure just means this wake was a no-op.)
+            FenixKanbanApp.submitBackgroundRefreshRequest()
+            // Return value is ignored by SwiftUI's backgroundTask modifier;
+            // BGTask.setTaskCompleted(success:) is called automatically.
+            _ = success
+        }
+        #endif
+    }
+
+    #if os(iOS)
+    /// Submit a BGAppRefreshTaskRequest so the system schedules the next wake.
+    ///
+    /// Static + nonisolated so it can be called from both `@MainActor` context
+    /// (the scenePhase onChange) and the non-isolated `.backgroundTask` closure
+    /// without triggering Swift 6 actor-isolation warnings.
+    /// Safe to call multiple times — duplicates are coalesced by BGTaskScheduler.
+    nonisolated static func submitBackgroundRefreshRequest() {
+        let request = BGAppRefreshTaskRequest(identifier: bgRefreshIdentifier)
+        // Earliest date: 15 minutes from now. The OS decides the actual wake
+        // time based on usage patterns; this is a lower bound.
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            // Non-fatal: the task may already be scheduled, or the simulator
+            // may not support BGTaskScheduler. Log and continue.
+            print("[BgRefresh] BGTaskScheduler.submit failed: \(error)")
         }
     }
+    #endif
 }
 
 struct ContentView: View {

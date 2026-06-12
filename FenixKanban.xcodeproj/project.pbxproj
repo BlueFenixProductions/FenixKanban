@@ -102,6 +102,7 @@
 		9493F64109A56D42E9AC52E8 /* CoreDataMigrationV7Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */; };
 		957D0C7287B2CAB192BC4E96 /* FizzyClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821C842E496F5DE33DC42D4A /* FizzyClientTests.swift */; };
 		97AA387F38B07EE3DC779639 /* FizzyClient+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DAD2ED2D2F5D199581543B6 /* FizzyClient+Comments.swift */; };
+		97B4886590DB0DFC0CAE82B1 /* BackgroundRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802287CDDC8F175E4CCC7C /* BackgroundRefreshCoordinator.swift */; };
 		98658EB79D1180F38108C352 /* BackupDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417CA11519C84AC01EEEE7B7 /* BackupDocument.swift */; };
 		98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */; };
 		9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */; };
@@ -305,6 +306,7 @@
 		A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementView.swift; sourceTree = "<group>"; };
 		A472D8FA16F1EB9A071E6E64 /* FizzyClientDirectoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientDirectoryTests.swift; sourceTree = "<group>"; };
 		A61AF1066F57E5404E2BF366 /* BoardViewModelLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelLifecycleTests.swift; sourceTree = "<group>"; };
+		A7802287CDDC8F175E4CCC7C /* BackgroundRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshCoordinator.swift; sourceTree = "<group>"; };
 		A9C7E3DD35C16245540AD34D /* FirstSyncMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstSyncMode.swift; sourceTree = "<group>"; };
 		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
 		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
@@ -678,6 +680,7 @@
 		9460B5BC7EB210D2C3DBA37F /* Sync */ = {
 			isa = PBXGroup;
 			children = (
+				A7802287CDDC8F175E4CCC7C /* BackgroundRefreshCoordinator.swift */,
 				5EA78C9E326E8DBEC86C46CA /* CardSyncBadgeState.swift */,
 				8F7BB129739333741CBDBEB5 /* SyncActivityState.swift */,
 				85FEB0BA3E783F68DD1ABFBA /* SyncScheduler.swift */,
@@ -1013,6 +1016,7 @@
 				431BFEDC9B5D0E3C958D1FE7 /* AuthView.swift in Sources */,
 				FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */,
 				F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */,
+				97B4886590DB0DFC0CAE82B1 /* BackgroundRefreshCoordinator.swift in Sources */,
 				98658EB79D1180F38108C352 /* BackupDocument.swift in Sources */,
 				FBE1E15BE388FCB6CC58D7FF /* BackupExporter.swift in Sources */,
 				A8BA33B4E95C7DC1B5BCB89F /* BackupManifest.swift in Sources */,
