@@ -10,12 +10,14 @@
 		0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
 		0052898C57571A9752CFC9A0 /* CachedComment+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */; };
 		01E3AFEC069DF18B4E2A0C4E /* SyncResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCED96777A4573DFBA0FF0AA /* SyncResult.swift */; };
+		01E63F0A3F9FDDE6F7B7C7C3 /* FenixKanbanUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BED4CF6E40316D84636F779 /* FenixKanbanUITests.swift */; };
 		033E10BB53252949904E52AA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
 		038304D92D7F6AAEBE6867EE /* CardStepsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB088C5A75FE888B531310C /* CardStepsViewModel.swift */; };
 		08B7C7B5D478946EAE9DE642 /* Card+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E58A51FEB2D7E2E3594F24 /* Card+Lifecycle.swift */; };
 		0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0435462C469D8222A55798D /* CardEntity.swift */; };
 		098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */; };
 		0DC9196E56E5472F3A3A12AA /* FizzyDTOs+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCF09CEDCB117837C6930E7 /* FizzyDTOs+Comments.swift */; };
+		1211AEE1BEEDC22F1060F004 /* FenixKanbanWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */; };
 		17275D2E744DB68AE345032D /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
 		17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10A143D4EF691E4A0436C89 /* NotificationService.swift */; };
@@ -115,6 +117,7 @@
 		857344412226E98D29897FCA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
 		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
 		865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */; };
+		87DFC476A5616C05386D198F /* PlaygroundBoardWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */; };
 		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
 		887D82A2C07BFB2278778129 /* FizzyError.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABA181CFB55168EB577EAA1 /* FizzyError.swift */; };
 		8AFDFD97E0C0917D6B84C923 /* CommentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66E5FCABE5C50693311577B /* CommentRepository.swift */; };
@@ -171,6 +174,7 @@
 		D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
 		D0B586E9137AE80BB7B0ACD9 /* ToggleGoldenIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FBA9DD9858555EF014B034 /* ToggleGoldenIntent.swift */; };
 		D3C037AAD854CDBEEEAEF968 /* FizzyDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A25B0D029F52671883DC255 /* FizzyDTOs.swift */; };
+		D43684A2EDC46213E1817D47 /* WidgetSnapshotReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA428EDA0F6EC5E565F52D5 /* WidgetSnapshotReader.swift */; };
 		D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C24E1E16D4DABFE2B4EDD2 /* FontCrossPlatformTests.swift */; };
 		D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */; };
 		DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */; };
@@ -180,12 +184,14 @@
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
 		DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */; };
+		E051A47171FC580A6BF1AE22 /* WidgetSnapshotReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F594652C5DF288B90851870 /* WidgetSnapshotReaderTests.swift */; };
 		E28CEDF04F9DC799CB8AA774 /* AssigneePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1B9186731B8F85F0294268 /* AssigneePickerView.swift */; };
 		E2E644FBE7E2A293B9E46891 /* FizzySyncEnginePushParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */; };
 		E558EBBB7243AC828B2FCC92 /* FizzyClient+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
 		E7142545CF6A399053654C8C /* FizzySyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263A4B64EBC1D39BF38D2CDC /* FizzySyncEngine.swift */; };
 		E72333D9A1BF94EB09AABEA5 /* FizzyClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF14922C6549BC2260540129 /* FizzyClient.swift */; };
+		E746092BB571C477737AB6B2 /* BoardSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E39A67DC347EB0CD3589743 /* BoardSnapshot.swift */; };
 		E82ED2F491D07950CC7D9A4D /* FirstSyncMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C7E3DD35C16245540AD34D /* FirstSyncMode.swift */; };
 		E8F4885003A7443637FADF62 /* FizzyAuthPairView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98505E6C18C3691F83519972 /* FizzyAuthPairView.swift */; };
 		E9E42C62557AFB457356C145 /* FizzySyncProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */; };
@@ -208,12 +214,20 @@
 		FBE1E15BE388FCB6CC58D7FF /* BackupExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0838D934889E230674EF4DE4 /* BackupExporter.swift */; };
 		FBEE679BCF1A845D4AD3521B /* FizzyDTOs+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D477B9EB12FF832B4E19D6 /* FizzyDTOs+Directory.swift */; };
 		FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */; };
+		FD40FD6D0F2677128AC88470 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1725825A4B3EA0BFDF7B7D1 /* Foundation.framework */; };
 		FD67D2436B58C8ECCB4073AB /* FizzyClientCommentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C48C9144B3593287090B842 /* FizzyClientCommentsTests.swift */; };
 		FDE100082D4EC59095D416DD /* BoardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */; };
 		FE02DAB0229879D619CBFD25 /* CardLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F71A7D0BFBA7DD53B71816A /* CardLifecycleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		10618D956C97B648C7EBA74C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA3C663B872EBD2B6D95718D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 29B0805C04158CE223599CD4;
+			remoteInfo = FenixKanban;
+		};
 		8BCCB11DF2158D802A5BFC16 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FA3C663B872EBD2B6D95718D /* Project object */;
@@ -221,7 +235,28 @@
 			remoteGlobalIDString = 29B0805C04158CE223599CD4;
 			remoteInfo = FenixKanban;
 		};
+		93CF08EA249E6A6A7AB8098E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA3C663B872EBD2B6D95718D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A3B334D6010135CEFEA59B5;
+			remoteInfo = FenixKanbanWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		448761EA26BAB85F68FE8440 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				1211AEE1BEEDC22F1060F004 /* FenixKanbanWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardTombstone+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -241,12 +276,14 @@
 		0E39A67DC347EB0CD3589743 /* BoardSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSnapshot.swift; sourceTree = "<group>"; };
 		0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthStateTests.swift; sourceTree = "<group>"; };
 		0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshTests.swift; sourceTree = "<group>"; };
+		12879304376681EE625271BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		139288734275D3EB49C0F400 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
 		140F9619D806C4B36AF13C6B /* CardStepsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStepsViewModelTests.swift; sourceTree = "<group>"; };
 		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
 		177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEnginePullPlacementTests.swift; sourceTree = "<group>"; };
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
 		1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 2.xcdatamodel"; sourceTree = "<group>"; };
+		1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FenixKanbanWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D083862CEB4C83C96107CE6 /* MockURLProtocolIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocolIsolationTests.swift; sourceTree = "<group>"; };
 		1DAB6EF3F6C76AE6F9A55B9C /* BoardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRepository.swift; sourceTree = "<group>"; };
 		1E738ED3A6BBDD9FDA17CE8D /* FizzyClient+Boards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Boards.swift"; sourceTree = "<group>"; };
@@ -261,6 +298,7 @@
 		263A4B64EBC1D39BF38D2CDC /* FizzySyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngine.swift; sourceTree = "<group>"; };
 		27A14F077027BF8262193AEE /* LabelBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelBadge.swift; sourceTree = "<group>"; };
 		2AB088C5A75FE888B531310C /* CardStepsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStepsViewModel.swift; sourceTree = "<group>"; };
+		2BED4CF6E40316D84636F779 /* FenixKanbanUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FenixKanbanUITests.swift; sourceTree = "<group>"; };
 		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
 		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelGoldenTests.swift; sourceTree = "<group>"; };
@@ -268,6 +306,7 @@
 		35A1AAE6F0C21DEB56C73DCA /* InitialsAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialsAvatar.swift; sourceTree = "<group>"; };
 		36E8B6A25376C60961725E8B /* BackupManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifest.swift; sourceTree = "<group>"; };
 		38A57D39B2CCA5985144EF4A /* FizzyClientBoardsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientBoardsTests.swift; sourceTree = "<group>"; };
+		3AA428EDA0F6EC5E565F52D5 /* WidgetSnapshotReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotReader.swift; sourceTree = "<group>"; };
 		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
 		3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineTests.swift; sourceTree = "<group>"; };
@@ -301,6 +340,7 @@
 		65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV7Tests.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
 		6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardSheet.swift; sourceTree = "<group>"; };
+		6F594652C5DF288B90851870 /* WidgetSnapshotReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotReaderTests.swift; sourceTree = "<group>"; };
 		701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProvider.swift; sourceTree = "<group>"; };
 		705401ADCC82CB1481075EA4 /* LabelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelPickerView.swift; sourceTree = "<group>"; };
 		72EAF4548651CF03FA7CA77D /* GoldZoneChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldZoneChip.swift; sourceTree = "<group>"; };
@@ -350,8 +390,10 @@
 		9C5FE8423C5C6D2A5FD1C033 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
 		9CF1A4FE82B7784CE44A4DCB /* CardLifecycleActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLifecycleActionsTests.swift; sourceTree = "<group>"; };
 		9D4887005A9D6F6667E16776 /* FenixKanban 7.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 7.xcdatamodel"; sourceTree = "<group>"; };
+		9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaygroundBoardWidget.swift; sourceTree = "<group>"; };
 		9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+CrossPlatform.swift"; sourceTree = "<group>"; };
 		9E20A59A4E9DDCD06081E6A7 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		9F986E44D6B15A61D1A06684 /* FenixKanbanUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FenixKanbanUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1E87D54C1B073A40441ED37 /* NavigationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationModelTests.swift; sourceTree = "<group>"; };
 		A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementView.swift; sourceTree = "<group>"; };
 		A472D8FA16F1EB9A071E6E64 /* FizzyClientDirectoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientDirectoryTests.swift; sourceTree = "<group>"; };
@@ -407,6 +449,7 @@
 		DF5619875D16CD1B3B74E215 /* BoardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardQuery.swift; sourceTree = "<group>"; };
 		E0435462C469D8222A55798D /* CardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntity.swift; sourceTree = "<group>"; };
 		E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		E1725825A4B3EA0BFDF7B7D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		E22CB144486430B2801DB56B /* FizzyDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyDTOTests.swift; sourceTree = "<group>"; };
 		E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
 		E468616D12A084C045616D44 /* FenixKanbanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanTests.swift; sourceTree = "<group>"; };
@@ -416,6 +459,7 @@
 		E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSManagedObject+Extensions.swift"; sourceTree = "<group>"; };
 		E96BEB60BF7AB875B2439D70 /* BoardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModel.swift; sourceTree = "<group>"; };
 		E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBoardIntentTests.swift; sourceTree = "<group>"; };
+		EACBCBD231CE21C868A017F6 /* FenixKanbanWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FenixKanbanWidgets.entitlements; sourceTree = "<group>"; };
 		EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntityTests.swift; sourceTree = "<group>"; };
 		F24019D9090EA00DA9C7D193 /* FizzyAuthPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthPhase.swift; sourceTree = "<group>"; };
 		F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardGoldenTicketTests.swift; sourceTree = "<group>"; };
@@ -431,7 +475,26 @@
 		FF14922C6549BC2260540129 /* FizzyClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		E7D2F5C98A07A11724A2F71F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FD40FD6D0F2677128AC88470 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		0556EADA133585EE7A275CF0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				33602D9321AA9045E039BEFA /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		05B48BF4B473AEFDFC63906C /* Labels */ = {
 			isa = PBXGroup;
 			children = (
@@ -504,6 +567,15 @@
 			path = Tools;
 			sourceTree = "<group>";
 		};
+		1CE7CB1D780FF1327079BE4D /* FenixKanbanUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2BED4CF6E40316D84636F779 /* FenixKanbanUITests.swift */,
+			);
+			name = FenixKanbanUITests;
+			path = FenixKanbanUITests;
+			sourceTree = "<group>";
+		};
 		1E279A33AD90043CFE8686B0 = {
 			isa = PBXGroup;
 			children = (
@@ -511,7 +583,10 @@
 				80557794546CE78EEA063AB3 /* FenixKanban */,
 				FC1AC208A9E6B4BA1D3A553E /* FenixKanbanTests */,
 				3B870940BDB183084D652B3A /* tools */,
+				8D1264E6D99E3B467A83C3FF /* Widgets */,
 				F16B1B49246B6D4A03A47839 /* Products */,
+				0556EADA133585EE7A275CF0 /* Frameworks */,
+				1CE7CB1D780FF1327079BE4D /* FenixKanbanUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -583,6 +658,14 @@
 				961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */,
 			);
 			path = Intents;
+			sourceTree = "<group>";
+		};
+		33602D9321AA9045E039BEFA /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				E1725825A4B3EA0BFDF7B7D1 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		3A956BD31899F5633C596B02 /* Components */ = {
@@ -788,6 +871,17 @@
 			path = FenixKanban;
 			sourceTree = "<group>";
 		};
+		8D1264E6D99E3B467A83C3FF /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				EACBCBD231CE21C868A017F6 /* FenixKanbanWidgets.entitlements */,
+				12879304376681EE625271BC /* Info.plist */,
+				9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */,
+				3AA428EDA0F6EC5E565F52D5 /* WidgetSnapshotReader.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
 		9460B5BC7EB210D2C3DBA37F /* Sync */ = {
 			isa = PBXGroup;
 			children = (
@@ -972,7 +1066,9 @@
 			children = (
 				3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */,
 				2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */,
+				1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */,
 				1FA469A42CF81C75F8BEF5CB /* fizzyctl */,
+				9F986E44D6B15A61D1A06684 /* FenixKanbanUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -993,6 +1089,7 @@
 			isa = PBXGroup;
 			children = (
 				DA05B3C28E71F324E32B74AC /* BoardSnapshotWriterTests.swift */,
+				6F594652C5DF288B90851870 /* WidgetSnapshotReaderTests.swift */,
 			);
 			path = Widget;
 			sourceTree = "<group>";
@@ -1060,14 +1157,14 @@
 			buildPhases = (
 				0D36C09605D6FEE3F011A35B /* Sources */,
 				33613CB61E1A3630860CA22F /* Resources */,
+				448761EA26BAB85F68FE8440 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				4A774485F07DDF0FCA7D63B0 /* PBXTargetDependency */,
 			);
 			name = FenixKanban;
-			packageProductDependencies = (
-			);
 			productName = FenixKanban;
 			productReference = 3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */;
 			productType = "com.apple.product-type.application";
@@ -1083,8 +1180,6 @@
 			dependencies = (
 			);
 			name = fizzyctl;
-			packageProductDependencies = (
-			);
 			productName = fizzyctl;
 			productReference = 1FA469A42CF81C75F8BEF5CB /* fizzyctl */;
 			productType = "com.apple.product-type.tool";
@@ -1101,11 +1196,42 @@
 				FABC1CD086BE8C4BD632A95F /* PBXTargetDependency */,
 			);
 			name = FenixKanbanTests;
-			packageProductDependencies = (
-			);
 			productName = FenixKanbanTests;
 			productReference = 2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6A3B334D6010135CEFEA59B5 /* FenixKanbanWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD4360FF711283FF65B7ED15 /* Build configuration list for PBXNativeTarget "FenixKanbanWidgets" */;
+			buildPhases = (
+				84517D65076A75558C623250 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FenixKanbanWidgets;
+			productName = FenixKanbanWidgets;
+			productReference = 1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		8B441F998F51006DF866918E /* FenixKanbanUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 80F348ACFA4A2D145EE654B0 /* Build configuration list for PBXNativeTarget "FenixKanbanUITests" */;
+			buildPhases = (
+				6CC2659EC6545E5F4FAE19ED /* Sources */,
+				E7D2F5C98A07A11724A2F71F /* Frameworks */,
+				6BE73A794EE348509384BDAE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5F5F03969FA6CD3EFA387376 /* PBXTargetDependency */,
+			);
+			name = FenixKanbanUITests;
+			productName = FenixKanbanUITests;
+			productReference = 9F986E44D6B15A61D1A06684 /* FenixKanbanUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -1117,15 +1243,19 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					29B0805C04158CE223599CD4 = {
-						DevelopmentTeam = QU2C2R55C4;
+						DevelopmentTeam = YOUR_TEAM_ID_HERE;
 						ProvisioningStyle = Automatic;
 					};
 					5FBE7EC4307D66DC5CD8CF44 = {
-						DevelopmentTeam = QU2C2R55C4;
+						DevelopmentTeam = YOUR_TEAM_ID_HERE;
 						ProvisioningStyle = Manual;
 					};
 					62212B85E018F8DAAD57EB30 = {
-						DevelopmentTeam = QU2C2R55C4;
+						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						ProvisioningStyle = Automatic;
+					};
+					6A3B334D6010135CEFEA59B5 = {
+						DevelopmentTeam = YOUR_TEAM_ID_HERE;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1146,7 +1276,9 @@
 			targets = (
 				29B0805C04158CE223599CD4 /* FenixKanban */,
 				62212B85E018F8DAAD57EB30 /* FenixKanbanTests */,
+				6A3B334D6010135CEFEA59B5 /* FenixKanbanWidgets */,
 				5FBE7EC4307D66DC5CD8CF44 /* fizzyctl */,
+				8B441F998F51006DF866918E /* FenixKanbanUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -1159,6 +1291,13 @@
 				6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */,
 				6721B436DE044A5FB471EA5C /* LaunchScreen.storyboard in Resources */,
 				A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6BE73A794EE348509384BDAE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1363,6 +1502,7 @@
 				73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */,
 				EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */,
 				F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */,
+				E051A47171FC580A6BF1AE22 /* WidgetSnapshotReaderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1387,9 +1527,38 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6CC2659EC6545E5F4FAE19ED /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				01E63F0A3F9FDDE6F7B7C7C3 /* FenixKanbanUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		84517D65076A75558C623250 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E746092BB571C477737AB6B2 /* BoardSnapshot.swift in Sources */,
+				87DFC476A5616C05386D198F /* PlaygroundBoardWidget.swift in Sources */,
+				D43684A2EDC46213E1817D47 /* WidgetSnapshotReader.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		4A774485F07DDF0FCA7D63B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A3B334D6010135CEFEA59B5 /* FenixKanbanWidgets */;
+			targetProxy = 93CF08EA249E6A6A7AB8098E /* PBXContainerItemProxy */;
+		};
+		5F5F03969FA6CD3EFA387376 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = FenixKanban;
+			target = 29B0805C04158CE223599CD4 /* FenixKanban */;
+			targetProxy = 10618D956C97B648C7EBA74C /* PBXContainerItemProxy */;
+		};
 		FABC1CD086BE8C4BD632A95F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 29B0805C04158CE223599CD4 /* FenixKanban */;
@@ -1559,6 +1728,45 @@
 			};
 			name = Debug;
 		};
+		39B12A27BA545EA1E6A13481 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Widgets/FenixKanbanWidgets.entitlements;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bluefenixproductions.FenixKanban.Widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		3FD18518A3DF14573FE45F12 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bluefenixproductions.FenixKanbanUITests;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FenixKanban;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		65A576C47E64E7F84FB86614 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1635,6 +1843,27 @@
 			};
 			name = Debug;
 		};
+		DDC1BDC5F8E2841A6371B01F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Widgets/FenixKanbanWidgets.entitlements;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bluefenixproductions.FenixKanban.Widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		EC40A95293AAD3628E587CD2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1657,6 +1886,23 @@
 			};
 			name = Release;
 		};
+		FE52F0C4E3BBDCDF37B443D0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bluefenixproductions.FenixKanbanUITests;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FenixKanban;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1678,6 +1924,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		80F348ACFA4A2D145EE654B0 /* Build configuration list for PBXNativeTarget "FenixKanbanUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3FD18518A3DF14573FE45F12 /* Release */,
+				FE52F0C4E3BBDCDF37B443D0 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		85D5340FEE4C212FE6974E6B /* Build configuration list for PBXNativeTarget "FenixKanbanTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1692,6 +1947,15 @@
 			buildConfigurations = (
 				D88215FC68AEB23A7C0BAC59 /* Debug */,
 				65A576C47E64E7F84FB86614 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CD4360FF711283FF65B7ED15 /* Build configuration list for PBXNativeTarget "FenixKanbanWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DDC1BDC5F8E2841A6371B01F /* Debug */,
+				39B12A27BA545EA1E6A13481 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
