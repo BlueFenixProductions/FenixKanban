@@ -3,6 +3,10 @@ import SwiftUI
 struct CardView: View {
     @ObservedObject var card: Card
     var columnColor: Color? = nil
+    /// Set to `true` by the parent `ColumnView` / `BoardView` when the board
+    /// has a Fizzy pairing. Drives the cloud badge without requiring CardView
+    /// to read UserDefaults directly.
+    var boardIsPaired: Bool = false
 
     private var glassTint: Color {
         // Golden priority takes precedence over the column-color tint.
@@ -31,6 +35,13 @@ struct CardView: View {
         // Show the highlighted stroke whenever there's something to outline
         // (column color OR golden state).
         (card.isGolden || columnColor != nil) ? 1.5 : 0
+    }
+
+    /// Resolved Fizzy sync badge state — uses device-local pairing store.
+    private var syncBadgeState: CardSyncBadgeState {
+        guard boardIsPaired, let cardID = card.id else { return .none }
+        let hasPairing = FizzyCardPairingStore.shared.pairing(for: cardID) != nil
+        return CardSyncBadgeState.resolve(hasPairing: hasPairing, boardIsPaired: boardIsPaired)
     }
 
     var body: some View {
@@ -97,6 +108,29 @@ struct CardView: View {
                     .foregroundStyle(Color.goldenTicketIcon)
                     .padding(8)
                     .accessibilityLabel("Golden ticket priority")
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            // Cloud sync badge — bottom-trailing so it doesn't collide with
+            // the golden ticket overlay (top-leading). Only shown when the
+            // board is Fizzy-paired.
+            switch syncBadgeState {
+            case .synced:
+                Image(systemName: "checkmark.icloud.fill")
+                    .imageScale(.small)
+                    .foregroundStyle(.tint.opacity(0.7))
+                    .padding(6)
+                    .accessibilityLabel("Synced with Fizzy")
+                    .accessibilityHint("This card has been synced to Fizzy.")
+            case .pending:
+                Image(systemName: "icloud.slash")
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary.opacity(0.7))
+                    .padding(6)
+                    .accessibilityLabel("Not yet synced")
+                    .accessibilityHint("This card has not been synced to Fizzy yet.")
+            case .none:
+                EmptyView()
             }
         }
         // Make the entire rounded-card area the drag target. Without an

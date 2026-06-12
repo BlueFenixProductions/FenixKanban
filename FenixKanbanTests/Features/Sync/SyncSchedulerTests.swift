@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import FenixKanban
 
@@ -9,9 +10,10 @@ final class SyncSpy: SyncTriggering {
     var isPaired: Bool
     var callCount = 0
     var callDates: [Date] = []
-    /// When non-nil, the spy suspends until this continuation is resumed.
-    private var suspension: CheckedContinuation<Void, Never>?
-    private var isSuspended = false
+
+    /// Each entry in this stream represents a pending triggerSync call waiting
+    /// to be released. Tests `yield` a Void into `releaseStream` to unblock.
+    private var slowMode = false
 
     init(isPaired: Bool = true) {
         self.isPaired = isPaired
@@ -20,24 +22,15 @@ final class SyncSpy: SyncTriggering {
     func triggerSync() async {
         callCount += 1
         callDates.append(Date())
-        if isSuspended, let k = suspension {
-            // Long-running: wait for resume
-            await withCheckedContinuation { cont in
-                k.resume()
-                suspension = cont
-            }
+        if slowMode {
+            // Block for a very long time (cancelled when scheduler stops)
+            try? await Task.sleep(for: .seconds(60))
         }
     }
 
-    /// Make subsequent calls block until `resume()` is called.
+    /// Make triggerSync block (effectively forever for the test window).
     func makeSlow() {
-        isSuspended = true
-    }
-
-    func resume() {
-        isSuspended = false
-        suspension?.resume()
-        suspension = nil
+        slowMode = true
     }
 }
 
@@ -107,13 +100,14 @@ struct SyncSchedulerTests {
         )
         scheduler.setSceneActive(true)
 
-        // Let the scheduler attempt multiple firings while the first is blocked
+        // Let the scheduler attempt multiple firings while the first is blocked.
+        // The first triggerSync call blocks for 60 s (cancelled when scene goes
+        // inactive), so isSyncing stays true for the entire observation window.
         try await Task.sleep(for: .milliseconds(180))
         scheduler.setSceneActive(false)
 
         // Only 1 call should have been made (no coalescing into a second)
         #expect(spy.callCount == 1)
-        spy.resume()
     }
 
     // MARK: (d) does not fire when unpaired
