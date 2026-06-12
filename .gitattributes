@@ -1,0 +1,3 @@
+# Status log is append-only per-task sections; union merge avoids
+# constant conflicts between parallel PRs that each append one section.
+TDD_IMPLEMENTATION_STATUS.md merge=union

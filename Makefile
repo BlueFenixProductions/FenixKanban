@@ -30,7 +30,7 @@ DEVICE_DEST   = 'platform=iOS,id=$(DEVICE_ID)'
 GENERIC_DEST  = 'generic/platform=iOS'
 
 .DEFAULT_GOAL := help
-.PHONY: help generate build build-device test install launch run \
+.PHONY: help generate build build-device test integration-test install launch run \
         run-device-1 run-device-2 run-all _deploy-one clean devices icon
 
 help:
@@ -40,6 +40,7 @@ help:
 	@echo "  make build         Build for iOS Simulator ($(SIMULATOR))"
 	@echo "  make build-device  Build for physical device (generic iOS)"
 	@echo "  make test          Run unit tests on simulator"
+	@echo "  make integration-test  Run live-API tests (loads .env if present)"
 	@echo "  make install       Install built app on DEVICE_ID (runs build-device)"
 	@echo "  make launch        Launch installed app on DEVICE_ID"
 	@echo "  make run           build-device + install + launch on DEVICE_ID"
@@ -79,6 +80,29 @@ build-device:
 test:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 	  -destination $(SIM_DEST) test
+
+# Pinned by UDID per the two-iPhone-17 flake rule (never use name=).
+INTEGRATION_SIM_DEST = 'platform=iOS Simulator,id=1CCA4B1C-2345-4642-A29C-237D8BE5B9EB'
+
+# Run the live-API test suite against the real Fizzy server.
+# Loads .env if present (set -a exports all vars; TEST_RUNNER_ prefix is how
+# xcodebuild forwards env vars into the test-runner process).
+# Credentials are intentionally absent in CI — the suite self-skips cleanly.
+integration-test:
+	@if [ -f .env ]; then \
+	    echo "Loading .env..."; \
+	    set -a; . ./.env; set +a; \
+	fi; \
+	xcodebuild test \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -destination $(INTEGRATION_SIM_DEST) \
+	  -only-testing:FenixKanbanTests/LiveSmokeTests \
+	  TEST_RUNNER_FIZZY_TOKEN=$${FIZZY_TOKEN:-} \
+	  TEST_RUNNER_FIZZY_ACCOUNT=$${FIZZY_ACCOUNT:-} \
+	  TEST_RUNNER_FIZZY_BASE_URL=$${FIZZY_BASE_URL:-} \
+	  TEST_RUNNER_FIZZY_EXPECTED_CARDS=$${FIZZY_EXPECTED_CARDS:-} \
+	  TEST_RUNNER_FIZZY_ALLOW_MUTATION=$${FIZZY_ALLOW_MUTATION:-}
 
 install: build-device
 	@APP=$$(ls -d $(APP_GLOB) 2>/dev/null | head -1); \
