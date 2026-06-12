@@ -107,6 +107,7 @@
 		7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
 		83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */; };
+		846C40D457B0553C01645736 /* FizzySyncEngineConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCC9BC12390FEA82248D10E /* FizzySyncEngineConflictTests.swift */; };
 		857344412226E98D29897FCA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
 		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
 		865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */; };
@@ -303,6 +304,7 @@
 		7B1B9186731B8F85F0294268 /* AssigneePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssigneePickerView.swift; sourceTree = "<group>"; };
 		7BEA333BB150F388950BC01B /* CardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryTests.swift; sourceTree = "<group>"; };
 		7DAD2ED2D2F5D199581543B6 /* FizzyClient+Comments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Comments.swift"; sourceTree = "<group>"; };
+		7FCC9BC12390FEA82248D10E /* FizzySyncEngineConflictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineConflictTests.swift; sourceTree = "<group>"; };
 		80B2297E0A59161848CA6210 /* FenixKanban 5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 5.xcdatamodel"; sourceTree = "<group>"; };
 		81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+Directory.swift"; sourceTree = "<group>"; };
 		81F6E147784B7158A6DF4A4D /* BoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardEntity.swift; sourceTree = "<group>"; };
@@ -856,6 +858,7 @@
 				90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */,
 				DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */,
 				51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */,
+				7FCC9BC12390FEA82248D10E /* FizzySyncEngineConflictTests.swift */,
 				D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */,
 				BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */,
 				177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */,
@@ -1290,6 +1293,7 @@
 				BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */,
 				F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */,
 				A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */,
+				846C40D457B0553C01645736 /* FizzySyncEngineConflictTests.swift in Sources */,
 				1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */,
 				1EE67FEFD13A28512384FA70 /* FizzySyncEngineLifecycleTests.swift in Sources */,
 				233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */,
