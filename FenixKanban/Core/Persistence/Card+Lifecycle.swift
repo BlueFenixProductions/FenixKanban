@@ -17,6 +17,15 @@ public enum CardLifecycleStatus: String {
     case notNow
 }
 
+/// The lifecycle action that a board-surface control (context menu, swipe)
+/// can request. Used by ColumnView → BoardView callback without coupling
+/// ColumnView to async logic.
+public enum CardLifecycleAction {
+    case close
+    case reopen
+    case postpone
+}
+
 extension Card {
 
     /// The lifecycle state of this card.

@@ -19,8 +19,16 @@ final class FizzyAuthState {
 
     let keyPrefix: String
 
-    init(keyPrefix: String = "fizzy") {
+    /// When `true` (default, production), credentials are stored in the
+    /// system Keychain. When `false` (integration tests running on clone
+    /// simulators that lack a Keychain session), an in-memory dictionary is
+    /// used instead. Always pass `false` only from live-test helpers.
+    private let useKeychain: Bool
+    private var memoryStore: [String: String] = [:]
+
+    init(keyPrefix: String = "fizzy", useKeychain: Bool = true) {
         self.keyPrefix = keyPrefix
+        self.useKeychain = useKeychain
     }
 
     private var tokenKey: String  { "\(keyPrefix).accessToken" }
@@ -28,20 +36,16 @@ final class FizzyAuthState {
     private var urlKey: String    { "\(keyPrefix).baseURL" }
 
     /// Bearer personal access token (e.g. `claude-dev`). `nil` when not configured.
-    var accessToken: String? {
-        KeychainHelper.load(key: tokenKey)
-    }
+    var accessToken: String? { load(key: tokenKey) }
 
     /// Account-slug segment (e.g. `"897362094"`) interpolated into URLs by
     /// `FizzyClient`. `nil` when not configured.
-    var accountSlug: String? {
-        KeychainHelper.load(key: slugKey)
-    }
+    var accountSlug: String? { load(key: slugKey) }
 
     /// Effective base URL. Returns the user-overridden value if set, else
     /// `defaultBaseURL`.
     var baseURL: URL {
-        guard let string = KeychainHelper.load(key: urlKey),
+        guard let string = load(key: urlKey),
               let url = URL(string: string)
         else { return Self.defaultBaseURL }
         return url
@@ -52,7 +56,7 @@ final class FizzyAuthState {
         accessToken != nil && accountSlug != nil
     }
 
-    /// Sets or clears the access token. `nil` removes the Keychain entry.
+    /// Sets or clears the access token. `nil` removes the entry.
     func setAccessToken(_ value: String?) {
         write(value, key: tokenKey)
     }
@@ -67,18 +71,40 @@ final class FizzyAuthState {
         write(value?.absoluteString, key: urlKey)
     }
 
-    /// Removes all three Keychain entries; `baseURL` reverts to default.
+    /// Removes all credential entries; `baseURL` reverts to default.
     func clear() {
-        KeychainHelper.delete(key: tokenKey)
-        KeychainHelper.delete(key: slugKey)
-        KeychainHelper.delete(key: urlKey)
+        remove(key: tokenKey)
+        remove(key: slugKey)
+        remove(key: urlKey)
+    }
+
+    // MARK: - Storage helpers
+
+    private func load(key: String) -> String? {
+        if useKeychain {
+            return KeychainHelper.load(key: key)
+        } else {
+            return memoryStore[key]
+        }
     }
 
     private func write(_ value: String?, key: String) {
         if let value {
-            KeychainHelper.save(key: key, value: value)
+            if useKeychain {
+                KeychainHelper.save(key: key, value: value)
+            } else {
+                memoryStore[key] = value
+            }
         } else {
+            remove(key: key)
+        }
+    }
+
+    private func remove(key: String) {
+        if useKeychain {
             KeychainHelper.delete(key: key)
+        } else {
+            memoryStore.removeValue(forKey: key)
         }
     }
 }

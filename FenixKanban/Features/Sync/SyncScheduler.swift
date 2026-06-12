@@ -13,8 +13,9 @@ import SwiftUI
 /// duplicate HTTP work, but the scheduler adds a second layer so the
 /// `activityState` never flips twice).
 ///
-/// Injectable `interval` (default 300 s) so tests can run at millisecond
-/// resolution without a test clock abstraction.
+/// An `any Clock<Duration>` is injected (default `ContinuousClock`) so
+/// that tests can drive time forward deterministically without relying on
+/// real wall-clock sleeps.
 @Observable
 @MainActor
 final class SyncScheduler {
@@ -27,6 +28,7 @@ final class SyncScheduler {
 
     private let provider: any SyncTriggering
     private let interval: Duration
+    private let clock: any Clock<Duration>
     private var loopTask: Task<Void, Never>?
     private var isSyncing = false
     private var isSceneActive = false
@@ -35,10 +37,12 @@ final class SyncScheduler {
 
     init(
         provider: any SyncTriggering,
-        interval: Duration = .seconds(300)
+        interval: Duration = .seconds(300),
+        clock: any Clock<Duration> = ContinuousClock()
     ) {
         self.provider = provider
         self.interval = interval
+        self.clock = clock
     }
 
     // Note: loopTask cancellation is intentionally triggered by setSceneActive(false)
@@ -70,7 +74,7 @@ final class SyncScheduler {
                 // the user may have just foregrounded and the last sync
                 // may still be fresh.
                 do {
-                    try await Task.sleep(for: interval)
+                    try await clock.sleep(for: interval)
                 } catch {
                     // CancellationError — break cleanly
                     return
