@@ -2750,3 +2750,48 @@ CloudKit-enabled release.
 **Final verification:** **408 tests / 83 suites green** on the pinned
 iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+### #46 — Issue #10: MockURLProtocol per-session state; parallel testing enabled (2026-06-11)
+
+The bandaid's present shape differed from the issue text:
+`FizzyClientSerialContainer` (df4b24c) had already dissolved into per-suite
+`.serialized` modifiers PLUS scheme-level `parallelizable = "NO"` — the
+scheme flag was the thing actually protecting the mock's static
+`handler`/`delayedHandler`/`requests` (per-suite `.serialized` only
+serializes WITHIN a suite; cross-suite races were prevented by the whole
+bundle running serially).
+
+RED: `MockURLProtocolIsolationTests` — two `MockHTTPState` instances with
+different handlers drive 40 interleaved requests through two sessions
+(`cannot find 'MockHTTPState' in scope`; the static design cannot express
+two simultaneous handlers — API-absent RED, #42 precedent).
+
+GREEN: `MockHTTPState` holds handler/delayedHandler/requests per instance
+(NSLock, `@unchecked Sendable`, `TagPushCallCounter` precedent);
+`makeSession()` injects a UUID token via `httpAdditionalHeaders`, and the
+protocol resolves its state from a lock-protected token registry (the
+registry is the one remaining static: write-once per state, UUID-keyed,
+bounded by suite instances per process — the #10 race was the
+unsynchronized shared mutable state, not statics per se). The URL loading
+system provably merges session additional headers into the request the
+protocol sees — the isolation test verifies this empirically.
+
+Migration: all 12 consumer files (~390 refs); 97 dead `reset()` calls
+deleted (Swift Testing re-instantiates the suite struct per test, so a
+suite-stored `MockHTTPState` is per-test automatically); the 10
+duplicated engine harnesses each carry `let mock` (exposed to tests as
+`h.mock`); five harness-less engine tests get local instances; 8
+FizzyClient suites drop `.serialized` (pure HTTP, no Core Data). Other
+suites keep `.serialized` (within-suite Core Data ordering is out of
+#10's scope). Fixtures elsewhere were already parallel-ready
+(UUID-suffixed pairing-store temp files, unique UserDefaults suite
+names, per-suite in-memory stores over the read-only `sharedModel`).
+
+Scheme: `parallelizable = "YES"` — acceptance criterion 4 upgraded from
+"FizzyClient suites parallel" to whole-bundle clone-based parallel
+execution.
+
+**Final verification:** serial run **409 tests / 84 suites green**, then
+**three consecutive parallel runs green** (pinned iPhone 17 sim
+`1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
+(`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
