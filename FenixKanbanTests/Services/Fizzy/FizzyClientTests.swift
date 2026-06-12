@@ -357,7 +357,8 @@ struct FizzyClientErrorTests {
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: session
+            urlSession: session,
+            clock: ImmediateClock()
         )
     }
 
