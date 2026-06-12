@@ -5,15 +5,14 @@ import Foundation
 @Suite("CardSteps ViewModel", .serialized)
 @MainActor
 struct CardStepsViewModelTests {
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: URLSession(configuration: config),
+            urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
     }
@@ -41,10 +40,8 @@ struct CardStepsViewModelTests {
 
     @Test("load fetches the card detail and exposes its steps (fixture verbatim)")
     func loadExposesSteps() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let detail = try loadFixture("card_detail_doc")
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (detail, .ok(for: request))
         }
 
@@ -61,10 +58,8 @@ struct CardStepsViewModelTests {
 
     @Test("addStep POSTs, follows Location, appends the created step")
     func addStepAppends() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let stepData = try loadFixture("step_doc")
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             if request.httpMethod == "POST", request.url!.path.hasSuffix("/cards/1/steps") {
                 return (Data(), .response(
                     for: request, status: 201,
@@ -89,9 +84,7 @@ struct CardStepsViewModelTests {
     func addStepFailureReturnsFalse() async throws {
         // The false return drives CardStepsSection's restore-typed-text
         // path — the field is cleared optimistically before the POST.
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
 
@@ -105,26 +98,22 @@ struct CardStepsViewModelTests {
 
     @Test("addStep ignores whitespace-only content without a network call")
     func addStepIgnoresEmpty() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
-        MockURLProtocol.handler = { _ in throw URLError(.unsupportedURL) }
+        mock.handler = { _ in throw URLError(.unsupportedURL) }
 
         let vm = CardStepsViewModel(cardNumber: 1, client: makeClient())
         await vm.addStep(content: "   ")
 
         #expect(vm.steps.isEmpty)
-        #expect(MockURLProtocol.requests.isEmpty)
+        #expect(mock.requests.isEmpty)
     }
 
     @Test("toggleStep flips optimistically and PUTs the new completed state")
     func toggleStepPuts() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let detail = try loadFixture("card_detail_doc")
         let updated = Data("""
         {"id":"03f8huu0sog76g3s975963b5e","content":"This is the first step","completed":true}
         """.utf8)
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             if request.httpMethod == "PUT" {
                 return (updated, .ok(for: request))
             }
@@ -139,16 +128,14 @@ struct CardStepsViewModelTests {
         let toggled = try #require(vm.steps.first)
         #expect(toggled.completed == true)
         #expect(vm.progressText == "Steps (1/2)")
-        let put = MockURLProtocol.requests.first { $0.httpMethod == "PUT" }
+        let put = mock.requests.first { $0.httpMethod == "PUT" }
         #expect(put?.url?.path.hasSuffix("/cards/1/steps/03f8huu0sog76g3s975963b5e") == true)
     }
 
     @Test("toggleStep reverts on 422 and surfaces an error")
     func toggleStepReverts() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let detail = try loadFixture("card_detail_doc")
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             if request.httpMethod == "PUT" {
                 return (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
             }
@@ -167,11 +154,9 @@ struct CardStepsViewModelTests {
 
     @Test("deleteStep removes optimistically; 422 restores at original index")
     func deleteStepReverts() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let detail = try loadFixture("card_detail_doc")
         // Phase 1: DELETE fails with 422.
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             if request.httpMethod == "DELETE" {
                 return (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
             }
@@ -190,7 +175,7 @@ struct CardStepsViewModelTests {
         #expect(vm.errorMessage != nil)
 
         // Phase 2: reassign the handler so DELETE now succeeds with 204.
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             if request.httpMethod == "DELETE" {
                 return (Data(), .response(for: request, status: 204))
             }
@@ -208,8 +193,6 @@ struct CardStepsViewModelTests {
         // a second toggle of the same step completes (back to false) while the
         // first is in flight. When the gate opens, the first toggle's success
         // path must see the newer local state and NOT apply its stale response.
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let detail = try loadFixture("card_detail_doc")
         let staleTrue = Data("""
         {"id":"03f8huu0sog76g3s975963b5e","content":"This is the first step","completed":true}
@@ -219,7 +202,7 @@ struct CardStepsViewModelTests {
         """.utf8)
         let (gate, releaseFirstPut) = AsyncStream.makeStream(of: Void.self)
         let puts = StepPutCallCounter()
-        MockURLProtocol.delayedHandler = { request in
+        mock.delayedHandler = { request in
             guard request.httpMethod == "PUT" else {
                 return (detail, .ok(for: request))
             }
@@ -257,10 +240,8 @@ struct CardStepsViewModelTests {
         // row 1 to index 0, so a naive index walk would skip (or crash on)
         // the second row. deleteSteps must snapshot step VALUES via
         // compactMap BEFORE its first await — both steps end up removed.
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let detail = try loadFixture("card_detail_doc")
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             if request.httpMethod == "DELETE" {
                 return (Data(), .response(for: request, status: 204))
             }
@@ -275,11 +256,11 @@ struct CardStepsViewModelTests {
 
         #expect(vm.steps.isEmpty)
         #expect(vm.errorMessage == nil)
-        #expect(MockURLProtocol.requests.filter { $0.httpMethod == "DELETE" }.count == 2)
+        #expect(mock.requests.filter { $0.httpMethod == "DELETE" }.count == 2)
     }
 }
 
-/// Thread-safe call counter for `MockURLProtocol.delayedHandler`, which is
+/// Thread-safe call counter for `mock.delayedHandler`, which is
 /// invoked off the main actor (URL loading threads). Mirrors the counter in
 /// `CardDetailViewModelTests`.
 private final class StepPutCallCounter: @unchecked Sendable {

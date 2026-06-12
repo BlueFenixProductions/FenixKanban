@@ -7,15 +7,13 @@ import Foundation
 
 private final class FixtureLocatorBoards {}
 
-@Suite("FizzyClient — boards & columns", .serialized)
+@Suite("FizzyClient — boards & columns")
 struct FizzyClientBoardsTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -77,7 +75,7 @@ struct FizzyClientBoardsTests {
         // Fixture boards_list_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/boards.md, section "GET /:account_slug/boards".
         let data = try loadFixture("boards_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards")
             return (data, .ok(for: req))
@@ -101,7 +99,7 @@ struct FizzyClientBoardsTests {
         // Fixture board_detail_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/boards.md, section "GET /:account_slug/boards/:board_id".
         let data = try loadFixture("board_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1")
             return (data, .ok(for: req))
@@ -121,7 +119,7 @@ struct FizzyClientBoardsTests {
     @Test("POST /:account/boards sends {board:{…}}, follows Location to GET the new board")
     func createBoardFollowsLocation() async throws {
         let detail = try loadFixture("board_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.httpMethod == "POST" {
                 #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards")
                 let body = self.jsonBody(of: req)
@@ -139,7 +137,7 @@ struct FizzyClientBoardsTests {
 
         let created = try await makeClient().createBoard(FizzyBoardWrite(name: "My new board"))
         #expect(created.id == "03f5v9zkft4hj9qq0lsn9ohcm")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     @Test("create follows a RELATIVE Location header (live-server shape, 2026-06-11 UAT)")
@@ -150,7 +148,7 @@ struct FizzyClientBoardsTests {
         // URLSession rejects with -1002 "unsupported URL"; the client must
         // resolve it against baseURL.
         let detail = try loadFixture("board_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.httpMethod == "POST" {
                 return (Data(), .response(
                     for: req, status: 201,
@@ -164,7 +162,7 @@ struct FizzyClientBoardsTests {
 
         let created = try await makeClient().createBoard(FizzyBoardWrite(name: "My new board"))
         #expect(created.id == "03f5v9zkft4hj9qq0lsn9ohcm")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     // MARK: - Update board
@@ -172,7 +170,7 @@ struct FizzyClientBoardsTests {
     @Test("PUT /:account/boards/:id sends {board:{…}} and returns the updated board")
     func updateBoardReturnsUpdatedBoard() async throws {
         let detail = try loadFixture("board_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1")
             let body = self.jsonBody(of: req)
@@ -192,7 +190,7 @@ struct FizzyClientBoardsTests {
 
     @Test("PUT /:account/boards/:id returning 204 (self access removal) yields nil")
     func updateBoardSelfRemovalReturnsNil() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             return (Data(), .response(for: req, status: 204))
         }
@@ -206,13 +204,13 @@ struct FizzyClientBoardsTests {
 
     @Test("DELETE /:account/boards/:id deletes the board (204)")
     func deleteBoard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().deleteBoard(id: "B1")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     // MARK: - Board accesses
@@ -222,7 +220,7 @@ struct FizzyClientBoardsTests {
         // Fixture board_accesses_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/boards.md, section "GET /:account_slug/boards/:board_id/accesses".
         let data = try loadFixture("board_accesses_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/accesses")
             return (data, .ok(for: req))
@@ -262,7 +260,7 @@ struct FizzyClientBoardsTests {
           ]
         }
         """.utf8)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.url?.query() == nil {
                 let headers = ["Link": "<https://fizzy.bluefenix.net/ACCT/boards/B1/accesses?page=2>; rel=\"next\""]
                 return (page1, .ok(for: req, headers: headers))
@@ -274,7 +272,7 @@ struct FizzyClientBoardsTests {
         let accesses = try await makeClient().boardAccesses(boardID: "B1")
         #expect(accesses.users.count == 3)
         #expect(accesses.users[2].involvement == "access_only")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     // MARK: - Board publication
@@ -284,7 +282,7 @@ struct FizzyClientBoardsTests {
         // Fixture board_publication_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/boards.md, section "POST /:account_slug/boards/:board_id/publication".
         let data = try loadFixture("board_publication_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/publication")
             return (data, .response(for: req, status: 201))
@@ -293,18 +291,18 @@ struct FizzyClientBoardsTests {
         let board = try await makeClient().publishBoard(id: "B1")
         #expect(board.id == "03f5v9zkft4hj9qq0lsn9ohcm")
         #expect(board.publicURL?.absoluteString == "http://app.fizzy.localhost:3006/897362094/public/boards/aB3dEfGhIjKlMnOp")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("DELETE /:account/boards/:id/publication unpublishes the board (204)")
     func unpublishBoard() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/publication")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().unpublishBoard(id: "B1")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     // MARK: - Column detail
@@ -317,7 +315,7 @@ struct FizzyClientBoardsTests {
         // Note the wire `color` here is a bare CSS-variable string, unlike the
         // `{name, value}` object shape in cards.md — FizzyColor accepts both.
         let data = try loadFixture("column_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/columns/C1")
             return (data, .ok(for: req))
@@ -337,7 +335,7 @@ struct FizzyClientBoardsTests {
         // docs/api/sections/columns.md, section
         // "GET /:account_slug/boards/:board_id/columns/:column_id/cards".
         let data = try loadFixture("column_cards_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/columns/C1/cards")
             return (data, .ok(for: req))
@@ -358,7 +356,7 @@ struct FizzyClientBoardsTests {
     @Test("cards decode assignees from the column cards doc (fixture verbatim)")
     func cardsDecodeAssignees() async throws {
         let data = try loadFixture("column_cards_doc")
-        MockURLProtocol.handler = { req in (data, .ok(for: req)) }
+        mock.handler = { req in (data, .ok(for: req)) }
 
         let cards = try await makeClient().cards(boardID: "B1", columnID: "C1")
 
@@ -374,7 +372,7 @@ struct FizzyClientBoardsTests {
     @Test("POST /:account/boards/:id/columns sends {column:{…}}, follows Location")
     func createColumnFollowsLocation() async throws {
         let detail = try loadFixture("column_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.httpMethod == "POST" {
                 #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/columns")
                 let body = self.jsonBody(of: req)
@@ -394,7 +392,7 @@ struct FizzyClientBoardsTests {
         write.color = "var(--color-card-4)"
         let created = try await makeClient().createColumn(boardID: "B1", write)
         #expect(created.id == "03f5v9zkft4hj9qq0lsn9ohcm")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     // MARK: - Update column
@@ -402,7 +400,7 @@ struct FizzyClientBoardsTests {
     @Test("PUT /:account/boards/:id/columns/:column_id sends {column:{…}} and returns the column")
     func updateColumn() async throws {
         let detail = try loadFixture("column_detail_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/columns/C1")
             let body = self.jsonBody(of: req)
@@ -420,12 +418,12 @@ struct FizzyClientBoardsTests {
 
     @Test("DELETE /:account/boards/:id/columns/:column_id deletes the column (204)")
     func deleteColumn() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/columns/C1")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().deleteColumn(boardID: "B1", columnID: "C1")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 }

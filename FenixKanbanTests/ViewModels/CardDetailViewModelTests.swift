@@ -6,6 +6,7 @@ import Foundation
 @Suite("CardDetail ViewModel", .serialized)
 @MainActor
 struct CardDetailViewModelTests {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let boardRepo: BoardRepository
     let cardRepo: CardRepository
@@ -105,24 +106,20 @@ struct CardDetailViewModelTests {
 
     @Test("unpaired card: toggleAssignment is a no-op with zero network")
     func unpairedToggleAssignmentNoOp() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
                              emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
         await viewModel.toggleAssignment(user)
         #expect(viewModel.assignees.isEmpty)
-        #expect(MockURLProtocol.requests.isEmpty)
+        #expect(mock.requests.isEmpty)
     }
 
     @Test("unpaired card: watch/pin toggles are no-ops with zero network")
     func unpairedWatchPinNoOp() async throws {
-        MockURLProtocol.reset()
-        defer { MockURLProtocol.reset() }
         await viewModel.toggleWatched()
         await viewModel.togglePinned()
         #expect(viewModel.isWatched == false)
         #expect(viewModel.isPinned == false)
-        #expect(MockURLProtocol.requests.isEmpty)
+        #expect(mock.requests.isEmpty)
     }
 
     @Test("unpaired card is not fizzy-paired")
@@ -148,13 +145,13 @@ struct CardDetailViewModelTests {
 @Suite("CardDetail ViewModel — fizzy tag push", .serialized)
 @MainActor
 struct CardDetailViewModelTagPushTests {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let card: Card
     let label: Label
     let viewModel: CardDetailViewModel
 
     init() {
-        MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let cardRepo = CardRepository(context: persistence.viewContext)
@@ -166,13 +163,11 @@ struct CardDetailViewModelTagPushTests {
         label = LabelRepository(context: persistence.viewContext).createLabel(name: "bug", colorHex: "#FF0000")
         try! persistence.viewContext.save()
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: URLSession(configuration: config),
+            urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
@@ -185,22 +180,21 @@ struct CardDetailViewModelTagPushTests {
 
     @Test("toggle on a paired card POSTs the tagging toggle")
     func toggleOnPairedCardPosts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data(), .response(for: request, status: 204))
         }
 
         await viewModel.toggleLabel(label)
 
         #expect(viewModel.selectedLabels == [label])
-        let post = MockURLProtocol.requests.first { $0.httpMethod == "POST" }
+        let post = mock.requests.first { $0.httpMethod == "POST" }
         let url = try #require(post?.url)
         #expect(url.path.hasSuffix("/cards/7/taggings"))
-        MockURLProtocol.reset()
     }
 
     @Test("422 from taggings reverts the toggle and surfaces an error")
     func failedPushReverts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
 
@@ -209,7 +203,6 @@ struct CardDetailViewModelTagPushTests {
         #expect(viewModel.selectedLabels.isEmpty)
         #expect((card.labels as? Set<Label>)?.isEmpty == true)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 
     @Test("failed push does not clobber a newer toggle of the same label")
@@ -220,7 +213,7 @@ struct CardDetailViewModelTagPushTests {
         // must leave the newer state alone (no revert, no redundant save).
         let (gate, releaseFirstPush) = AsyncStream.makeStream(of: Void.self)
         let calls = TagPushCallCounter()
-        MockURLProtocol.delayedHandler = { request in
+        mock.delayedHandler = { request in
             if calls.next() == 1 {
                 var blocked = gate.makeAsyncIterator()
                 _ = await blocked.next()
@@ -247,14 +240,13 @@ struct CardDetailViewModelTagPushTests {
         #expect((card.labels as? Set<Label>)?.isEmpty == true)
         #expect(card.modifiedAt == stampAfterSecondToggle)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 
     @Test("unpaired card toggles locally without any network call")
     func unpairedCardStaysLocal() async throws {
         card.fizzyNumber = 0
         card.fizzyID = nil
-        MockURLProtocol.handler = { _ in
+        mock.handler = { _ in
             Issue.record("no network call expected for unpaired card")
             throw URLError(.unsupportedURL)
         }
@@ -262,21 +254,20 @@ struct CardDetailViewModelTagPushTests {
         await viewModel.toggleLabel(label)
 
         #expect(viewModel.selectedLabels == [label])
-        #expect(MockURLProtocol.requests.isEmpty)
-        MockURLProtocol.reset()
+        #expect(mock.requests.isEmpty)
     }
 }
 
 @Suite("CardDetailViewModel assignment push", .serialized)
 @MainActor
 struct CardDetailViewModelAssignmentPushTests {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let card: Card
     let client: FizzyClient
     let viewModel: CardDetailViewModel
 
     init() {
-        MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let cardRepo = CardRepository(context: persistence.viewContext)
@@ -287,13 +278,11 @@ struct CardDetailViewModelAssignmentPushTests {
         card.fizzyNumber = 7
         try! persistence.viewContext.save()
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
         client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: URLSession(configuration: config),
+            urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
@@ -306,7 +295,7 @@ struct CardDetailViewModelAssignmentPushTests {
 
     @Test("toggle POSTs /cards/7/assignments with assignee_id and updates the blob")
     func togglePostsAssignment() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
                              emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
 
@@ -314,14 +303,13 @@ struct CardDetailViewModelAssignmentPushTests {
 
         #expect(viewModel.assignees.map(\.id) == ["u9"])
         #expect(card.assignees.map(\.id) == ["u9"])
-        let post = MockURLProtocol.requests.first { $0.httpMethod == "POST" }
+        let post = mock.requests.first { $0.httpMethod == "POST" }
         #expect(post?.url?.path.hasSuffix("/cards/7/assignments") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("toggle on an already-assigned user removes them")
     func toggleRemovesAssigned() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         // Seed the blob, then build a fresh view model so init picks it up.
         card.assignees = [CardAssignee(id: "u9", name: "Grace Hopper")]
         let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
@@ -332,12 +320,11 @@ struct CardDetailViewModelAssignmentPushTests {
 
         #expect(vm.assignees.isEmpty)
         #expect(card.assignees.isEmpty)
-        MockURLProtocol.reset()
     }
 
     @Test("toggle preserves an assignee pulled in the background (#20 snapshot family)")
     func togglePreservesBackgroundPulledAssignee() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         // A sync pull lands while the sheet is open: the blob gains "bg".
         card.assignees = [CardAssignee(id: "bg", name: "Background Bee")]
         persistence.viewContext.processPendingChanges()
@@ -347,12 +334,11 @@ struct CardDetailViewModelAssignmentPushTests {
         await viewModel.toggleAssignment(user)
 
         #expect(Set(card.assignees.map(\.id)) == ["bg", "u2"])
-        MockURLProtocol.reset()
     }
 
     @Test("failed POST (422) reverts the optimistic change and surfaces an error")
     func failedToggleReverts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
         let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
@@ -363,7 +349,6 @@ struct CardDetailViewModelAssignmentPushTests {
         #expect(viewModel.assignees.isEmpty)
         #expect(card.assignees.isEmpty)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 
     @Test("failed POST does not clobber a newer toggle of the same user")
@@ -374,7 +359,7 @@ struct CardDetailViewModelAssignmentPushTests {
         // must leave the newer state alone (no revert, no redundant save).
         let (gate, releaseFirstPush) = AsyncStream.makeStream(of: Void.self)
         let calls = TagPushCallCounter()
-        MockURLProtocol.delayedHandler = { request in
+        mock.delayedHandler = { request in
             if calls.next() == 1 {
                 var blocked = gate.makeAsyncIterator()
                 _ = await blocked.next()
@@ -403,20 +388,19 @@ struct CardDetailViewModelAssignmentPushTests {
         #expect(card.assignees.isEmpty)
         #expect(card.modifiedAt == stampAfterSecondToggle)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 }
 
 @Suite("CardDetailViewModel watch/pin push", .serialized)
 @MainActor
 struct CardDetailViewModelWatchPinPushTests {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let card: Card
     let client: FizzyClient
     let viewModel: CardDetailViewModel
 
     init() {
-        MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let cardRepo = CardRepository(context: persistence.viewContext)
@@ -427,13 +411,11 @@ struct CardDetailViewModelWatchPinPushTests {
         card.fizzyNumber = 7
         try! persistence.viewContext.save()
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
         client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: URLSession(configuration: config),
+            urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
@@ -446,7 +428,7 @@ struct CardDetailViewModelWatchPinPushTests {
 
     @Test("toggleWatched POSTs /cards/7/watch and sets the flag")
     func watchPostsToWatchEndpoint() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         let stampBeforeToggle = card.modifiedAt
         await viewModel.toggleWatched()
         #expect(viewModel.isWatched == true)
@@ -455,84 +437,78 @@ struct CardDetailViewModelWatchPinPushTests {
         // LWW contract, and a bump makes the card look newer than
         // fizzyUpdatedAt — triggering a spurious echo-PUT on the next sync.
         #expect(card.modifiedAt == stampBeforeToggle)
-        let req = MockURLProtocol.requests.first
+        let req = mock.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/7/watch") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("toggleWatched on a watched card DELETEs /cards/7/watch")
     func unwatchDeletes() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         card.isWatched = true
         try persistence.viewContext.save()
         let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
         await vm.toggleWatched()
         #expect(vm.isWatched == false)
         #expect(card.isWatched == false)
-        let req = MockURLProtocol.requests.first
+        let req = mock.requests.first
         #expect(req?.httpMethod == "DELETE")
         #expect(req?.url?.path.hasSuffix("/cards/7/watch") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("togglePinned POSTs /cards/7/pin and sets the flag")
     func pinPostsToPinEndpoint() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         let stampBeforeToggle = card.modifiedAt
         await viewModel.togglePinned()
         #expect(viewModel.isPinned == true)
         #expect(card.isPinned == true)
         // Pin flag must NOT bump modifiedAt (echo-PUT guard, same as watch).
         #expect(card.modifiedAt == stampBeforeToggle)
-        let req = MockURLProtocol.requests.first
+        let req = mock.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/7/pin") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("togglePinned on a pinned card DELETEs /cards/7/pin")
     func unpinDeletes() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         card.isPinned = true
         try persistence.viewContext.save()
         let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
         await vm.togglePinned()
         #expect(vm.isPinned == false)
         #expect(card.isPinned == false)
-        let req = MockURLProtocol.requests.first
+        let req = mock.requests.first
         #expect(req?.httpMethod == "DELETE")
         #expect(req?.url?.path.hasSuffix("/cards/7/pin") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("failed watch toggle (422) reverts and surfaces an error")
     func failedWatchToggleReverts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
         await viewModel.toggleWatched()
         #expect(viewModel.isWatched == false)
         #expect(card.isWatched == false)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 
     @Test("failed pin toggle (422) reverts and surfaces an error")
     func failedPinToggleReverts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
         await viewModel.togglePinned()
         #expect(viewModel.isPinned == false)
         #expect(card.isPinned == false)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 
     @Test("toggleGolden on a paired card POSTs /cards/7/goldness")
     func goldenTogglePostsGoldness() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         let stampBeforeToggle = card.modifiedAt
         try? await Task.sleep(nanoseconds: 2_000_000)
         await viewModel.toggleGolden()
@@ -541,38 +517,35 @@ struct CardDetailViewModelWatchPinPushTests {
         // card content, and the bump blocks the LWW pull branch until the
         // push cycle completes (stale-pull revert protection, #19 wave 3).
         #expect((card.modifiedAt ?? .distantPast) > (stampBeforeToggle ?? .distantPast))
-        let req = MockURLProtocol.requests.first
+        let req = mock.requests.first
         #expect(req?.httpMethod == "POST")
         #expect(req?.url?.path.hasSuffix("/cards/7/goldness") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("toggleGolden on a golden paired card DELETEs /cards/7/goldness")
     func goldenToggleUnmarksDeletes() async throws {
-        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         card.isGolden = true
         try persistence.viewContext.save()
         await viewModel.toggleGolden()
         #expect(card.isGolden == false)
-        let req = MockURLProtocol.requests.first
+        let req = mock.requests.first
         #expect(req?.httpMethod == "DELETE")
         #expect(req?.url?.path.hasSuffix("/cards/7/goldness") == true)
-        MockURLProtocol.reset()
     }
 
     @Test("failed golden push (422) reverts and surfaces an error")
     func failedGoldenToggleReverts() async throws {
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             (Data("{\"error\":\"nope\"}".utf8), .response(for: request, status: 422))
         }
         await viewModel.toggleGolden()
         #expect(card.isGolden == false)
         #expect(viewModel.errorMessage != nil)
-        MockURLProtocol.reset()
     }
 }
 
-/// Thread-safe call counter for `MockURLProtocol.delayedHandler`, which is
+/// Thread-safe call counter for `mock.delayedHandler`, which is
 /// invoked off the main actor (URL loading threads).
 private final class TagPushCallCounter: @unchecked Sendable {
     private let lock = NSLock()
@@ -655,13 +628,13 @@ struct CardDetailViewModelSyncRefreshTests {
 @Suite("CardDetail ViewModel — deleted-card revert guards (#20 guard family)", .serialized)
 @MainActor
 struct CardDetailViewModelDeletedCardGuardTests {
+    let mock = MockHTTPState()
     let persistence: PersistenceController
     let card: Card
     let label: Label
     let viewModel: CardDetailViewModel
 
     init() {
-        MockURLProtocol.reset()
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let cardRepo = CardRepository(context: persistence.viewContext)
@@ -673,13 +646,11 @@ struct CardDetailViewModelDeletedCardGuardTests {
         label = LabelRepository(context: persistence.viewContext).createLabel(name: "bug", colorHex: "#FF0000")
         try! persistence.viewContext.save()
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
             accountSlug: "ACCT",
-            urlSession: URLSession(configuration: config),
+            urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
         viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
@@ -690,7 +661,7 @@ struct CardDetailViewModelDeletedCardGuardTests {
         // at the await, so the main queue is free for the deletion hop.
         let context = persistence.viewContext
         let doomed = card
-        MockURLProtocol.handler = { request in
+        mock.handler = { request in
             DispatchQueue.main.sync {
                 if !doomed.isDeleted, doomed.managedObjectContext != nil {
                     context.delete(doomed)
@@ -705,7 +676,6 @@ struct CardDetailViewModelDeletedCardGuardTests {
     func labelRevertGuarded() async {
         await viewModel.toggleLabel(label)
         #expect(viewModel.errorMessage == nil)
-        MockURLProtocol.reset()
     }
 
     @Test("assignment revert stands down on a deleted card")
@@ -714,27 +684,23 @@ struct CardDetailViewModelDeletedCardGuardTests {
                              emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
         await viewModel.toggleAssignment(user)
         #expect(viewModel.errorMessage == nil)
-        MockURLProtocol.reset()
     }
 
     @Test("watch revert stands down on a deleted card")
     func watchRevertGuarded() async {
         await viewModel.toggleWatched()
         #expect(viewModel.errorMessage == nil)
-        MockURLProtocol.reset()
     }
 
     @Test("pin revert stands down on a deleted card")
     func pinRevertGuarded() async {
         await viewModel.togglePinned()
         #expect(viewModel.errorMessage == nil)
-        MockURLProtocol.reset()
     }
 
     @Test("golden revert stands down on a deleted card")
     func goldenRevertGuarded() async {
         await viewModel.toggleGolden()
         #expect(viewModel.errorMessage == nil)
-        MockURLProtocol.reset()
     }
 }

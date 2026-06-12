@@ -50,6 +50,7 @@ struct FizzySyncEnginePushLocalTests {
 
     /// Shared test harness — builds a paired board + engine wired to MockURLProtocol.
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -63,7 +64,6 @@ struct FizzySyncEnginePushLocalTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -85,9 +85,7 @@ struct FizzySyncEnginePushLocalTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t",
@@ -109,7 +107,6 @@ struct FizzySyncEnginePushLocalTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -125,7 +122,7 @@ struct FizzySyncEnginePushLocalTests {
         // Configure mock: 2 POSTs each returning 201+Location followed by a single-card GET.
         var postCount = 0
         var nextFizzyID = 100
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 postCount += 1
@@ -191,7 +188,7 @@ struct FizzySyncEnginePushLocalTests {
         try h.persistence.viewContext.save()
 
         var postCount = 0
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("POST", let p?) where p.hasSuffix("/cards"):
                 postCount += 1
@@ -231,6 +228,7 @@ struct FizzySyncEnginePushLocalTests {
 struct FizzySyncEngineReplaceLocalTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -245,7 +243,6 @@ struct FizzySyncEngineReplaceLocalTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -268,9 +265,7 @@ struct FizzySyncEngineReplaceLocalTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t",
@@ -292,7 +287,6 @@ struct FizzySyncEngineReplaceLocalTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -335,7 +329,7 @@ struct FizzySyncEngineReplaceLocalTests {
           {"id":"fz2","number":2,"title":"Remote Two","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":["bug"],"golden":true,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/2"}
         ]
         """
-        MockURLProtocol.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
+        h.mock.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
 
         let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
 
@@ -366,7 +360,7 @@ struct FizzySyncEngineReplaceLocalTests {
         [{"id":"FC2","name":"In Progress","color":{"name":"Lime","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
         """
         let cardsJSON = "[]"
-        MockURLProtocol.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
+        h.mock.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
 
         let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
 
@@ -384,6 +378,7 @@ struct FizzySyncEngineReplaceLocalTests {
 struct FizzySyncEngineMergeTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -397,7 +392,6 @@ struct FizzySyncEngineMergeTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -419,9 +413,7 @@ struct FizzySyncEngineMergeTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t",
@@ -443,7 +435,6 @@ struct FizzySyncEngineMergeTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -459,7 +450,7 @@ struct FizzySyncEngineMergeTests {
         var postCount = 0
         var nextNumber = 100
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 let body = """
@@ -518,7 +509,7 @@ struct FizzySyncEngineMergeTests {
         try h.persistence.viewContext.save()
 
         var postCount = 0
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 let body = """
@@ -605,6 +596,7 @@ struct FizzySyncEngineSyncPairingTests {
 struct FizzySyncEngineSteadyPullTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -619,7 +611,6 @@ struct FizzySyncEngineSteadyPullTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -641,9 +632,7 @@ struct FizzySyncEngineSteadyPullTests {
             mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -660,7 +649,6 @@ struct FizzySyncEngineSteadyPullTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -679,7 +667,7 @@ struct FizzySyncEngineSteadyPullTests {
           {"id":"fz3","number":3,"title":"R3","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-05-25T00:00:00Z","created_at":"2026-05-25T00:00:00Z","url":"https://x/3"}
         ]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -712,7 +700,7 @@ struct FizzySyncEngineSteadyPullTests {
         paired.fizzyID = "fz1"
         try h.persistence.viewContext.save()
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -743,7 +731,7 @@ struct FizzySyncEngineSteadyPullTests {
         let cardsJSON = """
         [{"id":"fzT1","number":11,"title":"Tagged","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":["bug","urgent","backend"],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/11"}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -778,7 +766,7 @@ struct FizzySyncEngineSteadyPullTests {
         let cardsJSON = """
         [{"id":"fzT3","number":13,"title":"Shouty","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":["Bug","bug","BUG"],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/13"}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -828,7 +816,7 @@ struct FizzySyncEngineSteadyPullTests {
         let cardsJSON = """
         [{"id":"fzT2","number":12,"title":"Was tagged","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-11T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/12"}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -857,7 +845,7 @@ struct FizzySyncEngineSteadyPullTests {
         let cardsJSON = """
         [{"id":"fzA1","number":21,"title":"Assigned","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/21","assignees":[{"id":"u1","name":"Ada Lovelace","role":"member","active":true,"email_address":"ada@example.com","created_at":"2025-12-05T19:36:35.401Z","url":"https://fizzy.bluefenix.net/ACCT/users/u1","avatar_url":"https://fizzy.bluefenix.net/ACCT/users/u1/avatar"}],"has_more_assignees":false}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -902,7 +890,7 @@ struct FizzySyncEngineSteadyPullTests {
         let round1CardsJSON = """
         [{"id":"fzA2","number":22,"title":"Assigned once","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-11T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/22","assignees":[],"has_more_assignees":false}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -931,7 +919,7 @@ struct FizzySyncEngineSteadyPullTests {
         let round2CardsJSON = """
         [{"id":"fzA2","number":22,"title":"Assigned once","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-12T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/22"}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -961,6 +949,7 @@ struct FizzySyncEngineSteadyPullTests {
 struct FizzySyncEngineSteadyPushTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -974,7 +963,6 @@ struct FizzySyncEngineSteadyPushTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -995,9 +983,7 @@ struct FizzySyncEngineSteadyPushTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -1014,7 +1000,6 @@ struct FizzySyncEngineSteadyPushTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -1027,7 +1012,7 @@ struct FizzySyncEngineSteadyPushTests {
         try h.persistence.viewContext.save()
 
         var postCount = 0
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1067,6 +1052,7 @@ struct FizzySyncEngineSteadyPushTests {
 struct FizzySyncEngineLWWTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -1080,7 +1066,6 @@ struct FizzySyncEngineLWWTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -1101,9 +1086,7 @@ struct FizzySyncEngineLWWTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -1120,7 +1103,6 @@ struct FizzySyncEngineLWWTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -1139,7 +1121,7 @@ struct FizzySyncEngineLWWTests {
         try h.persistence.viewContext.save()
 
         let iso = ISO8601DateFormatter().string(from: newerRemote)
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1177,7 +1159,7 @@ struct FizzySyncEngineLWWTests {
 
         var putCount = 0
         let isoBaseline = ISO8601DateFormatter().string(from: baseline)
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1211,6 +1193,7 @@ struct FizzySyncEngineSoftDeleteTests {
 
     @Test("paired local card not in remote response → deleted locally")
     func softDeletesMissingRemote() async throws {
+        let mock = MockHTTPState()
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let pairingStore = FizzyCardPairingStore(
@@ -1240,17 +1223,14 @@ struct FizzySyncEngineSoftDeleteTests {
         try persistence.viewContext.save()
         let cardObjectID = card.objectID
 
-        MockURLProtocol.reset()
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t", accountSlug: "ACCT",
             urlSession: session, clock: ImmediateClock()
         )
 
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1282,6 +1262,7 @@ struct FizzySyncEngineCrashRecoveryTests {
 
     @Test("local nil-fizzyID + remote matching title within 60s → claim orphan, no duplicate POST")
     func claimsOrphan() async throws {
+        let mock = MockHTTPState()
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let pairingStore = FizzyCardPairingStore(
@@ -1310,11 +1291,10 @@ struct FizzySyncEngineCrashRecoveryTests {
         card.createdAt = baseline
         try persistence.viewContext.save()
 
-        MockURLProtocol.reset()
         var postCount = 0
         let withinWindow = baseline.addingTimeInterval(30)  // 30s after local create
         let iso = ISO8601DateFormatter().string(from: withinWindow)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1333,9 +1313,7 @@ struct FizzySyncEngineCrashRecoveryTests {
             }
         }
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t", accountSlug: "ACCT",
@@ -1356,6 +1334,7 @@ struct FizzySyncEngineCrashRecoveryTests {
 
     @Test("orphan claim does not also pull-create a duplicate local card")
     func orphanClaimNoDuplicatePull() async throws {
+        let mock = MockHTTPState()
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let pairingStore = FizzyCardPairingStore(
@@ -1384,10 +1363,9 @@ struct FizzySyncEngineCrashRecoveryTests {
         card.createdAt = baseline
         try persistence.viewContext.save()
 
-        MockURLProtocol.reset()
         let withinWindow = baseline.addingTimeInterval(30)
         let iso = ISO8601DateFormatter().string(from: withinWindow)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1406,9 +1384,7 @@ struct FizzySyncEngineCrashRecoveryTests {
             }
         }
 
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t", accountSlug: "ACCT",
@@ -1437,6 +1413,7 @@ struct FizzySyncEngineIdempotenceTests {
 
     @Test("running sync() twice in a row produces zero changes on second run")
     func doubleSyncIsNoop() async throws {
+        let mock = MockHTTPState()
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let board = boardRepo.createBoard(name: "B")
@@ -1455,8 +1432,7 @@ struct FizzySyncEngineIdempotenceTests {
         mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
         let stableISO = "2026-05-25T00:00:00Z"
-        MockURLProtocol.reset()
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1477,9 +1453,7 @@ struct FizzySyncEngineIdempotenceTests {
                 .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
         )
         defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t", accountSlug: "ACCT",
@@ -1507,6 +1481,7 @@ struct FizzySyncEngine401Tests {
 
     @Test("401 from remote clears authState; engine surfaces error")
     func unauthorizedClearsAuth() async throws {
+        let mock = MockHTTPState()
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let boardRepo = BoardRepository(context: persistence.viewContext)
         let board = boardRepo.createBoard(name: "B")
@@ -1525,8 +1500,7 @@ struct FizzySyncEngine401Tests {
         let mapping = FizzyBoardMapping(defaults: mappingDefaults)
         mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-        MockURLProtocol.reset()
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             (Data(), .response(for: req, status: 401))
         }
 
@@ -1535,9 +1509,7 @@ struct FizzySyncEngine401Tests {
                 .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
         )
         defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "revoked-token", accountSlug: "ACCT",
@@ -1568,6 +1540,7 @@ struct FizzySyncEngine401Tests {
 struct FizzySyncEngineNumberReentrancyTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -1581,7 +1554,6 @@ struct FizzySyncEngineNumberReentrancyTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -1602,9 +1574,7 @@ struct FizzySyncEngineNumberReentrancyTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -1621,7 +1591,6 @@ struct FizzySyncEngineNumberReentrancyTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -1647,7 +1616,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         let iso = ISO8601DateFormatter().string(from: baseline)
         let listJSON = "[\(Self.cardJSON(id: "03f5vaeq985jlvwv3arl4srq2", number: 7, title: "Stale", iso: iso))]"
         let showJSON = Self.cardJSON(id: "03f5vaeq985jlvwv3arl4srq2", number: 7, title: "Local edit", iso: iso)
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1678,7 +1647,7 @@ struct FizzySyncEngineNumberReentrancyTests {
 
         let iso = "2026-06-01T00:00:00Z"
         let created = Self.cardJSON(id: "fzNEW", number: 12, title: "Fresh local", iso: iso)
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1717,7 +1686,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         var postCount = 0
         var remoteList: [String] = []   // stateful: POSTed cards join the list
         let created = Self.cardJSON(id: "fzX", number: 3, title: "Once only", iso: iso)
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1761,7 +1730,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         let iso = "2026-06-01T00:00:00Z"
         var postCount = 0
         let created = Self.cardJSON(id: "fzY", number: 4, title: "Once only", iso: iso)
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1800,7 +1769,7 @@ struct FizzySyncEngineNumberReentrancyTests {
         let iso = "2026-06-01T00:00:00Z"
         let page1 = "[\(Self.cardJSON(id: "fzPG1", number: 21, title: "Page one card", iso: iso))]"
         let page2 = "[\(Self.cardJSON(id: "fzPG2", number: 22, title: "Page two card", iso: iso))]"
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1831,6 +1800,7 @@ struct FizzySyncEngineNumberReentrancyTests {
 struct FizzySyncEngineDeletePropagationTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -1844,7 +1814,6 @@ struct FizzySyncEngineDeletePropagationTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -1865,9 +1834,7 @@ struct FizzySyncEngineDeletePropagationTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -1884,7 +1851,6 @@ struct FizzySyncEngineDeletePropagationTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
 
         func cardTombstones() throws -> [CardTombstone] {
@@ -1908,7 +1874,7 @@ struct FizzySyncEngineDeletePropagationTests {
         #expect(try h.cardTombstones().count == 1)
 
         var requestLog: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             requestLog.append("\(req.httpMethod ?? "?") \(req.url?.path ?? "?")")
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
@@ -1944,7 +1910,7 @@ struct FizzySyncEngineDeletePropagationTests {
         tombstone.deletedAt = Date()
         try h.persistence.viewContext.save()
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -1975,7 +1941,7 @@ struct FizzySyncEngineDeletePropagationTests {
         tombstone.deletedAt = Date()
         try h.persistence.viewContext.save()
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2009,7 +1975,7 @@ struct FizzySyncEngineDeletePropagationTests {
 
         // DELETE fails (500) so the tombstone stays live; the remote list
         // still contains card number 7 — it must NOT be re-created locally.
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2046,7 +2012,7 @@ struct FizzySyncEngineDeletePropagationTests {
         try h.persistence.viewContext.save()
 
         var deleteCount = 0
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2075,6 +2041,7 @@ struct FizzySyncEngineDeletePropagationTests {
 struct FizzySyncEngineColumnPushTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -2088,7 +2055,6 @@ struct FizzySyncEngineColumnPushTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -2109,9 +2075,7 @@ struct FizzySyncEngineColumnPushTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -2128,7 +2092,6 @@ struct FizzySyncEngineColumnPushTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
 
         func columnTombstones() throws -> [ColumnTombstone] {
@@ -2149,7 +2112,7 @@ struct FizzySyncEngineColumnPushTests {
         defer { h.tearDown() }
 
         var postPaths: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2185,7 +2148,7 @@ struct FizzySyncEngineColumnPushTests {
         let h = Harness()
         defer { h.tearDown() }
 
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2219,7 +2182,7 @@ struct FizzySyncEngineColumnPushTests {
         try h.persistence.viewContext.save()
 
         var putPaths: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2259,7 +2222,7 @@ struct FizzySyncEngineColumnPushTests {
         #expect(try h.columnTombstones().count == 1)
 
         var deletePaths: [String] = []
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2295,7 +2258,7 @@ struct FizzySyncEngineColumnPushTests {
 
         // DELETE fails (500) so the tombstone stays live; the remote list
         // still contains FC1 — it must NOT be re-created locally.
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2328,6 +2291,7 @@ private final class FixtureLocatorPins {}
 struct FizzySyncEnginePinReconciliationTests {
 
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let boardRepo: BoardRepository
         let cardRepo: CardRepository
@@ -2341,7 +2305,6 @@ struct FizzySyncEnginePinReconciliationTests {
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
             boardRepo = BoardRepository(context: persistence.viewContext)
             pairingStore = FizzyCardPairingStore(
@@ -2363,9 +2326,7 @@ struct FizzySyncEnginePinReconciliationTests {
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
             mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
             let client = FizzyClient(
                 baseURL: URL(string: "https://fizzy.bluefenix.net")!,
                 accessToken: "t", accountSlug: "ACCT",
@@ -2382,7 +2343,6 @@ struct FizzySyncEnginePinReconciliationTests {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
-            MockURLProtocol.reset()
         }
     }
 
@@ -2424,7 +2384,7 @@ struct FizzySyncEnginePinReconciliationTests {
         [{"id":"03f5vaeq985jlvwv3arl4srq2","number":31,"title":"Pinned","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/31"},{"id":"fzB2","number":32,"title":"Unpinned","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/32"}]
         """
         let pinsData = try loadFixture("pins_doc")
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (pinsData, .ok(for: req))
@@ -2459,7 +2419,7 @@ struct FizzySyncEnginePinReconciliationTests {
         let cardsJSON = """
         [{"id":"fzP1","number":41,"title":"Pinned once","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/41"}]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data("[]".utf8), .ok(for: req))
@@ -2500,7 +2460,7 @@ struct FizzySyncEnginePinReconciliationTests {
         [{"id":"fzP2","number":42,"title":"Sticky pin","status":"published","description":null,"description_html":null,"image_url":null,"has_attachments":false,"tags":[],"golden":false,"last_active_at":"2026-06-10T00:00:00Z","created_at":"2026-06-10T00:00:00Z","url":"https://fizzy.bluefenix.net/ACCT/cards/42"}]
         """
         // Round 1: remote pin set contains the card → isPinned becomes true.
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (cardsJSON.data(using: .utf8)!, .ok(for: req))
@@ -2521,7 +2481,7 @@ struct FizzySyncEnginePinReconciliationTests {
         // Round 2: the pins fetch fails (422). Best-effort — the sync must
         // not throw and the pre-sync pin state must survive untouched.
         // No Issue.record for the pins arm: the failure is the point.
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/my/pins"):
                 return (Data(), .response(for: req, status: 422))

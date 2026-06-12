@@ -31,40 +31,99 @@ struct ImmediateClock: Clock {
 }
 
 
-/// In-process URL protocol that intercepts URLSession requests. Tests register
-/// a handler closure that returns either a `(Data, HTTPURLResponse)` or throws.
+/// Per-session state for `MockURLProtocol` (issue #10). Each suite creates
+/// its own instance and builds sessions from `makeSession()`; the protocol
+/// finds the right instance through a token header the session injects into
+/// every request. No cross-suite shared state — suites parallelize freely.
+/// Swift Testing instantiates the suite struct per test, so a suite-stored
+/// instance is per-test automatically (no reset needed).
 ///
-/// Per-test setup:
+/// Per-suite setup:
 ///
-///     let config = URLSessionConfiguration.ephemeral
-///     config.protocolClasses = [MockURLProtocol.self]
-///     let session = URLSession(configuration: config)
-///     MockURLProtocol.handler = { req in (Data("hi".utf8), .ok(for: req)) }
-final class MockURLProtocol: URLProtocol {
+///     let mock = MockHTTPState()
+///     let session = mock.makeSession()
+///     mock.handler = { req in (Data("hi".utf8), .ok(for: req)) }
+final class MockHTTPState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _handler: ((URLRequest) throws -> (Data, HTTPURLResponse))?
+    private var _delayedHandler: ((URLRequest) async throws -> (Data, HTTPURLResponse))?
+    private var _requests: [URLRequest] = []
 
-    /// Test sets this before issuing requests; cleared in tearDown.
-    static var handler: ((URLRequest) throws -> (Data, HTTPURLResponse))?
+    fileprivate let token = UUID().uuidString
+
+    init() {
+        MockURLProtocol.register(self)
+    }
+
+    /// Test sets this before issuing requests.
+    var handler: ((URLRequest) throws -> (Data, HTTPURLResponse))? {
+        get { lock.lock(); defer { lock.unlock() }; return _handler }
+        set { lock.lock(); defer { lock.unlock() }; _handler = newValue }
+    }
 
     /// Async variant checked before `handler` — lets a test gate a response
     /// on a signal it controls (e.g. hold one request in flight while a
-    /// second completes). Cleared by `reset()`.
-    static var delayedHandler: ((URLRequest) async throws -> (Data, HTTPURLResponse))?
+    /// second completes).
+    var delayedHandler: ((URLRequest) async throws -> (Data, HTTPURLResponse))? {
+        get { lock.lock(); defer { lock.unlock() }; return _delayedHandler }
+        set { lock.lock(); defer { lock.unlock() }; _delayedHandler = newValue }
+    }
 
-    /// Record of every request the SUT issued during the test, in order.
-    static var requests: [URLRequest] = []
+    /// Record of every request the SUT issued through this state's
+    /// sessions, in order.
+    var requests: [URLRequest] {
+        lock.lock(); defer { lock.unlock() }; return _requests
+    }
 
-    static func reset() {
-        handler = nil
-        delayedHandler = nil
-        requests = []
+    fileprivate func record(_ request: URLRequest) {
+        lock.lock(); defer { lock.unlock() }; _requests.append(request)
+    }
+
+    /// Builds a session whose requests resolve back to this state instance.
+    func makeSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        config.httpAdditionalHeaders = [MockURLProtocol.stateHeader: token]
+        return URLSession(configuration: config)
+    }
+}
+
+/// In-process URL protocol that intercepts URLSession requests. All mutable
+/// state lives on `MockHTTPState` instances; the only static here is the
+/// token→state registry — lock-protected, write-once per state, and keyed
+/// by UUID, so concurrent suites cannot interfere (the issue-#10 race was
+/// the unsynchronized shared handler/requests, not statics per se). Entries
+/// are never pruned: bounded by the number of suite instances in one short-
+/// lived test process.
+final class MockURLProtocol: URLProtocol {
+    static let stateHeader = "X-FK-Mock-State"
+
+    private static let registryLock = NSLock()
+    private static var registry: [String: MockHTTPState] = [:]
+
+    static func register(_ state: MockHTTPState) {
+        registryLock.lock(); defer { registryLock.unlock() }
+        registry[state.token] = state
+    }
+
+    private static func state(for request: URLRequest) -> MockHTTPState? {
+        guard let token = request.value(forHTTPHeaderField: stateHeader) else { return nil }
+        registryLock.lock(); defer { registryLock.unlock() }
+        return registry[token]
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        Self.requests.append(request)
-        if let delayedHandler = Self.delayedHandler {
+        guard let state = Self.state(for: request) else {
+            // Session not built via MockHTTPState.makeSession() — fail the
+            // request loudly rather than let it escape to the network.
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
+        }
+        state.record(request)
+        if let delayedHandler = state.delayedHandler {
             Task {
                 do {
                     let (data, response) = try await delayedHandler(self.request)
@@ -77,7 +136,7 @@ final class MockURLProtocol: URLProtocol {
             }
             return
         }
-        guard let handler = Self.handler else {
+        guard let handler = state.handler else {
             client?.urlProtocol(self, didFailWithError: URLError(.badURL))
             return
         }

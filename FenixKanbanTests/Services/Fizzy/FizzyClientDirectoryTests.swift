@@ -9,15 +9,13 @@ import Foundation
 
 private final class FixtureLocatorDirectory {}
 
-@Suite("FizzyClient — tags, users, identity, notifications & activities", .serialized)
+@Suite("FizzyClient — tags, users, identity, notifications & activities")
 struct FizzyClientDirectoryTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -80,7 +78,7 @@ struct FizzyClientDirectoryTests {
         // Fixture tags_list_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/tags.md, section "GET /:account_slug/tags".
         let data = try loadFixture("tags_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/tags")
             #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer t")
@@ -99,7 +97,7 @@ struct FizzyClientDirectoryTests {
     @Test("GET /tags follows Link rel=\"next\" pagination")
     func tagsListPaginates() async throws {
         let data = try loadFixture("tags_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.url?.query == nil {
                 let headers = ["Link": "<https://fizzy.bluefenix.net/ACCT/tags?page=2>; rel=\"next\""]
                 return (data, .ok(for: req, headers: headers))
@@ -110,7 +108,7 @@ struct FizzyClientDirectoryTests {
 
         let tags = try await makeClient().tags()
         #expect(tags.count == 4)
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     // MARK: - Users
@@ -120,7 +118,7 @@ struct FizzyClientDirectoryTests {
         // Fixture users_list_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/users.md, section "GET /:account_slug/users".
         let data = try loadFixture("users_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/users")
             return (data, .ok(for: req))
@@ -142,7 +140,7 @@ struct FizzyClientDirectoryTests {
         // Fixture user_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/users.md, section "GET /:account_slug/users/:user_id".
         let data = try loadFixture("user_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/users/03f5v9zjw7pz8717a4no1h8a7")
             return (data, .ok(for: req))
@@ -156,7 +154,7 @@ struct FizzyClientDirectoryTests {
 
     @Test("user endpoints surface HTTP errors as FizzyError")
     func userErrorMapping() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 404)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 404)) }
         await #expect(throws: FizzyError.notFound) {
             try await makeClient().user(id: "missing")
         }
@@ -169,7 +167,7 @@ struct FizzyClientDirectoryTests {
         // Fixture identity_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/identity.md, section "GET /my/identity".
         let data = try loadFixture("identity_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             // `/my/...` paths are NOT account-scoped — no /ACCT prefix.
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/my/identity")
@@ -190,7 +188,7 @@ struct FizzyClientDirectoryTests {
         // Per identity.md "PATCH /:account_slug/my/timezone" — this /my/ path
         // IS account-scoped (like /my/pins), and the body is flat (unwrapped).
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PATCH")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/my/timezone")
             #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -200,7 +198,7 @@ struct FizzyClientDirectoryTests {
 
         try await makeClient().updateTimezone("America/New_York")
         #expect(body.value as? [String: String] == ["timezone_name": "America/New_York"])
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     // MARK: - Notifications
@@ -211,7 +209,7 @@ struct FizzyClientDirectoryTests {
         // docs/api/sections/notifications.md, section
         // "GET /:account_slug/notifications".
         let data = try loadFixture("notifications_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/notifications")
             return (data, .ok(for: req))
@@ -234,35 +232,35 @@ struct FizzyClientDirectoryTests {
 
     @Test("POST /notifications/:id/reading marks a notification read (204)")
     func markNotificationRead() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/notifications/03f5va03bpuvkcjemcxl73ho2/reading")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().markNotificationRead(id: "03f5va03bpuvkcjemcxl73ho2")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("DELETE /notifications/:id/reading marks a notification unread (204)")
     func markNotificationUnread() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/notifications/03f5va03bpuvkcjemcxl73ho2/reading")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().markNotificationUnread(id: "03f5va03bpuvkcjemcxl73ho2")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("POST /notifications/bulk_reading marks all notifications read (204)")
     func markAllNotificationsRead() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "POST")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/notifications/bulk_reading")
             return (Data(), .response(for: req, status: 204))
         }
         try await makeClient().markAllNotificationsRead()
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("GET /notifications/settings decodes the verbatim doc response")
@@ -271,7 +269,7 @@ struct FizzyClientDirectoryTests {
         // docs/api/sections/notifications.md, section
         // "GET /:account_slug/notifications/settings".
         let data = try loadFixture("notification_settings_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/notifications/settings")
             return (data, .ok(for: req))
@@ -284,7 +282,7 @@ struct FizzyClientDirectoryTests {
     @Test("PUT /notifications/settings sends wrapped user_settings body and accepts 204")
     func updateNotificationSettings() async throws {
         let body = LockedBox<[String: Any]?>(nil)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/notifications/settings")
             body.value = self.jsonObject(of: req)
@@ -293,7 +291,7 @@ struct FizzyClientDirectoryTests {
 
         try await makeClient().updateNotificationSettings(bundleEmailFrequency: "daily")
         #expect(body.value?["user_settings"] as? [String: String] == ["bundle_email_frequency": "daily"])
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     // MARK: - Activities
@@ -303,7 +301,7 @@ struct FizzyClientDirectoryTests {
         // Fixture activities_list_doc.json is copied VERBATIM from fizzy
         // docs/api/sections/activities.md, section "GET /:account_slug/activities".
         let data = try loadFixture("activities_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "GET")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/activities")
             return (data, .ok(for: req))
@@ -340,20 +338,20 @@ struct FizzyClientDirectoryTests {
     @Test("GET /activities sends creator_ids[] and board_ids[] filters")
     func activitiesFilterQuery() async throws {
         let data = Data("[]".utf8)
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/activities?creator_ids%5B%5D=A&board_ids%5B%5D=X")
             return (data, .ok(for: req))
         }
 
         let activities = try await makeClient().activities(creatorIDs: ["A"], boardIDs: ["X"])
         #expect(activities.isEmpty)
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("GET /activities follows Link rel=\"next\" pagination")
     func activitiesPaginate() async throws {
         let data = try loadFixture("activities_list_doc")
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.url?.query == nil {
                 let headers = ["Link": "<https://fizzy.bluefenix.net/ACCT/activities?page=2>; rel=\"next\""]
                 return (data, .ok(for: req, headers: headers))
@@ -364,7 +362,7 @@ struct FizzyClientDirectoryTests {
 
         let activities = try await makeClient().activities()
         #expect(activities.count == 4)
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     @Test("activity particulars decode action-specific keys and ignore unknown ones")
@@ -427,7 +425,7 @@ struct FizzyClientDirectoryTests {
           }
         ]
         """.utf8)
-        MockURLProtocol.handler = { req in (json, .ok(for: req)) }
+        mock.handler = { req in (json, .ok(for: req)) }
 
         let activities = try await makeClient().activities()
         #expect(activities.count == 1)

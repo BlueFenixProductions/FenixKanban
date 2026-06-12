@@ -2,17 +2,12 @@ import Testing
 import Foundation
 @testable import FenixKanban
 
-@Suite("FizzyClient — auth + URL construction", .serialized)
+@Suite("FizzyClient — auth + URL construction")
 struct FizzyClientAuthTests {
-
-    init() {
-        MockURLProtocol.reset()
-    }
+    let mock = MockHTTPState()
 
     private func makeClient(token: String = "test-token", slug: String = "897362094") -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: token,
@@ -23,7 +18,7 @@ struct FizzyClientAuthTests {
 
     @Test("GET attaches Bearer header + interpolates :account_slug into path")
     func authAndSlug() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = "[]".data(using: .utf8)!
             return (body, .ok(for: req, headers: ["ETag": "\"abc\""]))
         }
@@ -31,7 +26,7 @@ struct FizzyClientAuthTests {
         let client = makeClient()
         _ = try await client.get("/boards", as: [FizzyBoard].self)
 
-        let req = try #require(MockURLProtocol.requests.first)
+        let req = try #require(mock.requests.first)
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/boards")
         #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
         #expect(req.value(forHTTPHeaderField: "Accept") == "application/json")
@@ -39,7 +34,7 @@ struct FizzyClientAuthTests {
 
     @Test("paths starting with /my/ are NOT account-scoped (Fizzy convention)")
     func myPathsBypassSlug() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = #"{"accounts":[]}"#.data(using: .utf8)!
             return (body, .ok(for: req))
         }
@@ -47,13 +42,13 @@ struct FizzyClientAuthTests {
         let client = makeClient()
         _ = try await client.get("/my/identity", as: FizzyIdentity.self)
 
-        let req = try #require(MockURLProtocol.requests.first)
+        let req = try #require(mock.requests.first)
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/my/identity")
     }
 
     @Test("paths with /my prefix but no trailing slash DO get scoped")
     func myPrefixWithoutSlashIsScoped() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = "[]".data(using: .utf8)!
             return (body, .ok(for: req))
         }
@@ -61,7 +56,7 @@ struct FizzyClientAuthTests {
         let client = makeClient()
         _ = try await client.get("/myth-busters", as: [FizzyBoard].self)
 
-        let req = try #require(MockURLProtocol.requests.first)
+        let req = try #require(mock.requests.first)
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/myth-busters")
     }
 
@@ -70,7 +65,7 @@ struct FizzyClientAuthTests {
         // Regression: Fizzy's /my/identity returns slug as "/897362094" (leading
         // slash). The previous URL builder produced "//897362094/boards" which
         // parses as a protocol-relative URL with host=897362094.
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = "[]".data(using: .utf8)!
             return (body, .ok(for: req))
         }
@@ -78,21 +73,19 @@ struct FizzyClientAuthTests {
         let client = makeClient(slug: "/897362094")
         _ = try await client.get("/boards", as: [FizzyBoard].self)
 
-        let req = try #require(MockURLProtocol.requests.first)
+        let req = try #require(mock.requests.first)
         #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/897362094/boards")
         #expect(req.url?.host == "fizzy.bluefenix.net")
     }
 }
 
-@Suite("FizzyClient — ETag", .serialized)
+@Suite("FizzyClient — ETag")
 struct FizzyClientETagTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -103,7 +96,7 @@ struct FizzyClientETagTests {
 
     @Test("getWithETag: nil etag → no If-None-Match header sent")
     func noEtagNoHeader() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = "[]".data(using: .utf8)!
             return (body, .ok(for: req, headers: ["ETag": "\"v1\""]))
         }
@@ -111,7 +104,7 @@ struct FizzyClientETagTests {
         let client = makeClient()
         let response: FizzyResponse<[FizzyBoard]> = try await client.getWithETag("/boards", etag: nil, as: [FizzyBoard].self)
 
-        let req = try #require(MockURLProtocol.requests.first)
+        let req = try #require(mock.requests.first)
         #expect(req.value(forHTTPHeaderField: "If-None-Match") == nil)
         #expect(response.etag == "\"v1\"")
         #expect(response.body != nil)
@@ -119,7 +112,7 @@ struct FizzyClientETagTests {
 
     @Test("getWithETag: 200 returns body and new etag")
     func twoHundredReturnsBodyAndEtag() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = "[]".data(using: .utf8)!
             return (body, .ok(for: req, headers: ["ETag": "\"v2\""]))
         }
@@ -127,7 +120,7 @@ struct FizzyClientETagTests {
         let client = makeClient()
         let response: FizzyResponse<[FizzyBoard]> = try await client.getWithETag("/boards", etag: "\"v1\"", as: [FizzyBoard].self)
 
-        let req = try #require(MockURLProtocol.requests.first)
+        let req = try #require(mock.requests.first)
         #expect(req.value(forHTTPHeaderField: "If-None-Match") == "\"v1\"")
         #expect(response.body != nil)
         #expect(response.etag == "\"v2\"")
@@ -135,7 +128,7 @@ struct FizzyClientETagTests {
 
     @Test("getWithETag: 304 returns nil body and preserves etag")
     func threeOhFourReturnsNilBody() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             return (Data(), .notModified(for: req, etag: "\"v1\""))
         }
 
@@ -147,15 +140,13 @@ struct FizzyClientETagTests {
     }
 }
 
-@Suite("FizzyClient — POST", .serialized)
+@Suite("FizzyClient — POST")
 struct FizzyClientPostTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -192,7 +183,7 @@ struct FizzyClientPostTests {
     func postFollowsLocation() async throws {
         let cardData = try loadFixture("card_single")
 
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             switch req.httpMethod {
             case "POST":
                 #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/boards/B1/cards")
@@ -218,12 +209,12 @@ struct FizzyClientPostTests {
         let created: FizzyCard = try await client.post("/boards/B1/cards", body: payload, as: FizzyCard.self)
 
         #expect(created.title == "First card")
-        #expect(MockURLProtocol.requests.count == 2)
+        #expect(mock.requests.count == 2)
     }
 
     @Test("POST surfaces 422 with parsed validation errors")
     func postValidationError() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let body = #"{"errors":{"title":["can't be blank"]}}"#.data(using: .utf8)!
             return (body, .response(for: req, status: 422))
         }
@@ -238,7 +229,7 @@ struct FizzyClientPostTests {
 
     @Test("POST 201 without a Location header throws unexpectedStatus(201)")
     func postMissingLocationHeader() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             (Data(), .response(for: req, status: 201))
         }
 
@@ -253,15 +244,13 @@ struct FizzyClientPostTests {
 
 private final class FixtureLocatorPost {}
 
-@Suite("FizzyClient — PUT", .serialized)
+@Suite("FizzyClient — PUT")
 struct FizzyClientPutTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -298,7 +287,7 @@ struct FizzyClientPutTests {
     func putReturnsUpdated() async throws {
         let cardData = try loadFixture("card_single")
 
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "PUT")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/1")
             #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -310,21 +299,19 @@ struct FizzyClientPutTests {
         let updated: FizzyCard = try await client.put("/cards/1", body: payload, as: FizzyCard.self)
 
         #expect(updated.id == "03f5vaeq985jlvwv3arl4srq2")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 }
 
 private final class FixtureLocatorPut {}
 
-@Suite("FizzyClient — DELETE", .serialized)
+@Suite("FizzyClient — DELETE")
 struct FizzyClientDeleteTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -335,7 +322,7 @@ struct FizzyClientDeleteTests {
 
     @Test("DELETE succeeds on 204")
     func deleteSucceeds() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             #expect(req.httpMethod == "DELETE")
             #expect(req.url?.absoluteString == "https://fizzy.bluefenix.net/ACCT/cards/1")
             return (Data(), .response(for: req, status: 204))
@@ -343,12 +330,12 @@ struct FizzyClientDeleteTests {
 
         let client = makeClient()
         try await client.delete("/cards/1")
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("DELETE surfaces 404 as FizzyError.notFound")
     func deleteNotFound() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             return (Data(), .response(for: req, status: 404))
         }
 
@@ -359,15 +346,13 @@ struct FizzyClientDeleteTests {
     }
 }
 
-@Suite("FizzyClient — HTTP error mapping", .serialized)
+@Suite("FizzyClient — HTTP error mapping")
 struct FizzyClientErrorTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -378,7 +363,7 @@ struct FizzyClientErrorTests {
 
     @Test("401 → .unauthorized")
     func unauthorized() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 401)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 401)) }
         let client = makeClient()
         await #expect(throws: FizzyError.unauthorized) {
             _ = try await client.get("/boards", as: [FizzyBoard].self)
@@ -387,7 +372,7 @@ struct FizzyClientErrorTests {
 
     @Test("403 → .forbidden")
     func forbidden() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 403)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 403)) }
         let client = makeClient()
         await #expect(throws: FizzyError.forbidden) {
             _ = try await client.get("/boards", as: [FizzyBoard].self)
@@ -396,7 +381,7 @@ struct FizzyClientErrorTests {
 
     @Test("404 → .notFound")
     func notFound() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 404)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 404)) }
         let client = makeClient()
         await #expect(throws: FizzyError.notFound) {
             _ = try await client.get("/boards/missing", as: FizzyBoard.self)
@@ -405,7 +390,7 @@ struct FizzyClientErrorTests {
 
     @Test("500 → .server(500)")
     func server() async throws {
-        MockURLProtocol.handler = { req in (Data(), .response(for: req, status: 500)) }
+        mock.handler = { req in (Data(), .response(for: req, status: 500)) }
         let client = makeClient()
         await #expect(throws: FizzyError.server(statusCode: 500)) {
             _ = try await client.get("/boards", as: [FizzyBoard].self)
@@ -414,7 +399,7 @@ struct FizzyClientErrorTests {
 
     @Test("429 → .rateLimited honors Retry-After")
     func rateLimited() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             (Data(), .response(for: req, status: 429, headers: ["Retry-After": "30"]))
         }
         let client = makeClient()
@@ -424,15 +409,13 @@ struct FizzyClientErrorTests {
     }
 }
 
-@Suite("FizzyClient — retry", .serialized)
+@Suite("FizzyClient — retry")
 struct FizzyClientRetryTests {
 
-    init() { MockURLProtocol.reset() }
+    let mock = MockHTTPState()
 
     private func makeClient(clock: any Clock<Duration> & Sendable = ImmediateClock()) -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "t",
@@ -445,7 +428,7 @@ struct FizzyClientRetryTests {
     @Test("transient network error retries up to 3 times then succeeds")
     func transientThenSucceeds() async throws {
         var attempt = 0
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             attempt += 1
             if attempt < 3 {
                 throw URLError(.networkConnectionLost)
@@ -461,7 +444,7 @@ struct FizzyClientRetryTests {
     @Test("transient network error gives up after 3 retries and surfaces .network")
     func transientGivesUp() async throws {
         var attempt = 0
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             attempt += 1
             throw URLError(.networkConnectionLost)
         }
@@ -483,7 +466,7 @@ struct FizzyClientRetryTests {
     @Test("4xx is not retried")
     func clientErrorNotRetried() async throws {
         var attempt = 0
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             attempt += 1
             return (Data(), .response(for: req, status: 404))
         }
@@ -498,7 +481,7 @@ struct FizzyClientRetryTests {
     @Test("5xx IS retried")
     func serverErrorRetried() async throws {
         var attempt = 0
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             attempt += 1
             if attempt < 3 {
                 return (Data(), .response(for: req, status: 503))
@@ -512,21 +495,17 @@ struct FizzyClientRetryTests {
     }
 }
 
-@Suite("FizzyClient — Link-header pagination", .serialized)
+@Suite("FizzyClient — Link-header pagination")
 struct FizzyClientPaginationTests {
 
-    init() {
-        MockURLProtocol.reset()
-    }
+    let mock = MockHTTPState()
 
     private struct Item: Decodable, Equatable, Sendable {
         let id: Int
     }
 
     private func makeClient() -> FizzyClient {
-        let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: config)
+        let session = mock.makeSession()
         return FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
             accessToken: "test-token",
@@ -538,7 +517,7 @@ struct FizzyClientPaginationTests {
 
     @Test("follows rel=\"next\" across pages and concatenates results")
     func followsNextAcrossPages() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let url = req.url!.absoluteString
             if url.contains("page=3") {
                 return (#"[{"id":5}]"#.data(using: .utf8)!, .ok(for: req))
@@ -553,19 +532,19 @@ struct FizzyClientPaginationTests {
 
         let items = try await makeClient().getAllPages("/cards", as: [Item].self)
         #expect(items == [Item(id: 1), Item(id: 2), Item(id: 3), Item(id: 4), Item(id: 5)])
-        #expect(MockURLProtocol.requests.count == 3)
+        #expect(mock.requests.count == 3)
         // Pages 2+ are requested at the exact URL from the Link header.
-        #expect(MockURLProtocol.requests[1].url?.absoluteString
+        #expect(mock.requests[1].url?.absoluteString
             == "https://fizzy.bluefenix.net/897362094/cards?page=2")
         // Auth carries across page follows.
-        #expect(MockURLProtocol.requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
+        #expect(mock.requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
     }
 
     @Test("lowercase `link:` header (doc wire shape) is honored on same-origin follows")
     func docWireShapeLinkHeader() async throws {
         // fizzy docs/api/README.md ("Pagination") prints the header lowercase:
         //   < link: <http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel="next"
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             if req.url!.absoluteString.contains("page=2") {
                 return (#"[{"id":2}]"#.data(using: .utf8)!, .ok(for: req))
             }
@@ -575,7 +554,7 @@ struct FizzyClientPaginationTests {
 
         let items = try await makeClient().getAllPages("/cards", as: [Item].self)
         #expect(items == [Item(id: 1), Item(id: 2)])
-        #expect(MockURLProtocol.requests[1].url?.absoluteString
+        #expect(mock.requests[1].url?.absoluteString
             == "https://fizzy.bluefenix.net/897362094/cards?page=2")
     }
 
@@ -585,36 +564,36 @@ struct FizzyClientPaginationTests {
         // (app.fizzy.localhost:3006) differs from this client's baseURL, exactly
         // the shape a hostile/misconfigured server could use to exfiltrate the
         // Authorization header. Pagination must stop, not follow.
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let headers = ["link": "<http://app.fizzy.localhost:3006/686465299/cards?page=2>; rel=\"next\""]
             return (#"[{"id":1}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
         }
 
         let items = try await makeClient().getAllPages("/cards", as: [Item].self)
         #expect(items == [Item(id: 1)])
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("single page without Link header returns just that page")
     func singlePageNoLink() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             (#"[{"id":1}]"#.data(using: .utf8)!, .ok(for: req))
         }
 
         let items = try await makeClient().getAllPages("/cards", as: [Item].self)
         #expect(items == [Item(id: 1)])
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 
     @Test("Link header with only rel=\"prev\" does not loop")
     func linkWithoutNextStops() async throws {
-        MockURLProtocol.handler = { req in
+        mock.handler = { req in
             let headers = ["Link": "<https://fizzy.bluefenix.net/897362094/cards?page=1>; rel=\"prev\""]
             return (#"[{"id":9}]"#.data(using: .utf8)!, .ok(for: req, headers: headers))
         }
 
         let items = try await makeClient().getAllPages("/cards", as: [Item].self)
         #expect(items == [Item(id: 9)])
-        #expect(MockURLProtocol.requests.count == 1)
+        #expect(mock.requests.count == 1)
     }
 }
