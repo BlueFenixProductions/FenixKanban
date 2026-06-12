@@ -151,6 +151,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
             // Note: lastSyncAt is NOT advanced — the cycle did not complete.
         }
         await retryPendingComments()
+        await retryPendingSteps()
     }
 
     /// Fires one sync cycle via the engine. Silently absorbs errors so the
@@ -164,6 +165,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         guard let engine = makeEngine() else { return }
         _ = try? await engine.sync()
         await retryPendingComments()
+        await retryPendingSteps()
     }
 
     /// Re-posts all `pendingWrite == true` CachedComment entries found in
@@ -190,6 +192,43 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
                 // Leave pending; will be retried on the next tick.
             }
         }
+    }
+
+    /// Re-pushes pending step writes (task #29 — symmetric with
+    /// `retryPendingComments`; both run on every scheduler tick). A step
+    /// with no `fizzyStepID` is a failed create → POST; one with an ID is a
+    /// failed update → PUT. Failures stay pending for the next tick.
+    func retryPendingSteps() async {
+        guard let client = makeClient() else { return }
+        let context = persistence.viewContext
+        let request: NSFetchRequest<CardStep> = CardStep.fetchRequest()
+        request.predicate = NSPredicate(format: "pendingWrite == YES")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CardStep.sortOrder, ascending: true)]
+        let pending = (try? context.fetch(request)) ?? []
+        for step in pending {
+            guard !step.isDeleted, step.managedObjectContext != nil,
+                  let card = step.card, card.fizzyNumber > 0 else { continue }
+            let cardNumber = Int(card.fizzyNumber)
+            do {
+                if let stepID = step.fizzyStepID {
+                    _ = try await client.updateStep(
+                        cardNumber: cardNumber, id: stepID,
+                        content: step.content, completed: step.completed
+                    )
+                } else {
+                    let created = try await client.createStep(
+                        cardNumber: cardNumber,
+                        content: step.content ?? "",
+                        completed: step.completed
+                    )
+                    step.fizzyStepID = created.id
+                }
+                step.pendingWrite = false
+            } catch {
+                continue // stays pending; next tick retries
+            }
+        }
+        if context.hasChanges { try? context.save() }
     }
 
     // MARK: - Conflict resolution (task #70)
