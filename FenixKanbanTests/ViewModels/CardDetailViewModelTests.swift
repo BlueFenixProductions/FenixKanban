@@ -335,6 +335,21 @@ struct CardDetailViewModelAssignmentPushTests {
         MockURLProtocol.reset()
     }
 
+    @Test("toggle preserves an assignee pulled in the background (#20 snapshot family)")
+    func togglePreservesBackgroundPulledAssignee() async throws {
+        MockURLProtocol.handler = { request in (Data(), .response(for: request, status: 204)) }
+        // A sync pull lands while the sheet is open: the blob gains "bg".
+        card.assignees = [CardAssignee(id: "bg", name: "Background Bee")]
+        persistence.viewContext.processPendingChanges()
+        let user = FizzyUser(id: "u2", name: "Toggled Tom", role: "member", active: true,
+                             emailAddress: "t@example.com", createdAt: .now, url: nil, avatarURL: nil)
+
+        await viewModel.toggleAssignment(user)
+
+        #expect(Set(card.assignees.map(\.id)) == ["bg", "u2"])
+        MockURLProtocol.reset()
+    }
+
     @Test("failed POST (422) reverts the optimistic change and surfaces an error")
     func failedToggleReverts() async throws {
         MockURLProtocol.handler = { request in
@@ -574,5 +589,152 @@ private final class TagPushCallCounter: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return value
+    }
+}
+
+@Suite("CardDetail ViewModel — sync refresh (#20 snapshot family)", .serialized)
+@MainActor
+struct CardDetailViewModelSyncRefreshTests {
+    let persistence: PersistenceController
+    let card: Card
+    let viewModel: CardDetailViewModel
+
+    init() {
+        persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "Board")
+        let column = boardRepo.createColumn(in: board, name: "Col")
+        card = cardRepo.createCard(in: column, title: "Open Card")
+        try! persistence.viewContext.save()
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext)
+    }
+
+    @Test("a label added underneath the open sheet refreshes selectedLabels")
+    func remoteLabelAdditionRefreshesSelection() {
+        let remote = LabelRepository(context: persistence.viewContext)
+            .createLabel(name: "remote", colorHex: "#00FF00")
+        card.addToLabels(remote)
+        persistence.viewContext.processPendingChanges()
+
+        #expect(viewModel.selectedLabels == [remote])
+    }
+
+    @Test("a label added underneath the open sheet survives save() — the #20 clobber")
+    func remoteLabelAdditionSurvivesSave() {
+        let remote = LabelRepository(context: persistence.viewContext)
+            .createLabel(name: "remote", colorHex: "#00FF00")
+        card.addToLabels(remote)
+        persistence.viewContext.processPendingChanges()
+
+        viewModel.title = "Edited while open"
+        viewModel.save()
+
+        #expect((card.labels as? Set<Label>) == [remote])
+    }
+
+    @Test("watch/pin flags written underneath the open sheet refresh the toggles")
+    func remoteWatchPinRefresh() {
+        card.isWatched = true
+        card.isPinned = true
+        persistence.viewContext.processPendingChanges()
+
+        #expect(viewModel.isWatched == true)
+        #expect(viewModel.isPinned == true)
+    }
+
+    @Test("an assignee blob written underneath the open sheet refreshes assignees")
+    func remoteAssigneeRefresh() {
+        card.assignees = [CardAssignee(id: "bg", name: "Background Bee")]
+        persistence.viewContext.processPendingChanges()
+
+        #expect(viewModel.assignees.map(\.id) == ["bg"])
+    }
+}
+
+@Suite("CardDetail ViewModel — deleted-card revert guards (#20 guard family)", .serialized)
+@MainActor
+struct CardDetailViewModelDeletedCardGuardTests {
+    let persistence: PersistenceController
+    let card: Card
+    let label: Label
+    let viewModel: CardDetailViewModel
+
+    init() {
+        MockURLProtocol.reset()
+        persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "Board")
+        let column = boardRepo.createColumn(in: board, name: "Col")
+        card = cardRepo.createCard(in: column, title: "Doomed Card")
+        card.fizzyID = "fz7"
+        card.fizzyNumber = 7
+        label = LabelRepository(context: persistence.viewContext).createLabel(name: "bug", colorHex: "#FF0000")
+        try! persistence.viewContext.save()
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: URLSession(configuration: config),
+            clock: ImmediateClock()
+        )
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+
+        // Sync soft-deletes the card while the push is in flight, then the
+        // push fails: the catch revert must not touch the dead card. The
+        // handler runs on a URL-loading thread while the test is suspended
+        // at the await, so the main queue is free for the deletion hop.
+        let context = persistence.viewContext
+        let doomed = card
+        MockURLProtocol.handler = { request in
+            DispatchQueue.main.sync {
+                if !doomed.isDeleted, doomed.managedObjectContext != nil {
+                    context.delete(doomed)
+                    try? context.save()
+                }
+            }
+            return (Data("{\"error\":\"gone\"}".utf8), .response(for: request, status: 404))
+        }
+    }
+
+    @Test("label revert stands down on a deleted card")
+    func labelRevertGuarded() async {
+        await viewModel.toggleLabel(label)
+        #expect(viewModel.errorMessage == nil)
+        MockURLProtocol.reset()
+    }
+
+    @Test("assignment revert stands down on a deleted card")
+    func assignmentRevertGuarded() async {
+        let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
+                             emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
+        await viewModel.toggleAssignment(user)
+        #expect(viewModel.errorMessage == nil)
+        MockURLProtocol.reset()
+    }
+
+    @Test("watch revert stands down on a deleted card")
+    func watchRevertGuarded() async {
+        await viewModel.toggleWatched()
+        #expect(viewModel.errorMessage == nil)
+        MockURLProtocol.reset()
+    }
+
+    @Test("pin revert stands down on a deleted card")
+    func pinRevertGuarded() async {
+        await viewModel.togglePinned()
+        #expect(viewModel.errorMessage == nil)
+        MockURLProtocol.reset()
+    }
+
+    @Test("golden revert stands down on a deleted card")
+    func goldenRevertGuarded() async {
+        await viewModel.toggleGolden()
+        #expect(viewModel.errorMessage == nil)
+        MockURLProtocol.reset()
     }
 }
