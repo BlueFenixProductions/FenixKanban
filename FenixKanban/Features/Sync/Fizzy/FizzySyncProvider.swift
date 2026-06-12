@@ -102,6 +102,13 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
             throw FizzyError.requiresInteractiveAuth
         }
         let result = try await engine.sync()
+
+        // Publish a fresh widget snapshot after every successful sync so
+        // the PlaygroundBoardWidget always reflects the latest board state.
+        // Failures are silent — a stale snapshot is better than a crash.
+        let writer = BoardSnapshotWriter(context: persistence.viewContext)
+        _ = try? writer.writeSnapshot()
+
         return SyncResult(
             itemsCreated: result.itemsCreated,
             itemsUpdated: result.itemsUpdated,

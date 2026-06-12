@@ -27,7 +27,7 @@ final class StepRepository {
 
     /// Returns all `CardStep` rows for `card`, sorted by `sortOrder` ascending.
     func fetchSteps(for card: Card) -> [CardStep] {
-        let request = CardStep.fetchRequest() as! NSFetchRequest<CardStep>
+        let request = CardStep.fetchRequest()
         request.predicate = NSPredicate(format: "card == %@", card)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \CardStep.sortOrder, ascending: true)]
         return (try? context.fetch(request)) ?? []

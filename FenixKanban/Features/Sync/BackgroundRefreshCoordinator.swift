@@ -19,17 +19,26 @@ final class BackgroundRefreshCoordinator {
 
     private let provider: any SyncTriggering
     private let budgetSeconds: Double
+    private let clock: any Clock<Duration>
 
     // MARK: - Init
 
     /// - Parameters:
     ///   - provider: The sync-triggering seam (production: `FizzySyncProvider`).
-    ///   - budgetSeconds: Wall-clock seconds allowed for the sync. The
+    ///   - budgetSeconds: Seconds allowed for the sync. The
     ///     `BGAppRefreshTask` system budget is ~30 s; production passes 25 s
-    ///     to leave a 5 s margin for overhead. Tests pass a sub-second value.
-    init(provider: any SyncTriggering, budgetSeconds: Double = 25) {
+    ///     to leave a 5 s margin for overhead.
+    ///   - clock: Clock used for the deadline sleep. Defaults to
+    ///     `ContinuousClock()` (wall time) so production behaviour is
+    ///     unchanged. Tests inject `ManualClock` for determinism.
+    init(
+        provider: any SyncTriggering,
+        budgetSeconds: Double = 25,
+        clock: any Clock<Duration> = ContinuousClock()
+    ) {
         self.provider = provider
         self.budgetSeconds = budgetSeconds
+        self.clock = clock
     }
 
     // MARK: - Public entry point
@@ -50,10 +59,11 @@ final class BackgroundRefreshCoordinator {
                 return true
             }
 
-            // The budget / deadline task
-            group.addTask { [budgetSeconds] in
+            // The budget / deadline task — uses the injected clock so tests
+            // can advance time deterministically instead of waiting real seconds.
+            group.addTask { [budgetSeconds, clock] in
                 do {
-                    try await Task.sleep(for: .seconds(budgetSeconds))
+                    try await clock.sleep(for: .seconds(budgetSeconds))
                 } catch {
                     // Cancelled — sync finished first, propagate success
                     return true

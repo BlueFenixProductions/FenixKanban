@@ -238,9 +238,15 @@ final class FizzySyncEngine {
                 }
                 result.itemsUpdated += 1
             } else if localModified > localFizzyTimestamp {
-                // Local edited since last sync → push.
+                // Local edited since last sync → push. Beyond the PUT
+                // (title/description), parity push (#69) diffs local state
+                // against the freshly-fetched remote card: column moves ride
+                // POST /triage; tags and assignees push as EXACT toggle
+                // diffs (tag_ids on PUT is rejected by the live server, and
+                // toggles are not idempotent — docs/fizzy-api-notes.md).
                 do {
                     let updated = try await putCard(card, number: p.fizzyNumber)
+                    await pushParityDiffs(for: card, against: remote, number: p.fizzyNumber, into: &result)
                     recordPairing(for: card, fizzyID: fizzyID, number: p.fizzyNumber, updatedAt: updated.lastActiveAt)
                     card.modifiedAt = updated.lastActiveAt
                     result.itemsUpdated += 1
@@ -809,6 +815,58 @@ final class FizzySyncEngine {
     }
 
     // MARK: - Apply remote → local
+
+    // MARK: - Push parity diffs (#69: moves, tags, assignees)
+
+    /// Pushes the local-vs-remote deltas the PUT body can't carry, on the
+    /// LWW local-newer branch only. Diffs are computed against the remote
+    /// card from THIS cycle's pull (fresh state), because the toggle
+    /// endpoints are not idempotent. Errors collect into the result.
+    private func pushParityDiffs(
+        for card: Card,
+        against remote: FizzyCard,
+        number: Int64,
+        into result: inout FizzySyncResult
+    ) async {
+        // Column move → POST /cards/:n/triage with the local column's id.
+        // Requires a KNOWN remote column: payloads without one (legacy list
+        // shapes) say nothing about placement, and triaging on unknown would
+        // fabricate moves.
+        if let localColumnID = card.column?.fizzyColumnID,
+           let remoteColumnID = remote.column?.id,
+           localColumnID != remoteColumnID {
+            do {
+                try await client.triageCard(number: Int(number), columnID: localColumnID)
+            } catch {
+                result.errors.append("Push move '\(card.title ?? "(untitled)")': \(error)")
+            }
+        }
+
+        // Tags → exact toggle diff by case-insensitive title.
+        let localTags = Set(((card.labels as? Set<Label>) ?? []).compactMap { $0.name?.lowercased() })
+        let remoteTags = Set(remote.tags.map { $0.lowercased() })
+        for tag in localTags.subtracting(remoteTags).union(remoteTags.subtracting(localTags)).sorted() {
+            do {
+                try await client.toggleCardTag(number: Int(number), tagTitle: tag)
+            } catch {
+                result.errors.append("Push tag '\(tag)': \(error)")
+            }
+        }
+
+        // Assignees → exact toggle diff by user id. A nil remote array means
+        // the payload didn't carry the field — skip rather than mass-toggle.
+        if let remoteAssignees = remote.assignees {
+            let localIDs = Set(card.assignees.map(\.id))
+            let remoteIDs = Set(remoteAssignees.map(\.id))
+            for id in localIDs.subtracting(remoteIDs).union(remoteIDs.subtracting(localIDs)).sorted() {
+                do {
+                    try await client.toggleCardAssignment(number: Int(number), assigneeID: id)
+                } catch {
+                    result.errors.append("Push assignment '\(id)': \(error)")
+                }
+            }
+        }
+    }
 
     // MARK: - Wire lifecycle mapping (#13)
 

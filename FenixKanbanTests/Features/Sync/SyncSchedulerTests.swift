@@ -11,9 +11,10 @@ final class SyncSpy: SyncTriggering {
     var callCount = 0
     var callDates: [Date] = []
 
-    /// Each entry in this stream represents a pending triggerSync call waiting
-    /// to be released. Tests `yield` a Void into `releaseStream` to unblock.
+    /// When set, each `triggerSync` call suspends on a continuation.
+    /// Tests call `releaseAll()` to unblock pending calls.
     private var slowMode = false
+    private var slowContinuations: [CheckedContinuation<Void, Never>] = []
 
     init(isPaired: Bool = true) {
         self.isPaired = isPaired
@@ -23,14 +24,23 @@ final class SyncSpy: SyncTriggering {
         callCount += 1
         callDates.append(Date())
         if slowMode {
-            // Block for a very long time (cancelled when scheduler stops)
-            try? await Task.sleep(for: .seconds(60))
+            // Suspend until the test releases us.
+            await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+                slowContinuations.append(cont)
+            }
         }
     }
 
-    /// Make triggerSync block (effectively forever for the test window).
+    /// Make all future triggerSync calls block until explicitly released.
     func makeSlow() {
         slowMode = true
+    }
+
+    /// Release all pending blocked triggerSync calls.
+    func releaseAll() {
+        let conts = slowContinuations
+        slowContinuations.removeAll()
+        for cont in conts { cont.resume() }
     }
 }
 
@@ -42,88 +52,134 @@ struct SyncSchedulerTests {
 
     // MARK: (a) fires after interval while active
 
-    @Test("fires sync after interval elapses while scene is active",
-          .disabled("Flaky under CI load (wall-clock race) — deterministic rewrite lands in #65"))
+    /// Previously flaky: used real wall-clock Task.sleep on both sides of the
+    /// scheduler/test boundary; under parallel load the loop task's continuation
+    /// was not scheduled before the test checked callCount.
+    ///
+    /// Fix: inject ManualClock.  `waitForSleeper()` guarantees the loop has
+    /// actually suspended in `clock.sleep(until:)` before we advance time,
+    /// making the wakeup deterministic.
+    @Test("fires sync after interval elapses while scene is active")
     func firesAfterIntervalWhileActive() async throws {
+        let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
         let scheduler = SyncScheduler(
             provider: spy,
-            interval: .milliseconds(50)
+            interval: .seconds(1),
+            clock: clock
         )
+
         scheduler.setSceneActive(true)
-        // Give the loop time to fire once.
-        try await Task.sleep(for: .milliseconds(200))
-        scheduler.setSceneActive(false)
+
+        // Wait until the loop task has suspended in clock.sleep; only then
+        // advance time so we know we're waking a real sleeper.
+        await clock.waitForSleeper()
+        await clock.advance(by: .seconds(1))
+
         #expect(spy.callCount >= 1)
+
+        scheduler.setSceneActive(false)
     }
 
     // MARK: (b) suspends when scenePhase inactive/background
 
     @Test("does not fire when scene is inactive/background")
     func doesNotFireWhenInactive() async throws {
+        let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
         let scheduler = SyncScheduler(
             provider: spy,
-            interval: .milliseconds(50)
+            interval: .seconds(1),
+            clock: clock
         )
-        // scenePhase starts inactive
+
+        // Scene never goes active — no loop task started, no sleeper registered.
         scheduler.setSceneActive(false)
-        try await Task.sleep(for: .milliseconds(200))
+        await clock.advance(by: .seconds(10))
+
         #expect(spy.callCount == 0)
     }
 
     @Test("stops firing after transitioning to inactive")
     func stopsFiringOnInactiveTransition() async throws {
+        let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
         let scheduler = SyncScheduler(
             provider: spy,
-            interval: .milliseconds(50)
+            interval: .seconds(1),
+            clock: clock
         )
+
         scheduler.setSceneActive(true)
-        try await Task.sleep(for: .milliseconds(120))
-        scheduler.setSceneActive(false)
+
+        // Wait for the loop to enter sleep, then fire once.
+        await clock.waitForSleeper()
+        await clock.advance(by: .seconds(1))
         let countAtStop = spy.callCount
-        // Nothing more should fire after going inactive
-        try await Task.sleep(for: .milliseconds(120))
+        #expect(countAtStop >= 1)
+
+        // Go inactive — loop task gets cancelled.
+        scheduler.setSceneActive(false)
+
+        // Advancing more should produce no further calls.
+        await clock.advance(by: .seconds(5))
         #expect(spy.callCount == countAtStop)
     }
 
     // MARK: (c) does not double-fire when manual sync running
 
-    @Test("does not start a second sync while one is already in flight",
-          .disabled("Flaky under CI load (wall-clock race) — deterministic rewrite lands in #65"))
+    /// Previously flaky: same real-sleep race as (a).
+    ///
+    /// Fix: ManualClock advances time so the loop fires twice in quick
+    /// succession; because the first triggerSync blocks (spy.makeSlow()),
+    /// isSyncing stays true for the second tick and callCount stays 1.
+    @Test("does not start a second sync while one is already in flight")
     func noDoubleFire() async throws {
+        let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
-        spy.makeSlow()          // first triggerSync will not return
+        spy.makeSlow()  // first triggerSync will block
 
         let scheduler = SyncScheduler(
             provider: spy,
-            interval: .milliseconds(30)
+            interval: .seconds(1),
+            clock: clock
         )
         scheduler.setSceneActive(true)
 
-        // Let the scheduler attempt multiple firings while the first is blocked.
-        // The first triggerSync call blocks for 60 s (cancelled when scene goes
-        // inactive), so isSyncing stays true for the entire observation window.
-        try await Task.sleep(for: .milliseconds(180))
-        scheduler.setSceneActive(false)
-
-        // Only 1 call should have been made (no coalescing into a second)
+        // Advance past the first interval — fires tick 1 (blocks in triggerSync).
+        await clock.waitForSleeper()
+        await clock.advance(by: .seconds(1))
         #expect(spy.callCount == 1)
+
+        // The loop is now blocked in triggerSync (isSyncing == true).
+        // Advance past a second interval — tick 2 must be skipped.
+        // Note: the loop won't have re-registered a sleeper because it's
+        // blocked in fireTick(); so we just advance and yield.
+        await clock.advance(by: .seconds(1))
+        #expect(spy.callCount == 1)
+
+        // Clean up.
+        scheduler.setSceneActive(false)
+        spy.releaseAll()
     }
 
     // MARK: (d) does not fire when unpaired
 
     @Test("does not fire when provider is not paired")
     func doesNotFireWhenUnpaired() async throws {
+        let clock = ManualClock()
         let spy = SyncSpy(isPaired: false)
         let scheduler = SyncScheduler(
             provider: spy,
-            interval: .milliseconds(50)
+            interval: .seconds(1),
+            clock: clock
         )
+
         scheduler.setSceneActive(true)
-        try await Task.sleep(for: .milliseconds(200))
+        await clock.waitForSleeper()
+        await clock.advance(by: .seconds(3))
         scheduler.setSceneActive(false)
+
         #expect(spy.callCount == 0)
     }
 
@@ -155,15 +211,20 @@ struct SyncSchedulerTests {
 
     @Test("activityState transitions to syncing then back to idle")
     func activityStateTransitions() async throws {
+        let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
         let scheduler = SyncScheduler(
             provider: spy,
-            interval: .milliseconds(50)
+            interval: .seconds(1),
+            clock: clock
         )
+
         scheduler.setSceneActive(true)
-        try await Task.sleep(for: .milliseconds(200))
+        await clock.waitForSleeper()
+        await clock.advance(by: .seconds(1))
         scheduler.setSceneActive(false)
-        // After stopping, state should be idle (not stuck in syncing)
+
+        // After stopping, state should be idle (not stuck in syncing).
         if case .idle = scheduler.activityState.phase {
             // pass
         } else {
