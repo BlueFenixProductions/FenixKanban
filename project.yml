@@ -61,6 +61,12 @@ targets:
         CODE_SIGN_ENTITLEMENTS: FenixKanban/Resources/FenixKanban.entitlements
         SUPPORTS_MACCATALYST: NO
         "EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]": "LaunchScreen.storyboard"
+    # NOTE: FenixKanbanWidgets dependency deferred — see #66 report.
+    # xcodegen 2.45.4 generates the Embed Foundation Extensions build phase
+    # without PLATFORM_FILTER = ios, causing macOS builds to fail with
+    # "embedded content built for iOS not allowed". The Widgets/ sources are
+    # in the tree and ready; re-add this dependency once xcodegen gains proper
+    # platform-filtered embed support or a post-generate pbxproj patch is added.
 
   FenixKanbanTests:
     type: bundle.unit-test
