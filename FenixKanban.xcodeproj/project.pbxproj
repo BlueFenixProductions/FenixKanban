@@ -101,6 +101,7 @@
 		97AA387F38B07EE3DC779639 /* FizzyClient+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DAD2ED2D2F5D199581543B6 /* FizzyClient+Comments.swift */; };
 		98658EB79D1180F38108C352 /* BackupDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417CA11519C84AC01EEEE7B7 /* BackupDocument.swift */; };
 		98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */; };
+		9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */; };
 		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
 		A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */; };
 		A30A97626FA931BBFCD62BA3 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */; };
@@ -152,6 +153,7 @@
 		E9E42C62557AFB457356C145 /* FizzySyncProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */; };
 		EB89C1364903EF0A7B4F90E5 /* TipJarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AA8D2F4FF050550CD5DED /* TipJarStore.swift */; };
 		EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */; };
+		EE3AE5B8CCA089F5BAF7595B /* LiveTestEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */; };
 		EE5DD89C21B3F520B7C19CED /* InitialsAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A1AAE6F0C21DEB56C73DCA /* InitialsAvatar.swift */; };
 		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
 		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
@@ -237,6 +239,7 @@
 		5DCF09CEDCB117837C6930E7 /* FizzyDTOs+Comments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyDTOs+Comments.swift"; sourceTree = "<group>"; };
 		5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 4.xcdatamodel"; sourceTree = "<group>"; };
 		5F8BA67918984E11FD14D58F /* SyncMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMonitorTests.swift; sourceTree = "<group>"; };
+		61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTestEnv.swift; sourceTree = "<group>"; };
 		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV7Tests.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
@@ -343,6 +346,7 @@
 		F242A8F3B83F682279D956CF /* CardGoldenTicketTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardGoldenTicketTests.swift; sourceTree = "<group>"; };
 		F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBoardIntent.swift; sourceTree = "<group>"; };
 		F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSmokeTests.swift; sourceTree = "<group>"; };
 		F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		FABA181CFB55168EB577EAA1 /* FizzyError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyError.swift; sourceTree = "<group>"; };
 		FAE77B96655930ABFC5A54DA /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
@@ -677,6 +681,15 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		9BD9DED15478EB6A47DB67C0 /* Live */ = {
+			isa = PBXGroup;
+			children = (
+				F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */,
+				61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */,
+			);
+			path = Live;
+			sourceTree = "<group>";
+		};
 		9F7F63F146DCE5A5D0241825 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
@@ -734,6 +747,7 @@
 				B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */,
 				1D083862CEB4C83C96107CE6 /* MockURLProtocolIsolationTests.swift */,
 				09EACADBB67BFDA43E39C6E2 /* SyncResultTests.swift */,
+				9BD9DED15478EB6A47DB67C0 /* Live */,
 			);
 			path = Fizzy;
 			sourceTree = "<group>";
@@ -1125,6 +1139,8 @@
 				D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */,
 				BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
+				9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */,
+				EE3AE5B8CCA089F5BAF7595B /* LiveTestEnv.swift in Sources */,
 				7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */,
 				DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */,
 				52518B243D944207DE9AE664 /* MockURLProtocolIsolationTests.swift in Sources */,
