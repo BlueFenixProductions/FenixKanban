@@ -106,6 +106,56 @@ final class FizzyClient: Sendable {
         return nil
     }
 
+    /// Conditional variant of `getAllPages` (task #61). Sends `If-None-Match`
+    /// on the FIRST page only; a 304 there means the collection is unchanged
+    /// and `items == nil` is returned (callers reuse their cached copy). Any
+    /// 200 walks all pages as usual. `singlePage` reports whether page 1
+    /// carried a `rel="next"` link — callers should only go conditional on
+    /// collections that were single-page last time (page-1-ETag semantics
+    /// across pages are unverified against the live server).
+    func getAllPagesWithETag<Element: Decodable & Sendable>(
+        _ path: String,
+        etag: String?,
+        as: [Element].Type
+    ) async throws -> FizzyPagedResult<Element> {
+        var items: [Element] = []
+        var nextURL: URL? = url(for: path)
+        var firstPage = true
+        var firstPageETag: String?
+        var singlePage = true
+
+        while let pageURL = nextURL {
+            var request = URLRequest(url: pageURL)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            if firstPage, let etag {
+                request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+            }
+
+            let (data, http) = try await performWithRetry(request)
+            switch http.statusCode {
+            case 200:
+                items += try Self.decoder.decode([Element].self, from: data)
+                if firstPage { firstPageETag = http.value(forHTTPHeaderField: "ETag") }
+                nextURL = nextPageURL(from: http.value(forHTTPHeaderField: "Link"))
+                if firstPage, nextURL != nil { singlePage = false }
+            case 304 where firstPage:
+                return FizzyPagedResult(
+                    items: nil,
+                    etag: http.value(forHTTPHeaderField: "ETag") ?? etag,
+                    singlePage: true
+                )
+            case 429:
+                throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+            default:
+                throw FizzyError(httpStatus: http.statusCode, body: data)
+            }
+            firstPage = false
+        }
+        return FizzyPagedResult(items: items, etag: firstPageETag, singlePage: singlePage)
+    }
+
     /// GET with explicit ETag handling. Used by the sync engine; sends
     /// `If-None-Match` if `etag != nil`, returns `body == nil` on 304.
     func getWithETag<T: Decodable & Sendable>(
