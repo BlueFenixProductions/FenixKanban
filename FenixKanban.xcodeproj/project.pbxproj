@@ -22,6 +22,7 @@
 		1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */; };
 		1AC18227D4ECC15AE10448B8 /* SyncSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76CCDC89B952EC09B79E7A1D /* SyncSchedulerTests.swift */; };
 		1CB04CF828EEDBD05FD6D100 /* FirstSyncModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D613029DDB577CD954C47EEC /* FirstSyncModeTests.swift */; };
+		1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */; };
 		1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */; };
 		233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */; };
 		24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */; };
@@ -345,6 +346,7 @@
 		CE8B5CCEE07FD18D668BA849 /* BackupManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifestTests.swift; sourceTree = "<group>"; };
 		D05B5FFB9A7288FA077C6870 /* ColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnView.swift; sourceTree = "<group>"; };
 		D10A143D4EF691E4A0436C89 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineETagTests.swift; sourceTree = "<group>"; };
 		D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
 		D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCommentsViewModelTests.swift; sourceTree = "<group>"; };
 		D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMappingTests.swift; sourceTree = "<group>"; };
@@ -792,6 +794,7 @@
 				90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */,
 				DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */,
 				51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */,
+				D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */,
 				177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */,
 				3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */,
 				D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */,
@@ -1196,6 +1199,7 @@
 				BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */,
 				F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */,
 				A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */,
+				1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */,
 				233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */,
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,
 				321C0D7DB3CF3DD8D9ECD6B4 /* FizzySyncMappingTests.swift in Sources */,
