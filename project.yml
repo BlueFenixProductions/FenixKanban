@@ -95,6 +95,20 @@ targets:
     platform: macOS
     sources:
       - path: tools/fizzyctl
+      # Foundation-only Fizzy client files shared from the main app target.
+      # Each file imports only Foundation — verified via grep on 2026-06-12.
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Boards.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+CardActions.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Comments.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Directory.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyError.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyResponse.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Boards.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+CardActions.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Comments.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Directory.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.fizzyctl

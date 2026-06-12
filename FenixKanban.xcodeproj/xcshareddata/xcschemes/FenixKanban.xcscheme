@@ -51,7 +51,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "0103FC258DD8E389D884AF15"
+               BlueprintIdentifier = "85F59587B34BECEE09778F9F"
                BuildableName = "FenixKanbanUITests.xctest"
                BlueprintName = "FenixKanbanUITests"
                ReferencedContainer = "container:FenixKanban.xcodeproj">
