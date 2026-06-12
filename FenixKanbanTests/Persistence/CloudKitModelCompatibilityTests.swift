@@ -11,7 +11,7 @@ import CoreData
 struct CloudKitModelCompatibilityTests {
 
     @Test("no model version carries an explicit renaming identifier",
-          arguments: ["FenixKanban 6", "FenixKanban 7", "FenixKanban 8"])
+          arguments: ["FenixKanban 6", "FenixKanban 7", "FenixKanban 8", "FenixKanban 9"])
     func noRenamingIdentifiers(version: String) throws {
         let model = try migrationTestModel(named: version)
         for entity in model.entities {

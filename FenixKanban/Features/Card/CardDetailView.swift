@@ -152,6 +152,10 @@ struct CardDetailView: View {
                 if let stepsVM = viewModel.stepsViewModel {
                     CardStepsSection(viewModel: stepsVM)
                 }
+
+                if let commentsVM = viewModel.commentsViewModel {
+                    CardCommentsSection(viewModel: commentsVM)
+                }
             }
             .navigationTitle("Card Detail")
             #if os(iOS)
