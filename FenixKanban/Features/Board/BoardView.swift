@@ -114,6 +114,21 @@ struct BoardView: View {
                 } label: {
                     SwiftUI.Label("New Column", systemImage: "rectangle.split.3x1")
                 }
+
+                Divider()
+
+                // "Show Closed" toggle — issue #34 default A.
+                // Persisted globally via UserDefaults (no per-board settings
+                // mechanism exists; see PR body for rationale).
+                Toggle(isOn: Binding(
+                    get: { viewModel.showClosedCards },
+                    set: { viewModel.showClosedCards = $0 }
+                )) {
+                    SwiftUI.Label(
+                        viewModel.showClosedCards ? "Hide Closed Cards" : "Show Closed Cards",
+                        systemImage: viewModel.showClosedCards ? "eye.slash" : "eye"
+                    )
+                }
             } label: {
                 Image(systemName: "plus")
             }
@@ -168,7 +183,7 @@ struct BoardView: View {
                 ForEach(viewModel.columns, id: \.objectID) { column in
                     ColumnView(
                         column: column,
-                        cards: column.sortedCards,
+                        cards: viewModel.visibleCards(in: column, showClosed: viewModel.showClosedCards),
                         boardIsPaired: boardIsPaired,
                         onAddCard: {
                             viewModel.selectedColumnForNewCard = column
@@ -199,6 +214,9 @@ struct BoardView: View {
                         },
                         onToggleGoldenByID: { uuid in
                             viewModel.toggleGolden(cardID: uuid)
+                        },
+                        onLifecycleAction: { card, action in
+                            viewModel.performLifecycleAction(action, on: card)
                         }
                     )
                     .frame(width: 280)
@@ -232,7 +250,7 @@ struct BoardView: View {
                 ForEach(Array(viewModel.columns.enumerated()), id: \.element.objectID) { index, column in
                     ColumnView(
                         column: column,
-                        cards: column.sortedCards,
+                        cards: viewModel.visibleCards(in: column, showClosed: viewModel.showClosedCards),
                         boardIsPaired: boardIsPaired,
                         onAddCard: {
                             viewModel.selectedColumnForNewCard = column
@@ -265,6 +283,9 @@ struct BoardView: View {
                         },
                         onToggleGoldenByID: { uuid in
                             viewModel.toggleGolden(cardID: uuid)
+                        },
+                        onLifecycleAction: { card, action in
+                            viewModel.performLifecycleAction(action, on: card)
                         }
                     )
                     .tag(index)

@@ -44,6 +44,11 @@ struct CardView: View {
         return CardSyncBadgeState.resolve(hasPairing: hasPairing, boardIsPaired: boardIsPaired)
     }
 
+    /// True when the card is not actively in-progress (closed or deferred).
+    private var isInactive: Bool {
+        card.lifecycleStatus != .active
+    }
+
     var body: some View {
         // Computed once per body evaluation — sortedLabels sorts the Core
         // Data set on every access, and the chips row reads it up to 4x.
@@ -110,6 +115,28 @@ struct CardView: View {
                     .accessibilityLabel("Golden ticket priority")
             }
         }
+        .overlay(alignment: .topTrailing) {
+            // Lifecycle status badge — top-trailing; only visible for
+            // closed/notNow cards (active cards show nothing).
+            switch card.lifecycleStatus {
+            case .closed:
+                Image(systemName: "checkmark.circle.fill")
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+                    .accessibilityLabel("Closed")
+                    .accessibilityHint("This card has been resolved.")
+            case .notNow:
+                Image(systemName: "clock.badge.xmark")
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+                    .accessibilityLabel("Not Now")
+                    .accessibilityHint("This card is deferred.")
+            case .active:
+                EmptyView()
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             // Cloud sync badge — bottom-trailing so it doesn't collide with
             // the golden ticket overlay (top-leading). Only shown when the
@@ -136,6 +163,9 @@ struct CardView: View {
         // Make the entire rounded-card area the drag target. Without an
         // explicit shape, .draggable only picks up touches on rendered
         // pixels (text, badge) and ignores the empty padding/glass area.
+        // Dim closed/notNow cards so they're visually recessive when shown
+        // via the "Show Closed" toggle. Active cards are full opacity.
+        .opacity(isInactive ? 0.5 : 1.0)
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 8))
         .contentShape(Rectangle())
         // .contain makes CardView a single queryable container in the
