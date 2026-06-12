@@ -2796,10 +2796,6 @@ execution.
 `1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
 
-### #49 — live‑API test infrastructure (2026-06-12)
+### #47 — Mission setup: union-merge status log + .env scaffolding (2026-06-12)
 
-Added `LiveTestEnv` (test-bundle enum) that pulls `FIZZY_TOKEN`, `FIZZY_ACCOUNT`, `FIZZY_BASE_URL`, `FIZZY_EXPECTED_CARDS`, and `FIZZY_ALLOW_MUTATION` from the process environment. Live test suites are gated with `Swift Testing .enabled(if:)`; when any credential is missing the suite self‑skips, ensuring CI runs without live traffic. Added `LiveSmokeTests` which performs a GET to `/my/identity`, decodes the response, and asserts that the returned account slug matches `FIZZY_ACCOUNT` (normalizing a leading slash).  
-
-Updated the Makefile integration target to load an optional `.env` file, prefix its variables with `TEST_RUNNER_`, and forward them to the pinned iPhone 17 simulator test runner. This keeps environment handling consistent across local and CI runs.  
-
-All unit tests now pass with the live suite skipped when credentials are absent, and a macOS build produces zero warnings. Verification confirmed via `swift test` output on the CI agent and local machine.
+Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to allow parallel PRs to append status sections without merge conflicts. Created `.env.example` containing placeholders for Fizzy API credentials and test knobs, and updated `.gitignore` to exclude the actual `.env` file. These changes are documentation‑only; no code was modified. CI build and test gates remain unchanged, ensuring the PR passes standard checks before merging.
