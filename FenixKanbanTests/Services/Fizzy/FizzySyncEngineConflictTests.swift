@@ -555,3 +555,87 @@ struct FizzySyncEngineConflictTests {
                 "pendingPushCount must equal number of failed push errors")
     }
 }
+
+// MARK: - Task #29: pending step writes retry on the provider tick
+
+@Suite("FizzySyncProvider — steps retry on tick (task #29)", .serialized)
+@MainActor
+struct ProviderStepsRetryTests {
+
+    @Test("provider tick re-pushes pending step writes and clears pendingWrite")
+    func tickRetriesPendingSteps() async throws {
+        let h = ConflictHarness()
+        defer { h.tearDown() }
+
+        let card = h.seedConflictCard(localTitle: "Steppy")
+        card.fizzyNumber = 9
+
+        let step = CardStep(context: h.persistence.viewContext)
+        step.content = "updated content"
+        step.completed = true
+        step.sortOrder = 0
+        step.pendingWrite = true
+        step.fizzyStepID = "st1"
+        step.card = card
+        try h.persistence.viewContext.save()
+
+        let provider = FizzySyncProvider(
+            authState: h.authState,
+            mapping: FizzyBoardMapping(defaults: h.mappingDefaults),
+            persistence: h.persistence,
+            urlSession: h.mock.makeSession(),
+            clock: ImmediateClock(),
+            pairingStore: h.pairingStore,
+            conflictStore: h.conflictStore
+        )
+
+        h.mock.handler = { req in
+            let path = req.url?.path ?? ""
+            if req.httpMethod == "PUT", path.hasSuffix("/cards/9/steps/st1") {
+                return (Data(#"{"id":"st1","content":"updated content","completed":true}"#.utf8), .ok(for: req))
+            }
+            Issue.record("unexpected request: \(req.httpMethod ?? "?") \(path)")
+            return (Data(), .response(for: req, status: 500))
+        }
+
+        await provider.retryPendingSteps()
+
+        #expect(step.pendingWrite == false, "successful re-push must clear pendingWrite")
+    }
+
+    @Test("failed step re-push keeps pendingWrite for the next tick")
+    func failedRetryKeepsPending() async throws {
+        let h = ConflictHarness()
+        defer { h.tearDown() }
+
+        let card = h.seedConflictCard(localTitle: "Steppy")
+        card.fizzyNumber = 9
+
+        let step = CardStep(context: h.persistence.viewContext)
+        step.content = "won't land"
+        step.completed = false
+        step.sortOrder = 0
+        step.pendingWrite = true
+        step.fizzyStepID = "st1"
+        step.card = card
+        try h.persistence.viewContext.save()
+
+        let provider = FizzySyncProvider(
+            authState: h.authState,
+            mapping: FizzyBoardMapping(defaults: h.mappingDefaults),
+            persistence: h.persistence,
+            urlSession: h.mock.makeSession(),
+            clock: ImmediateClock(),
+            pairingStore: h.pairingStore,
+            conflictStore: h.conflictStore
+        )
+
+        h.mock.handler = { req in
+            (Data(), .response(for: req, status: 500))
+        }
+
+        await provider.retryPendingSteps()
+
+        #expect(step.pendingWrite == true, "failed re-push must stay pending")
+    }
+}
