@@ -167,6 +167,7 @@
 		F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */; };
 		F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */; };
 		F8CFCB9761DFDE1E3B27990B /* FizzySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */; };
+		FA69352B11E2800440F5C0CA /* BackgroundRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */; };
 		FBE1E15BE388FCB6CC58D7FF /* BackupExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0838D934889E230674EF4DE4 /* BackupExporter.swift */; };
 		FBEE679BCF1A845D4AD3521B /* FizzyDTOs+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D477B9EB12FF832B4E19D6 /* FizzyDTOs+Directory.swift */; };
 		FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */; };
@@ -198,6 +199,7 @@
 		0BFC2630360516F47B333AA9 /* FenixKanban 3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 3.xcdatamodel"; sourceTree = "<group>"; };
 		0E2D11BAE72815F0D7F274CD /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthStateTests.swift; sourceTree = "<group>"; };
+		0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshTests.swift; sourceTree = "<group>"; };
 		139288734275D3EB49C0F400 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
 		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
 		177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEnginePullPlacementTests.swift; sourceTree = "<group>"; };
@@ -471,6 +473,7 @@
 		2E22745F4F482FA3823879D8 /* Sync */ = {
 			isa = PBXGroup;
 			children = (
+				0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */,
 				76CCDC89B952EC09B79E7A1D /* SyncSchedulerTests.swift */,
 				2532EED83F28CDBD8101A208 /* Fizzy */,
 			);
@@ -1116,6 +1119,7 @@
 			files = (
 				A30A97626FA931BBFCD62BA3 /* AppearanceModeTests.swift in Sources */,
 				2BAB3B616AC9A95A8CC6D3B1 /* AuthenticationServiceTests.swift in Sources */,
+				FA69352B11E2800440F5C0CA /* BackgroundRefreshTests.swift in Sources */,
 				38B76F596C9ADE228B1DBFAE /* BackupExporterTests.swift in Sources */,
 				CFD2124A4025EA91037AD6BF /* BackupManifestTests.swift in Sources */,
 				12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */,

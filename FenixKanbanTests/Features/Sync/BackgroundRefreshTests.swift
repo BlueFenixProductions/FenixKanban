@@ -1,0 +1,99 @@
+import Foundation
+import Testing
+@testable import FenixKanban
+
+// MARK: - NeverReturnSpy
+
+/// SyncTriggering spy whose `triggerSync` blocks until cancelled.
+/// Used to verify the time-budget enforcement path.
+@MainActor
+final class NeverReturnSpy: SyncTriggering {
+    var isPaired: Bool = true
+    var callCount = 0
+    var didObserveCancellation = false
+
+    func triggerSync() async {
+        callCount += 1
+        do {
+            // Block for a very long time; the coordinator's budget Task
+            // will cancel this child when the deadline is hit.
+            try await Task.sleep(for: .seconds(300))
+        } catch {
+            // CancellationError arrives here — record it so tests can assert
+            didObserveCancellation = true
+        }
+    }
+}
+
+// MARK: - Tests
+
+@Suite("BackgroundRefreshCoordinator")
+@MainActor
+struct BackgroundRefreshTests {
+
+    // MARK: (a) triggers exactly one sync and reports success
+
+    @Test("triggers one sync and returns true when provider completes within budget")
+    func triggersOneSyncAndReportsSuccess() async throws {
+        let spy = SyncSpy(isPaired: true)
+        let coordinator = BackgroundRefreshCoordinator(
+            provider: spy,
+            budgetSeconds: 25
+        )
+
+        let result = await coordinator.performBackgroundRefresh()
+
+        #expect(spy.callCount == 1)
+        #expect(result == true)
+    }
+
+    // MARK: (b) reports failure when provider never returns (times out)
+
+    @Test("returns false when provider does not complete before budget expires")
+    func reportsFailureOnTimeout() async throws {
+        let spy = NeverReturnSpy()
+        let coordinator = BackgroundRefreshCoordinator(
+            provider: spy,
+            budgetSeconds: 0.1   // 100 ms budget for testing
+        )
+
+        let result = await coordinator.performBackgroundRefresh()
+
+        #expect(spy.callCount == 1)
+        #expect(result == false)
+    }
+
+    // MARK: (c) respects the time budget — completes within budget + small slack
+
+    @Test("completes within budget even when provider would block forever")
+    func respectsTimeBudget() async throws {
+        let spy = NeverReturnSpy()
+        let coordinator = BackgroundRefreshCoordinator(
+            provider: spy,
+            budgetSeconds: 0.1   // 100 ms budget
+        )
+
+        let start = ContinuousClock.now
+        _ = await coordinator.performBackgroundRefresh()
+        let elapsed = ContinuousClock.now - start
+
+        // Should return well within a 5-second observation window
+        #expect(elapsed < .seconds(5))
+    }
+
+    // MARK: (d) does not run when unpaired
+
+    @Test("does not trigger sync and returns false when provider is not paired")
+    func doesNotRunWhenUnpaired() async throws {
+        let spy = SyncSpy(isPaired: false)
+        let coordinator = BackgroundRefreshCoordinator(
+            provider: spy,
+            budgetSeconds: 25
+        )
+
+        let result = await coordinator.performBackgroundRefresh()
+
+        #expect(spy.callCount == 0)
+        #expect(result == false)
+    }
+}
