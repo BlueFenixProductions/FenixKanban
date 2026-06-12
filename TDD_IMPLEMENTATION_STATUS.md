@@ -2852,3 +2852,41 @@ macOS/iPadOS 27 hides menu item symbol images by default. Repo ruling recorded: 
 stays iOS 26/macOS 26, 27-only APIs behind #available(iOS 27, *), floor-raise temptations become
 gray-area issues. Toolchain note: Susanoo runs iOS 27.0 beta; the Mac mini has Xcode 26.5 only —
 on-device verification path is empirical (devicectl) until an Xcode 27 beta is installed.
+
+### #50–#69 — Mission #28 consolidated log: playground restore + fizzy parity (2026-06-12)
+
+Single-day orchestrated mission (full narrative, manifests, and elf scorecard: GitHub issue #28).
+Per-task sections were moved out of PR bodies mid-mission after EOF-append conflicts silently
+blocked CI on conflicted PRs; this consolidated entry settles the ledger.
+
+- **#50** Live E2E restore (PR #48): replaceLocal pulls all 32 Playground cards into Ready with
+  zero-delta second sync — executed green against the live server. Precondition executed the same
+  day: 160→32 dedup purge (kept lowest numbers) + triage of all survivors into Ready.
+- **#51** Susanoo runbook + deploy: build with Xcode 26.5, install/launch via Xcode 27 beta
+  devicectl (26.5 cannot mount the iOS 27 ddi). FK launched on-device.
+- **#52** fizzyctl tool target (PR #42): Foundation-only client reuse; 28 parse tests.
+- **#54** docs/fizzy-api-notes.md: live-probed toggle semantics (tag_ids on PUT rejected),
+  untriaged-card visibility, relative .json Locations, per-column ETags.
+- **#55** Live UAT automation + wire fixtures (PR pending at entry time).
+- **#56–#59** CONTRIBUTING.md (PR #32) · auto-refresh scheduler + badges (PR #38) · Liquid Glass
+  iOS 27 deltas in the tech archive (PR #37).
+- **#60** CoreData v9 (PR #39): Card.lifecycleStatusRaw/closedAt + local-only CardStep/
+  CachedComment; lightweight migration verified from v8; #22 removal deferred to v10.
+- **#61** ETag-conditional pulls (PR #40): 304 no-op polling cycles via in-memory per-column
+  card-list cache; soft-delete/LWW/push logic untouched by design.
+- **#62** BGAppRefreshTask (PR #41): bounded background sync; test-host guard hardening; the
+  300s-sleeping test spy that crashed CI runners replaced with a cancellation-correct blocker.
+- **#63/#64** Comments (PR #43) and steps (PR #44) cache-first read/write over the v9 entities.
+- **#65** Deterministic SyncScheduler timing (PR #46): ManualClock + waitForSleeper kills the
+  wall-clock flake (10/10 runs); the interim quarantine on develop is superseded.
+- **#66** AddCardIntent + board snapshot writer (PR #45); widget target deferred on an xcodegen
+  platform-filter blocker (sources shipped in-tree).
+- **#67** Lifecycle sync engine (PR #47): wire closed/postponed → lifecycleStatus; the unlisted-
+  card guard transitions instead of deleting; local edits survive transitions.
+- **#68** Lifecycle UI (PR #49): close/reopen/not-now actions with write-through + revert; closed-
+  card filter toggle per issue #34 default A.
+- **#69** Push parity (PR #50): local column moves via triage; tags/assignees as exact toggle
+  diffs against fresh remote state. Engine chain complete (conflicts land as #70).
+
+Recurring verification: every PR gated on the full unit suite (pinned/dedicated sims) + zero-
+warning macOS builds + the ~10-min CI gate; live-API suites are env-gated and skip in CI.
