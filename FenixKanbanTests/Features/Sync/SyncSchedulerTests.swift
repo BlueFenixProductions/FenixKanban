@@ -52,6 +52,7 @@ struct SyncSchedulerTests {
 
     // MARK: (a) fires after interval while active
 
+<<<<<<< HEAD
     /// Previously flaky: used real wall-clock Task.sleep on both sides of the
     /// scheduler/test boundary; under parallel load the loop task's continuation
     /// was not scheduled before the test checked callCount.
@@ -60,6 +61,10 @@ struct SyncSchedulerTests {
     /// actually suspended in `clock.sleep(until:)` before we advance time,
     /// making the wakeup deterministic.
     @Test("fires sync after interval elapses while scene is active")
+=======
+    @Test("fires sync after interval elapses while scene is active",
+          .disabled("Flaky under CI load (wall-clock race) — deterministic rewrite lands in #65"))
+>>>>>>> origin/develop
     func firesAfterIntervalWhileActive() async throws {
         let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
@@ -128,12 +133,17 @@ struct SyncSchedulerTests {
 
     // MARK: (c) does not double-fire when manual sync running
 
+<<<<<<< HEAD
     /// Previously flaky: same real-sleep race as (a).
     ///
     /// Fix: ManualClock advances time so the loop fires twice in quick
     /// succession; because the first triggerSync blocks (spy.makeSlow()),
     /// isSyncing stays true for the second tick and callCount stays 1.
     @Test("does not start a second sync while one is already in flight")
+=======
+    @Test("does not start a second sync while one is already in flight",
+          .disabled("Flaky under CI load (wall-clock race) — deterministic rewrite lands in #65"))
+>>>>>>> origin/develop
     func noDoubleFire() async throws {
         let clock = ManualClock()
         let spy = SyncSpy(isPaired: true)
