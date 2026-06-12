@@ -11,7 +11,7 @@ import CoreData
 /// Phase 5 only handles the manual entry points (`fetchRemoteBoards`,
 /// `sync`). The foreground polling timer lands in Phase 6.
 @MainActor
-final class FizzySyncProvider: BoardSyncProvider {
+final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
 
     let providerName: String = "Fizzy"
     let iconName: String = "bolt.circle.fill"
@@ -115,6 +115,21 @@ final class FizzySyncProvider: BoardSyncProvider {
     /// since Phase 5 pairs at most one local board).
     func lastSyncDate(for boardId: UUID) -> Date? {
         mapping.lastSyncAt
+    }
+
+    // MARK: - SyncTriggering (Phase 6 foreground scheduler)
+
+    /// `true` when both token and board pairing are configured.
+    var isPaired: Bool {
+        authState.isConfigured && mapping.isPaired
+    }
+
+    /// Fires one sync cycle via the engine. Silently absorbs errors so the
+    /// scheduler's loop doesn't crash on transient failures; errors are
+    /// surfaced through `activityState` on the scheduler.
+    func triggerSync() async {
+        guard let engine = makeEngine() else { return }
+        _ = try? await engine.sync()
     }
 
     // MARK: - Internal accessors (used by FizzyAuthView sub-views)
