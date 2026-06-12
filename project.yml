@@ -61,12 +61,42 @@ targets:
         CODE_SIGN_ENTITLEMENTS: FenixKanban/Resources/FenixKanban.entitlements
         SUPPORTS_MACCATALYST: NO
         "EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]": "LaunchScreen.storyboard"
-    # NOTE: FenixKanbanWidgets dependency deferred — see #66 report.
-    # xcodegen 2.45.4 generates the Embed Foundation Extensions build phase
-    # without PLATFORM_FILTER = ios, causing macOS builds to fail with
-    # "embedded content built for iOS not allowed". The Widgets/ sources are
-    # in the tree and ready; re-add this dependency once xcodegen gains proper
-    # platform-filtered embed support or a post-generate pbxproj patch is added.
+    dependencies:
+      # FenixKanbanWidgets is iOS-only. xcodegen 2.45.4 does not write
+      # platformFilters on the Embed Foundation Extensions build file even with
+      # `platformFilter: ios` set here, so the macOS app build would fail with
+      # "embedded content built for iOS not allowed". The post-generate script
+      # scripts/patch-widget-platform-filter.rb sets platformFilters = ["ios"]
+      # on the embed build file after `make generate` runs.
+      - target: FenixKanbanWidgets
+        embed: true
+        link: false
+
+  FenixKanbanWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+        excludes:
+          - "**/.DS_Store"
+      # BoardSnapshot is the shared Codable model — must be compiled into both
+      # the app and the widget extension (no dynamic linking across app extension
+      # sandbox boundary).
+      - path: FenixKanban/Features/Widget/BoardSnapshot.swift
+    info:
+      path: Widgets/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanban.Widgets
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Widgets/FenixKanbanWidgets.entitlements
+        SDKROOT: iphoneos
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        SKIP_INSTALL: YES
+        # WidgetKit requires the extension host app's Swift version.
+        SWIFT_VERSION: "5.9"
 
   FenixKanbanTests:
     type: bundle.unit-test

@@ -63,6 +63,7 @@ help:
 
 generate:
 	xcodegen generate
+	ruby scripts/patch-widget-platform-filter.rb
 
 build:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
