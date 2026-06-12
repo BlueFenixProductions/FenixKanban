@@ -176,6 +176,7 @@
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
 		DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */; };
 		E28CEDF04F9DC799CB8AA774 /* AssigneePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1B9186731B8F85F0294268 /* AssigneePickerView.swift */; };
+		E2E644FBE7E2A293B9E46891 /* FizzySyncEnginePushParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */; };
 		E558EBBB7243AC828B2FCC92 /* FizzyClient+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
 		E7142545CF6A399053654C8C /* FizzySyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263A4B64EBC1D39BF38D2CDC /* FizzySyncEngine.swift */; };
@@ -377,6 +378,7 @@
 		D10A143D4EF691E4A0436C89 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineETagTests.swift; sourceTree = "<group>"; };
 		D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
+		D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEnginePushParityTests.swift; sourceTree = "<group>"; };
 		D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCommentsViewModelTests.swift; sourceTree = "<group>"; };
 		D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMappingTests.swift; sourceTree = "<group>"; };
 		D613029DDB577CD954C47EEC /* FirstSyncModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstSyncModeTests.swift; sourceTree = "<group>"; };
@@ -857,6 +859,7 @@
 				D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */,
 				BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */,
 				177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */,
+				D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */,
 				3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */,
 				D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */,
 				B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */,
@@ -1077,15 +1080,15 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					29B0805C04158CE223599CD4 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 					5FBE7EC4307D66DC5CD8CF44 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Manual;
 					};
 					62212B85E018F8DAAD57EB30 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1290,6 +1293,7 @@
 				1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */,
 				1EE67FEFD13A28512384FA70 /* FizzySyncEngineLifecycleTests.swift in Sources */,
 				233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */,
+				E2E644FBE7E2A293B9E46891 /* FizzySyncEnginePushParityTests.swift in Sources */,
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,
 				321C0D7DB3CF3DD8D9ECD6B4 /* FizzySyncMappingTests.swift in Sources */,
 				E9E42C62557AFB457356C145 /* FizzySyncProviderTests.swift in Sources */,
