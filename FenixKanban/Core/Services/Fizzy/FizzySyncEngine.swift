@@ -34,6 +34,18 @@ final class FizzySyncEngine {
     /// calls return an empty `FizzySyncResult` immediately.
     private var isSyncing = false
 
+    /// Per-column card-list cache for ETag-conditional pulls (task #61).
+    /// Keyed by request path; in-memory by design (cold start re-fetches
+    /// once, then steady-state polling 304s). Holding the cards alongside
+    /// the etag keeps the remote universe complete on a 304, which is what
+    /// lets the soft-delete and LWW logic run unchanged.
+    private struct CardListCacheEntry {
+        var etag: String
+        var singlePage: Bool
+        var cards: [FizzyCard]
+    }
+    private var cardListCache: [String: CardListCacheEntry] = [:]
+
     init(
         client: FizzyClient,
         authState: FizzyAuthState,
@@ -737,10 +749,32 @@ final class FizzySyncEngine {
     /// NOTE: these lists exclude closed/not-now cards, so absence here is
     /// not proof of server-side deletion — the soft-delete path must confirm
     /// via `GET /cards/:number` before deleting locally.
+    ///
+    /// ETag-conditional (task #61): each column's list is fetched with
+    /// `If-None-Match` when the previous response was single-page; a 304
+    /// reuses the cached card list, so the returned "universe" is always
+    /// complete and the LWW / soft-delete / push logic downstream runs
+    /// unchanged. The cache is in-memory by design — a cold start simply
+    /// re-fetches once.
     private func fetchRemoteCards(boardID: String, remoteColumns: [FizzyColumn]) async throws -> [FizzyCard] {
         var cards: [FizzyCard] = []
         for column in remoteColumns {
-            cards += try await client.cards(boardID: boardID, columnID: column.id)
+            let path = "/boards/\(boardID)/columns/\(column.id)/cards"
+            let cached = cardListCache[path]
+            // Conditional only when the prior response was single-page —
+            // page-1-ETag semantics across pages are unverified (probe B3-4).
+            let conditionalETag = (cached?.singlePage == true) ? cached?.etag : nil
+            let result = try await client.getAllPagesWithETag(path, etag: conditionalETag, as: [FizzyCard].self)
+            if let fresh = result.items {
+                cards += fresh
+                if let etag = result.etag {
+                    cardListCache[path] = CardListCacheEntry(etag: etag, singlePage: result.singlePage, cards: fresh)
+                } else {
+                    cardListCache[path] = nil
+                }
+            } else if let cached {
+                cards += cached.cards // 304 — unchanged since the last cycle
+            }
         }
         var seen = Set<String>()
         return cards.filter { seen.insert($0.id).inserted }

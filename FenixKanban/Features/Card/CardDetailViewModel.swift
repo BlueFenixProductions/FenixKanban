@@ -26,6 +26,10 @@ final class CardDetailViewModel: ObservableObject {
     /// steps checklist section (issue #19, online-only).
     let stepsViewModel: CardStepsViewModel?
 
+    /// Present only for fizzy-paired cards with a live client — drives the
+    /// comments section with cache-first read/write (issue #16).
+    let commentsViewModel: CardCommentsViewModel?
+
     var availableColumns: [Column] {
         card.column?.board?.sortedColumns ?? []
     }
@@ -48,10 +52,20 @@ final class CardDetailViewModel: ObservableObject {
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
         if card.fizzyNumber > 0, let client = fizzyClient {
+<<<<<<< HEAD
             let stepRepo = StepRepository(context: context)
             self.stepsViewModel = CardStepsViewModel(card: card, client: client, repository: stepRepo)
+=======
+            self.stepsViewModel = CardStepsViewModel(cardNumber: Int(card.fizzyNumber), client: client)
+            self.commentsViewModel = CardCommentsViewModel(
+                cardFizzyNumber: card.fizzyNumber,
+                client: client,
+                context: context
+            )
+>>>>>>> origin/develop
         } else {
             self.stepsViewModel = nil
+            self.commentsViewModel = nil
         }
         observeCardChanges(context: context)
     }
