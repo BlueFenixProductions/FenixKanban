@@ -10,6 +10,7 @@ struct CardStepsSection: View {
     var body: some View {
         Section {
             ForEach(viewModel.steps) { step in
+                let isPending = step.id.hasPrefix("pending-")
                 Button {
                     Task { await viewModel.toggleStep(step) }
                 } label: {
@@ -20,6 +21,12 @@ struct CardStepsSection: View {
                             .strikethrough(step.completed)
                             .foregroundStyle(step.completed ? .secondary : .primary)
                         Spacer(minLength: 0)
+                        if isPending {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.crossPlatformCaption2)
+                                .foregroundStyle(.tertiary)
+                                .accessibilityLabel("Pending sync")
+                        }
                     }
                     .contentShape(Rectangle())
                 }
