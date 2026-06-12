@@ -2799,3 +2799,7 @@ execution.
 ### #47 — Mission setup: union-merge status log + .env scaffolding (2026-06-12)
 
 Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to allow parallel PRs to append status sections without merge conflicts. Created `.env.example` containing placeholders for Fizzy API credentials and test knobs, and updated `.gitignore` to exclude the actual `.env` file. These changes are documentation‑only; no code was modified. CI build and test gates remain unchanged, ensuring the PR passes standard checks before merging.
+
+### #56 — Generated CONTRIBUTING.md from DELIVERABLES.md spec (2026-06-12)
+
+Implemented a comprehensive CONTRIBUTING.md based on Deliverable 1. The document now includes the TDD red‑green‑refactor workflow, phase checklists, definition of done, hotfix exception policy, branch/PR guidelines, and platform‑specific considerations. The local LLM drafted the content; a review confirmed fidelity to branch naming conventions and formatter references as defined in the spec. No code changes were made—docs-only update.
