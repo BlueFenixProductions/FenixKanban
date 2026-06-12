@@ -2795,3 +2795,11 @@ execution.
 **three consecutive parallel runs green** (pinned iPhone 17 sim
 `1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+---
+
+### #57 — 429 Retry-After backoff (2026-06-12)
+
+`FizzyClient.performWithRetry` now honors `Retry-After` on HTTP 429. Previously every 429 was returned immediately to the caller which threw `FizzyError.rateLimited` — there was no retry path. The fix adds a 429 branch inside the retry loop: when attempts remain, sleep `min(Retry-After, 30s)` via the injected `Clock` (falling back to the existing 1s/2s/4s ladder when the header is absent or unparseable), then continue. The 429 path shares the identical 4-request budget (attempt 0…3) as the 5xx and URLError ladders — a hostile server that always returns 429 will exhaust the budget and produce `.rateLimited` as before, not spin forever.
+
+Three new tests in `FizzyClientRetryTests` cover the behavior: (a) 429 + `Retry-After: 1` followed by 200 → call succeeds with exactly 2 requests recorded; (b) persistent 429 → throws `.rateLimited` after exactly 4 requests (exhausted budget); (c) 429 without `Retry-After` → still retries and succeeds with 2 requests, confirming ladder-delay fallback. All three were RED before the one-function change and GREEN after. Full iOS test run: 412 tests / 84 suites green, zero failures; macOS build succeeded with zero warnings.
