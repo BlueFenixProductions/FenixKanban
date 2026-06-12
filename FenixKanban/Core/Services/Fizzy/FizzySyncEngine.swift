@@ -25,6 +25,9 @@ final class FizzySyncEngine {
     /// Device-local pairing authority (issue #21 A′). CloudKit-synced
     /// attributes on Card are demoted to a self-healing hint channel.
     private let pairingStore: FizzyCardPairingStore
+    /// Device-local conflict store. Receives one entry per card where both
+    /// local and remote title/description diverged since the last watermark.
+    private let conflictStore: FizzyConflictStore
 
     /// Reentrancy guard. `sync()`/`syncFirst(mode:)` suspend at every HTTP
     /// await, so a second call (double-tapped Sync Now, a pair-then-sync
@@ -51,13 +54,15 @@ final class FizzySyncEngine {
         authState: FizzyAuthState,
         mapping: FizzyBoardMapping,
         context: NSManagedObjectContext,
-        pairingStore: FizzyCardPairingStore
+        pairingStore: FizzyCardPairingStore,
+        conflictStore: FizzyConflictStore = .shared
     ) {
         self.client = client
         self.authState = authState
         self.mapping = mapping
         self.context = context
         self.pairingStore = pairingStore
+        self.conflictStore = conflictStore
     }
 
     /// One-shot first-sync. Caller must have set `authState.accessToken`,
@@ -244,6 +249,33 @@ final class FizzySyncEngine {
                 // POST /triage; tags and assignees push as EXACT toggle
                 // diffs (tag_ids on PUT is rejected by the live server, and
                 // toggles are not idempotent — docs/fizzy-api-notes.md).
+                //
+                // Conflict predicate (task #70): if remote also moved since
+                // the watermark AND title or description diverged, emit a
+                // ConflictRecord. Column moves, tags, and assignees are
+                // commutative and flow through parity diffs unchanged.
+                // The keep-mine default (PUT + parity) still proceeds so
+                // convergence is unchanged — the loss becomes visible and
+                // reversible.
+                if remoteTimestamp > localFizzyTimestamp {
+                    let localTitle = card.title ?? ""
+                    let localDesc = card.cardDescription
+                    if localTitle != remote.title || localDesc != remote.description {
+                        if let cardID = card.id {
+                            let conflict = ConflictRecord(
+                                id: cardID,
+                                fizzyNumber: p.fizzyNumber,
+                                localTitle: localTitle,
+                                localDescription: localDesc,
+                                remoteTitle: remote.title,
+                                remoteDescription: remote.description,
+                                detectedAt: .now
+                            )
+                            result.conflicts.append(conflict)
+                            conflictStore.setRecord(conflict, for: cardID)
+                        }
+                    }
+                }
                 do {
                     let updated = try await putCard(card, number: p.fizzyNumber)
                     await pushParityDiffs(for: card, against: remote, number: p.fizzyNumber, into: &result)
@@ -357,6 +389,38 @@ final class FizzySyncEngine {
                 }
             }
         }
+    }
+
+    // MARK: - Conflict resolution (task #70)
+
+    /// Keep-mine resolution: PUT the local title/description to the remote,
+    /// advance the pairing watermark and card.modifiedAt to the server echo,
+    /// then clear the conflict record.
+    ///
+    /// User-action entry point — never called inside sync().
+    func resolveKeepMine(cardID: UUID) async throws {
+        guard let card = fetchCard(by: cardID) else { return }
+        guard let p = pairingStore.pairing(for: cardID) else { return }
+        let updated = try await putCard(card, number: p.fizzyNumber)
+        recordPairing(for: card, fizzyID: p.fizzyID, number: p.fizzyNumber, updatedAt: updated.lastActiveAt)
+        card.modifiedAt = updated.lastActiveAt
+        conflictStore.remove(for: cardID)
+        if context.hasChanges { try? context.save() }
+    }
+
+    /// Take-theirs resolution: re-fetch fresh remote state via the single-card
+    /// endpoint (the stored ConflictRecord is a prompt, not the source of truth),
+    /// apply it via the existing `applyRemote` helper (which repairs both the
+    /// pairing watermark and card.modifiedAt), then clear the conflict record.
+    ///
+    /// User-action entry point — never called inside sync().
+    func resolveTakeTheirs(cardID: UUID) async throws {
+        guard let p = pairingStore.pairing(for: cardID) else { return }
+        guard let card = fetchCard(by: cardID) else { return }
+        let detail = try await client.card(number: Int(p.fizzyNumber))
+        applyRemote(detail, to: card)
+        conflictStore.remove(for: cardID)
+        if context.hasChanges { try? context.save() }
     }
 
     // MARK: - Pairing store access (issue #21 A′)
@@ -969,6 +1033,14 @@ final class FizzySyncEngine {
     /// `FizzyBoardMapping`). Returns `nil` if the board was deleted.
     private func fetchBoard(by id: UUID) -> Board? {
         let request: NSFetchRequest<Board> = Board.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        request.fetchLimit = 1
+        return (try? context.fetch(request))?.first
+    }
+
+    /// Fetches a local `Card` by its UUID. Returns `nil` if deleted.
+    private func fetchCard(by id: UUID) -> Card? {
+        let request: NSFetchRequest<Card> = Card.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
         return (try? context.fetch(request))?.first
