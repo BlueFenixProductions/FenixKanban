@@ -117,6 +117,7 @@ struct FizzyCard: Codable, Equatable {
     let hasAttachments: Bool
     let tags: [String]
     let closed: Bool?           // present only on single-card endpoint
+    let postponed: Bool?        // "Not Now" state; single-card + column-cards shapes
     let golden: Bool
     let lastActiveAt: Date
     let createdAt: Date
@@ -126,7 +127,7 @@ struct FizzyCard: Codable, Equatable {
     let assignees: [FizzyUser]?  // present only on the column-cards list endpoint
 
     enum CodingKeys: String, CodingKey {
-        case id, number, title, status, description, tags, closed, golden, url, column, steps, assignees
+        case id, number, title, status, description, tags, closed, postponed, golden, url, column, steps, assignees
         case descriptionHTML = "description_html"
         case imageURL = "image_url"
         case hasAttachments = "has_attachments"
