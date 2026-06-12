@@ -156,6 +156,51 @@ final class BoardViewModel: ObservableObject {
         toggleGolden(for: card)
     }
 
+    // MARK: - Lifecycle actions (board-surface context menu / swipe)
+
+    /// Fire-and-forget lifecycle action from a board-surface control (context
+    /// menu). The board has no alert surface; a failed push reverts silently —
+    /// the next pull is reconciler of last resort (#19 pattern).
+    func performLifecycleAction(_ action: CardLifecycleAction, on card: Card) {
+        Task { @MainActor in
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
+            let previous = card.lifecycleStatus
+            let targetStatus: CardLifecycleStatus
+            switch action {
+            case .close: targetStatus = .closed
+            case .reopen: targetStatus = .active
+            case .postpone: targetStatus = .notNow
+            }
+            card.lifecycleStatus = targetStatus
+            card.modifiedAt = Date()
+            card.column?.modifiedAt = Date()
+            card.column?.board?.modifiedAt = Date()
+            try? context.save()
+            refreshColumns()
+
+            guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+            do {
+                switch action {
+                case .close:
+                    try await client.closeCard(number: Int(card.fizzyNumber))
+                case .reopen:
+                    try await client.reopenCard(number: Int(card.fizzyNumber))
+                case .postpone:
+                    try await client.postponeCard(number: Int(card.fizzyNumber))
+                }
+            } catch {
+                // State-recheck revert (fire-and-forget, no alert surface on board)
+                if !card.isDeleted, card.managedObjectContext != nil,
+                   card.lifecycleStatus == targetStatus {
+                    card.lifecycleStatus = previous
+                    card.modifiedAt = Date()
+                    try? context.save()
+                    refreshColumns()
+                }
+            }
+        }
+    }
+
     // MARK: - Lifecycle filter (#34 default A)
 
     /// Board-level toggle — persisted globally via AppStorage; @AppStorage
