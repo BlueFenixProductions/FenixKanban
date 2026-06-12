@@ -105,6 +105,11 @@ struct FenixKanbanApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, newPhase in
+            // The unit-test host must not run the production sync loop or
+            // touch BGTaskScheduler: a scheduler tick firing mid-test-run
+            // (interval is 300 s; CI test phases can exceed that under load)
+            // races the test suites. Same detection PersistenceController uses.
+            guard !FenixKanbanApp.isRunningUnitTests else { return }
             syncScheduler.setSceneActive(newPhase == .active)
             #if os(iOS)
             // Schedule the next background refresh whenever the app moves
@@ -130,6 +135,11 @@ struct FenixKanbanApp: App {
         }
         #endif
     }
+
+    /// True when running inside the unit-test host (XCTest injects this env
+    /// var). Gates the production sync machinery off during test runs.
+    static let isRunningUnitTests =
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     #if os(iOS)
     /// Submit a BGAppRefreshTaskRequest so the system schedules the next wake.
