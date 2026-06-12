@@ -285,9 +285,13 @@ final class FizzyClient: Sendable {
 
     // MARK: - Retry
 
-    /// Performs the request with up to 3 retries on transient failures (URLError
-    /// or 5xx). 4xx propagates immediately. Backoff: 1s, 2s, 4s (via the
-    /// injected `Clock`, so tests can pass `ImmediateClock()` for instant runs).
+    /// Performs the request with up to 3 retries on transient failures (URLError,
+    /// 5xx, or 429). 4xx other than 429 propagates immediately. Backoff: 1s, 2s,
+    /// 4s (via the injected `Clock`, so tests can pass `ImmediateClock()` for
+    /// instant runs). On 429, sleeps `min(Retry-After, 30s)`; if Retry-After is
+    /// absent or unparseable, falls back to the ladder delay for that attempt.
+    /// 429 shares the same total attempt budget as 5xx/URLError — a hostile
+    /// server cannot pin a sync for an unbounded number of retries.
     private func performWithRetry(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let delays: [Duration] = [.seconds(1), .seconds(2), .seconds(4)]
 
@@ -299,6 +303,13 @@ final class FizzyClient: Sendable {
                 }
                 if (500...599).contains(http.statusCode), attempt < delays.count {
                     try await clock.sleep(for: delays[attempt])
+                    continue
+                }
+                if http.statusCode == 429, attempt < delays.count {
+                    let retryAfterHeader = http.value(forHTTPHeaderField: "Retry-After")
+                    let parsed = retryAfterHeader.flatMap { TimeInterval($0) }
+                    let delay: Duration = parsed.map { Duration.seconds(min($0, 30)) } ?? delays[attempt]
+                    try await clock.sleep(for: delay)
                     continue
                 }
                 return (data, http)

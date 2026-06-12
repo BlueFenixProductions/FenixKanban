@@ -11,7 +11,7 @@ import CoreData
 /// Phase 5 only handles the manual entry points (`fetchRemoteBoards`,
 /// `sync`). The foreground polling timer lands in Phase 6.
 @MainActor
-final class FizzySyncProvider: BoardSyncProvider {
+final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
 
     let providerName: String = "Fizzy"
     let iconName: String = "bolt.circle.fill"
@@ -115,6 +115,52 @@ final class FizzySyncProvider: BoardSyncProvider {
     /// since Phase 5 pairs at most one local board).
     func lastSyncDate(for boardId: UUID) -> Date? {
         mapping.lastSyncAt
+    }
+
+    // MARK: - SyncTriggering (Phase 6 foreground scheduler)
+
+    /// `true` when both token and board pairing are configured.
+    var isPaired: Bool {
+        authState.isConfigured && mapping.isPaired
+    }
+
+    /// Fires one sync cycle via the engine. Silently absorbs errors so the
+    /// scheduler's loop doesn't crash on transient failures; errors are
+    /// surfaced through `activityState` on the scheduler.
+    ///
+    /// Also re-posts any pending (unsent) comments — issue #16 retry seam.
+    /// This hook lives here rather than in FizzySyncEngine or FizzyClient so
+    /// neither orchestrator is aware of the comment cache (single-responsibility).
+    func triggerSync() async {
+        guard let engine = makeEngine() else { return }
+        _ = try? await engine.sync()
+        await retryPendingComments()
+    }
+
+    /// Re-posts all `pendingWrite == true` CachedComment entries found in
+    /// the viewContext. No-op when unauthenticated. Called from `triggerSync()`
+    /// on every scheduler tick.
+    func retryPendingComments() async {
+        guard let client = makeClient() else { return }
+        let context = persistence.viewContext
+        let request: NSFetchRequest<CachedComment> = CachedComment.fetchRequest()
+        request.predicate = NSPredicate(format: "pendingWrite == YES")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CachedComment.createdAt, ascending: true)]
+        let pending = (try? context.fetch(request)) ?? []
+        for comment in pending {
+            guard !comment.isDeleted, comment.managedObjectContext != nil else { continue }
+            let cardNumber = Int(comment.cardFizzyNumber)
+            let body = comment.body ?? ""
+            guard !body.isEmpty else { continue }
+            do {
+                let created = try await client.createComment(cardNumber: cardNumber, body: body)
+                comment.fizzyCommentID = created.id
+                comment.pendingWrite = false
+                if context.hasChanges { try? context.save() }
+            } catch {
+                // Leave pending; will be retried on the next tick.
+            }
+        }
     }
 
     // MARK: - Internal accessors (used by FizzyAuthView sub-views)
