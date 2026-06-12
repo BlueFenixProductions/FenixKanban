@@ -86,9 +86,19 @@ struct FenixKanbanApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, newPhase in
+            // The unit-test host must not run the production sync loop: a
+            // scheduler tick firing mid-test-run (interval is 300 s; CI test
+            // phases can exceed that under load) races the test suites. Same
+            // detection PersistenceController uses for its in-memory store.
+            guard !FenixKanbanApp.isRunningUnitTests else { return }
             syncScheduler.setSceneActive(newPhase == .active)
         }
     }
+
+    /// True when running inside the unit-test host (XCTest injects this env
+    /// var). Gates the production sync machinery off during test runs.
+    static let isRunningUnitTests =
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 }
 
 struct ContentView: View {
