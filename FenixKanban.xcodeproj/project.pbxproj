@@ -152,6 +152,7 @@
 		E9E42C62557AFB457356C145 /* FizzySyncProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */; };
 		EB89C1364903EF0A7B4F90E5 /* TipJarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AA8D2F4FF050550CD5DED /* TipJarStore.swift */; };
 		EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */; };
+		EE3AE5B8CCA089F5BAF7595B /* LiveTestEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */; };
 		EE5DD89C21B3F520B7C19CED /* InitialsAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A1AAE6F0C21DEB56C73DCA /* InitialsAvatar.swift */; };
 		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
 		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
@@ -236,6 +237,7 @@
 		5DCF09CEDCB117837C6930E7 /* FizzyDTOs+Comments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyDTOs+Comments.swift"; sourceTree = "<group>"; };
 		5E3E553C08C4D58EB070A17A /* FenixKanban 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 4.xcdatamodel"; sourceTree = "<group>"; };
 		5F8BA67918984E11FD14D58F /* SyncMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMonitorTests.swift; sourceTree = "<group>"; };
+		61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTestEnv.swift; sourceTree = "<group>"; };
 		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV7Tests.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
@@ -681,6 +683,7 @@
 			isa = PBXGroup;
 			children = (
 				F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */,
+				61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */,
 			);
 			path = Live;
 			sourceTree = "<group>";
@@ -1133,6 +1136,7 @@
 				BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */,
 				7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */,
 				9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */,
+				EE3AE5B8CCA089F5BAF7595B /* LiveTestEnv.swift in Sources */,
 				7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */,
 				DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */,
 				52518B243D944207DE9AE664 /* MockURLProtocolIsolationTests.swift in Sources */,
