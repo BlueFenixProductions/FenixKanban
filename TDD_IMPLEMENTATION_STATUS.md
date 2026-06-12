@@ -2796,10 +2796,10 @@ execution.
 `1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
 
----
+### #47 — Mission setup: union-merge status log + .env scaffolding (2026-06-12)
 
-### #57 — 429 Retry-After backoff (2026-06-12)
+Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to allow parallel PRs to append status sections without merge conflicts. Created `.env.example` containing placeholders for Fizzy API credentials and test knobs, and updated `.gitignore` to exclude the actual `.env` file. These changes are documentation‑only; no code was modified. CI build and test gates remain unchanged, ensuring the PR passes standard checks before merging.
 
-`FizzyClient.performWithRetry` now honors `Retry-After` on HTTP 429. Previously every 429 was returned immediately to the caller which threw `FizzyError.rateLimited` — there was no retry path. The fix adds a 429 branch inside the retry loop: when attempts remain, sleep `min(Retry-After, 30s)` via the injected `Clock` (falling back to the existing 1s/2s/4s ladder when the header is absent or unparseable), then continue. The 429 path shares the identical 4-request budget (attempt 0…3) as the 5xx and URLError ladders — a hostile server that always returns 429 will exhaust the budget and produce `.rateLimited` as before, not spin forever.
+### #56 — Generated CONTRIBUTING.md from DELIVERABLES.md spec (2026-06-12)
 
-Three new tests in `FizzyClientRetryTests` cover the behavior: (a) 429 + `Retry-After: 1` followed by 200 → call succeeds with exactly 2 requests recorded; (b) persistent 429 → throws `.rateLimited` after exactly 4 requests (exhausted budget); (c) 429 without `Retry-After` → still retries and succeeds with 2 requests, confirming ladder-delay fallback. All three were RED before the one-function change and GREEN after. Full iOS test run: 412 tests / 84 suites green, zero failures; macOS build succeeded with zero warnings.
+Implemented a comprehensive CONTRIBUTING.md based on Deliverable 1. The document now includes the TDD red‑green‑refactor workflow, phase checklists, definition of done, hotfix exception policy, branch/PR guidelines, and platform‑specific considerations. The local LLM drafted the content; a review confirmed fidelity to branch naming conventions and formatter references as defined in the spec. No code changes were made—docs-only update.
