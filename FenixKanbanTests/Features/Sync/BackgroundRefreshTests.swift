@@ -27,9 +27,11 @@ final class NeverReturnSpy: SyncTriggering {
                 }
             }
         } onCancel: {
-            self.didObserveCancellation = true
-            self.blocked?.resume()
-            self.blocked = nil
+            Task { @MainActor in
+                self.didObserveCancellation = true
+                self.blocked?.resume()
+                self.blocked = nil
+            }
         }
     }
 
