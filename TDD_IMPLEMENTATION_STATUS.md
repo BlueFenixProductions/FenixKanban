@@ -2890,3 +2890,36 @@ blocked CI on conflicted PRs; this consolidated entry settles the ledger.
 
 Recurring verification: every PR gated on the full unit suite (pinned/dedicated sims) + zero-
 warning macOS builds + the ~10-min CI gate; live-API suites are env-gated and skip in CI.
+
+### #70 — Conflict surfacing + offline awareness + steps retry (2026-06-12)
+
+LWW conflicts are now visible and reversible: when remote also moved past the watermark and
+title/description diverged, the engine emits a ConflictRecord (transient in FizzySyncResult,
+durable in the FizzyConflictStore sidecar) while keep-mine remains the silent default —
+convergence unchanged. resolveKeepMine PUTs local; resolveTakeTheirs re-fetches the single-card
+truth. Commutative fields never conflict. The provider routes errors into SyncActivityState
+(.error phase; lastSyncAt only advances when a cycle ran) and pendingPushCount surfaces failed
+PUTs. Provider tick also re-pushes pending step writes (task #29), symmetric with comments.
+10 tests; full suite green; macOS zero warnings. GREEN salvaged from the interrupted C11
+subagent, reviewed and adopted; steps retry by the orchestrator.
+
+### #71 — Deterministic BackgroundRefresh timing via ManualClock (2026-06-12)
+
+BackgroundRefreshCoordinator gains Clock injection (default ContinuousClock — production
+unchanged); the budget deadline uses clock.sleep. Timing tests rewritten on ManualClock +
+waitForSleeper per the #65 pattern; the wall-clock elapsed assertion removed. 10/10 consecutive
+runs green, max 0.012s per test. Completes the wall-clock-test elimination.
+
+### #72 — FenixKanbanWidgets extension target wired (2026-06-12)
+
+The #66 deferral is closed: xcodegen 2.45.4 confirmed unable to emit platformFilters on the
+embed phase, so scripts/patch-widget-platform-filter.rb (xcodeproj gem, add-ui-test-target.rb
+style) patches the generated project; make generate chains it. iOS + macOS builds green, UI-test
+overlay composes, 2 new BoardSnapshot wire-shape tests. Bonus root-cause: local Keychain-suite
+failures on unsigned runs are errSecMissingEntitlement — CI signs sim builds.
+
+### #55 (completion note) — Live UAT verified against the real server (2026-06-12)
+
+After the token refresh, UAT items 4 (golden pull), 6 (401 recovery), and 7 (re-pair merge,
+zero remote creates) all passed live; no-creds runs skip cleanly; [itest] hygiene verified —
+Playground holds exactly 32 cards post-run. Phase 5 UAT ledger items 4–7: closed.
