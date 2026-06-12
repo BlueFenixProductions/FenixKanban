@@ -24,6 +24,13 @@ struct BoardView: View {
         ))
     }
 
+    /// `true` when Fizzy has an active board pairing — used to decide whether
+    /// to show sync badges on cards.
+    private var boardIsPaired: Bool {
+        let fizzy = PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider
+        return fizzy?.isPaired ?? false
+    }
+
     var body: some View {
         boardContent
             .navigationTitle(viewModel.board.name ?? "Board")
@@ -162,6 +169,7 @@ struct BoardView: View {
                     ColumnView(
                         column: column,
                         cards: column.sortedCards,
+                        boardIsPaired: boardIsPaired,
                         onAddCard: {
                             viewModel.selectedColumnForNewCard = column
                         },
@@ -225,6 +233,7 @@ struct BoardView: View {
                     ColumnView(
                         column: column,
                         cards: column.sortedCards,
+                        boardIsPaired: boardIsPaired,
                         onAddCard: {
                             viewModel.selectedColumnForNewCard = column
                         },

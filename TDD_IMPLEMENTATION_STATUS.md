@@ -2803,3 +2803,52 @@ Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to 
 ### #56 — Generated CONTRIBUTING.md from DELIVERABLES.md spec (2026-06-12)
 
 Implemented a comprehensive CONTRIBUTING.md based on Deliverable 1. The document now includes the TDD red‑green‑refactor workflow, phase checklists, definition of done, hotfix exception policy, branch/PR guidelines, and platform‑specific considerations. The local LLM drafted the content; a review confirmed fidelity to branch naming conventions and formatter references as defined in the spec. No code changes were made—docs-only update.
+
+### #48 — Fizzy Sync Engine Card Pull Refactor (2026-06-12)
+
+Switched card pull from the board‑wide list endpoint to per‑column GET `/boards/:id/columns/:col/cards`. Cards now land in their source column keyed by Fizzy column ID, with a name fallback. The board-wide list carries no column data, so pulls previously landed in an arbitrary column.
+
+Implemented steady‑state pull logic that applies remote column moves without echo‑push, ensuring local state stays in sync with server changes. During first sync, we replace/merge local columns with Fizzy column IDs to maintain identity across sessions.
+
+Deletion handling now verifies card existence via the single‑card endpoint: a 404 confirms deletion, 200 indicates survival, and unverifiable cards are retained. Per‑column lists exclude closed or non‑current cards, so missing cards are reliably detected.
+
+Added a push loop guard that skips context‑deleted cards, fixing a latent resurrection bug where soft‑deleted cards were re‑POSTed. Updated legacy test to align with the verified‑deletion contract.
+
+All 413/413 tests pass on a pinned iPhone 17 simulator, and the macOS build compiles with zero warnings.
+
+### #49 — live‑API test infrastructure (2026-06-12)
+
+Added `LiveTestEnv` (test-bundle enum) that pulls `FIZZY_TOKEN`, `FIZZY_ACCOUNT`, `FIZZY_BASE_URL`, `FIZZY_EXPECTED_CARDS`, and `FIZZY_ALLOW_MUTATION` from the process environment. Live test suites are gated with `Swift Testing .enabled(if:)`; when any credential is missing the suite self‑skips, ensuring CI runs without live traffic. Added `LiveSmokeTests` which performs a GET to `/my/identity`, decodes the response, and asserts that the returned account slug matches `FIZZY_ACCOUNT` (normalizing a leading slash).  
+
+Updated the Makefile integration target to load an optional `.env` file, prefix its variables with `TEST_RUNNER_`, and forward them to the pinned iPhone 17 simulator test runner. This keeps environment handling consistent across local and CI runs.  
+
+All unit tests now pass with the live suite skipped when credentials are absent, and a macOS build produces zero warnings. Verification confirmed via `swift test` output on the CI agent and local machine.
+
+
+---
+
+### #57 — 429 Retry-After backoff (2026-06-12)
+
+`FizzyClient.performWithRetry` now honors `Retry-After` on HTTP 429. Previously every 429 was returned immediately to the caller which threw `FizzyError.rateLimited` — there was no retry path. The fix adds a 429 branch inside the retry loop: when attempts remain, sleep `min(Retry-After, 30s)` via the injected `Clock` (falling back to the existing 1s/2s/4s ladder when the header is absent or unparseable), then continue. The 429 path shares the identical 4-request budget (attempt 0…3) as the 5xx and URLError ladders — a hostile server that always returns 429 will exhaust the budget and produce `.rateLimited` as before, not spin forever.
+
+Three new tests in `FizzyClientRetryTests` cover the behavior: (a) 429 + `Retry-After: 1` followed by 200 → call succeeds with exactly 2 requests recorded; (b) persistent 429 → throws `.rateLimited` after exactly 4 requests (exhausted budget); (c) 429 without `Retry-After` → still retries and succeeds with 2 requests, confirming ladder-delay fallback. All three were RED before the one-function change and GREEN after. Full iOS test run: 412 tests / 84 suites green, zero failures; macOS build succeeded with zero warnings.
+
+### #58 — Foreground auto-refresh + sync visibility (2026-06-12)
+
+Introduced foreground auto-sync (every 300 s while the scene is `.active`) and a set of observable sync-state surfaces so the user always knows what Fizzy is doing. The work is organized around a minimal protocol seam (`SyncTriggering`: two requirements — `isPaired` and `triggerSync()`) that keeps `SyncScheduler` free of any Fizzy internals. `FizzySyncProvider` conforms via a small extension; tests inject a `SyncSpy` that records calls without touching the network.
+
+`SyncScheduler` is `@Observable @MainActor` and owns a `Task` loop that sleeps `interval` seconds before calling the provider. Two reentrancy guards prevent double-work: the scheduler's `isSyncing` flag short-circuits the tick when the previous call hasn't returned, and `FizzySyncEngine`'s own pre-existing guard returns an empty result if the HTTP phase races through. `SyncActivityState` (also `@Observable`) carries `phase` (idle / syncing / error(String)) and `lastSyncAt`; it is exposed directly on the scheduler and forwarded into `SyncSettingsView` so the Auto-Sync section shows live status without an `@EnvironmentObject`. Cloud badges on `CardView` resolve via `CardSyncBadgeState.resolve(hasPairing:boardIsPaired:)` — a pure static function that reads `FizzyCardPairingStore.shared` at body-evaluation time, keeping all badge logic off the view layer and in testable code.
+
+RED: `SyncSchedulerTests` — 8 tests covering (a) fires after interval while active, (b) suspends when inactive, (c) no double-fire when in-flight, (d) no fire when unpaired; plus `CardSyncBadgeStateTests` — 4 badge-resolution cases. All failed with `cannot find type 'SyncTriggering'/'SyncScheduler'/'CardSyncBadgeState' in scope`. GREEN: all 421 tests / 86 suites pass (pinned sim `1CCA4B1C…`, parallel); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+
+### #59 — Apple technology archive: iOS 27 / macOS 27 Liquid Glass deltas (2026-06-12)
+
+Live-fetched (Apple docs JSON backend, iOS 27 beta release notes, WWDC26 coverage) and appended
+to docs/apple-technology-overviews.md per Captain's order before further UI dispatch. Key deltas:
+27's material refinements apply at runtime without recompile; new user transparency slider widens
+the accessibility test matrix; no glassEffect/GlassEffectContainer API changes or deprecations;
+macOS/iPadOS 27 hides menu item symbol images by default. Repo ruling recorded: deployment floor
+stays iOS 26/macOS 26, 27-only APIs behind #available(iOS 27, *), floor-raise temptations become
+gray-area issues. Toolchain note: Susanoo runs iOS 27.0 beta; the Mac mini has Xcode 26.5 only —
+on-device verification path is empirical (devicectl) until an Xcode 27 beta is installed.

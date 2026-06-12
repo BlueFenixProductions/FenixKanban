@@ -9,7 +9,9 @@ struct FenixKanbanApp: App {
     @StateObject private var authService = AuthenticationService()
     @StateObject private var syncMonitor: SyncMonitor
     @State private var navigator = NavigationModel()
+    @State private var syncScheduler: SyncScheduler
     @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let launchArgs = ProcessInfo.processInfo.arguments
@@ -57,11 +59,17 @@ struct FenixKanbanApp: App {
             persistence: PersistenceController.shared
         )
         PluginRegistry.shared.register(fizzyProvider)
+
+        // Phase 6: foreground auto-refresh scheduler (default 300 s interval).
+        // The scheduler is `@State` (not @StateObject) because it is
+        // @Observable (not ObservableObject). `_syncScheduler` follows the
+        // same pattern as `_navigator` above.
+        _syncScheduler = State(wrappedValue: SyncScheduler(provider: fizzyProvider))
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView(navigator: navigator)
+            ContentView(navigator: navigator, syncScheduler: syncScheduler)
                 .environment(\.managedObjectContext, persistence.viewContext)
                 .environmentObject(authService)
                 .environmentObject(syncMonitor)
@@ -77,11 +85,15 @@ struct FenixKanbanApp: App {
                     }
                 }
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            syncScheduler.setSceneActive(newPhase == .active)
+        }
     }
 }
 
 struct ContentView: View {
     @Bindable var navigator: NavigationModel
+    var syncScheduler: SyncScheduler
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var syncMonitor: SyncMonitor
     @Environment(\.managedObjectContext) private var context
@@ -137,7 +149,7 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView(authService: authService, persistence: .shared)
+            SettingsView(authService: authService, persistence: .shared, syncScheduler: syncScheduler)
                 .environment(\.managedObjectContext, context)
         }
     }

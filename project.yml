@@ -100,7 +100,8 @@ schemes:
     test:
       config: Debug
       targets:
-        - FenixKanbanTests
+        - name: FenixKanbanTests
+          parallelizable: true
     run:
       config: Debug
     profile:
