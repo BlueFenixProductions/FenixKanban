@@ -38,3 +38,4 @@ Config/Development.xcconfig
 
 # Local LM Studio tooling (PR summary harness output, etc.)
 .lmstudio/
+.env
