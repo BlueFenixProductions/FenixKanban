@@ -1217,9 +1217,13 @@ struct FizzySyncEngineSoftDeleteTests {
         let mapping = FizzyBoardMapping(defaults: mappingDefaults)
         mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
-        // Paired local card; remote will return empty list.
+        // Paired local card; remote will return empty list. The number hint
+        // matters: deletion is only confirmed via GET /cards/:number → 404
+        // (per-column lists exclude closed cards, so absence alone no longer
+        // deletes — task #48).
         let card = cardRepo.createCard(in: column, title: "Doomed")
         card.fizzyID = "fz-doomed"
+        card.fizzyNumber = 9
         try persistence.viewContext.save()
         let cardObjectID = card.objectID
 
@@ -1238,6 +1242,9 @@ struct FizzySyncEngineSoftDeleteTests {
                 return (#"[{"id":"FCLOCAL","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-06-01T00:00:00Z"}]"#.data(using: .utf8)!, .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/cards"):
                 return ("[]".data(using: .utf8)!, .ok(for: req))
+            case ("GET", let p?) where p.contains("/cards/"):
+                // Deletion confirmation: the card is gone on the server.
+                return (Data(), .response(for: req, status: 404))
             default:
                 return (Data(), .response(for: req, status: 500))
             }

@@ -3,6 +3,9 @@ import SwiftUI
 struct ColumnView: View {
     let column: Column
     let cards: [Card]
+    /// Forwarded from `BoardView`; `true` when the board's Fizzy pairing is
+    /// active so `CardView` can show sync badges.
+    var boardIsPaired: Bool = false
     let onAddCard: () -> Void
     let onDeleteCard: (Card) -> Void
     let onSelectCard: (Card) -> Void
@@ -13,6 +16,7 @@ struct ColumnView: View {
     let onMoveCardDown: (Card) -> Void
     let onToggleGolden: (Card) -> Void
     let onToggleGoldenByID: (UUID) -> Void
+    let onLifecycleAction: (Card, CardLifecycleAction) -> Void
 
     @State private var isDropTargeted = false
 
@@ -81,7 +85,7 @@ struct ColumnView: View {
                 GlassEffectContainer(spacing: 6) {
                     LazyVStack(spacing: 6) {
                         ForEach(Array(cards.enumerated()), id: \.element.objectID) { index, card in
-                            CardView(card: card, columnColor: columnColor)
+                            CardView(card: card, columnColor: columnColor, boardIsPaired: boardIsPaired)
                                 .draggable(card.id?.uuidString ?? "") {
                                     CardView(card: card, columnColor: columnColor)
                                         .frame(width: 250)
@@ -119,6 +123,40 @@ struct ColumnView: View {
                                             ? "Remove golden ticket"
                                             : "Mark as golden ticket"
                                     )
+
+                                    Divider()
+
+                                    // Lifecycle actions — context-appropriate per current state
+                                    switch card.lifecycleStatus {
+                                    case .active:
+                                        Button {
+                                            onLifecycleAction(card, .close)
+                                        } label: {
+                                            SwiftUI.Label("Close Card", systemImage: "checkmark.circle")
+                                        }
+                                        Button {
+                                            onLifecycleAction(card, .postpone)
+                                        } label: {
+                                            SwiftUI.Label("Not Now", systemImage: "clock.badge.xmark")
+                                        }
+                                    case .closed:
+                                        Button {
+                                            onLifecycleAction(card, .reopen)
+                                        } label: {
+                                            SwiftUI.Label("Reopen Card", systemImage: "arrow.counterclockwise")
+                                        }
+                                    case .notNow:
+                                        Button {
+                                            onLifecycleAction(card, .reopen)
+                                        } label: {
+                                            SwiftUI.Label("Reopen Card", systemImage: "arrow.counterclockwise")
+                                        }
+                                        Button {
+                                            onLifecycleAction(card, .close)
+                                        } label: {
+                                            SwiftUI.Label("Close Card", systemImage: "checkmark.circle")
+                                        }
+                                    }
 
                                     Divider()
 

@@ -106,6 +106,56 @@ final class FizzyClient: Sendable {
         return nil
     }
 
+    /// Conditional variant of `getAllPages` (task #61). Sends `If-None-Match`
+    /// on the FIRST page only; a 304 there means the collection is unchanged
+    /// and `items == nil` is returned (callers reuse their cached copy). Any
+    /// 200 walks all pages as usual. `singlePage` reports whether page 1
+    /// carried a `rel="next"` link — callers should only go conditional on
+    /// collections that were single-page last time (page-1-ETag semantics
+    /// across pages are unverified against the live server).
+    func getAllPagesWithETag<Element: Decodable & Sendable>(
+        _ path: String,
+        etag: String?,
+        as: [Element].Type
+    ) async throws -> FizzyPagedResult<Element> {
+        var items: [Element] = []
+        var nextURL: URL? = url(for: path)
+        var firstPage = true
+        var firstPageETag: String?
+        var singlePage = true
+
+        while let pageURL = nextURL {
+            var request = URLRequest(url: pageURL)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            if firstPage, let etag {
+                request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+            }
+
+            let (data, http) = try await performWithRetry(request)
+            switch http.statusCode {
+            case 200:
+                items += try Self.decoder.decode([Element].self, from: data)
+                if firstPage { firstPageETag = http.value(forHTTPHeaderField: "ETag") }
+                nextURL = nextPageURL(from: http.value(forHTTPHeaderField: "Link"))
+                if firstPage, nextURL != nil { singlePage = false }
+            case 304 where firstPage:
+                return FizzyPagedResult(
+                    items: nil,
+                    etag: http.value(forHTTPHeaderField: "ETag") ?? etag,
+                    singlePage: true
+                )
+            case 429:
+                throw FizzyError(httpStatus: 429, retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
+            default:
+                throw FizzyError(httpStatus: http.statusCode, body: data)
+            }
+            firstPage = false
+        }
+        return FizzyPagedResult(items: items, etag: firstPageETag, singlePage: singlePage)
+    }
+
     /// GET with explicit ETag handling. Used by the sync engine; sends
     /// `If-None-Match` if `etag != nil`, returns `body == nil` on 304.
     func getWithETag<T: Decodable & Sendable>(
@@ -235,9 +285,13 @@ final class FizzyClient: Sendable {
 
     // MARK: - Retry
 
-    /// Performs the request with up to 3 retries on transient failures (URLError
-    /// or 5xx). 4xx propagates immediately. Backoff: 1s, 2s, 4s (via the
-    /// injected `Clock`, so tests can pass `ImmediateClock()` for instant runs).
+    /// Performs the request with up to 3 retries on transient failures (URLError,
+    /// 5xx, or 429). 4xx other than 429 propagates immediately. Backoff: 1s, 2s,
+    /// 4s (via the injected `Clock`, so tests can pass `ImmediateClock()` for
+    /// instant runs). On 429, sleeps `min(Retry-After, 30s)`; if Retry-After is
+    /// absent or unparseable, falls back to the ladder delay for that attempt.
+    /// 429 shares the same total attempt budget as 5xx/URLError — a hostile
+    /// server cannot pin a sync for an unbounded number of retries.
     private func performWithRetry(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let delays: [Duration] = [.seconds(1), .seconds(2), .seconds(4)]
 
@@ -249,6 +303,13 @@ final class FizzyClient: Sendable {
                 }
                 if (500...599).contains(http.statusCode), attempt < delays.count {
                     try await clock.sleep(for: delays[attempt])
+                    continue
+                }
+                if http.statusCode == 429, attempt < delays.count {
+                    let retryAfterHeader = http.value(forHTTPHeaderField: "Retry-After")
+                    let parsed = retryAfterHeader.flatMap { TimeInterval($0) }
+                    let delay: Duration = parsed.map { Duration.seconds(min($0, 30)) } ?? delays[attempt]
+                    try await clock.sleep(for: delay)
                     continue
                 }
                 return (data, http)

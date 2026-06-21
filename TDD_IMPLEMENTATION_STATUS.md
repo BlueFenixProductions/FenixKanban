@@ -2795,3 +2795,131 @@ execution.
 **three consecutive parallel runs green** (pinned iPhone 17 sim
 `1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
 (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+### #47 — Mission setup: union-merge status log + .env scaffolding (2026-06-12)
+
+Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to allow parallel PRs to append status sections without merge conflicts. Created `.env.example` containing placeholders for Fizzy API credentials and test knobs, and updated `.gitignore` to exclude the actual `.env` file. These changes are documentation‑only; no code was modified. CI build and test gates remain unchanged, ensuring the PR passes standard checks before merging.
+
+### #56 — Generated CONTRIBUTING.md from DELIVERABLES.md spec (2026-06-12)
+
+Implemented a comprehensive CONTRIBUTING.md based on Deliverable 1. The document now includes the TDD red‑green‑refactor workflow, phase checklists, definition of done, hotfix exception policy, branch/PR guidelines, and platform‑specific considerations. The local LLM drafted the content; a review confirmed fidelity to branch naming conventions and formatter references as defined in the spec. No code changes were made—docs-only update.
+
+### #48 — Fizzy Sync Engine Card Pull Refactor (2026-06-12)
+
+Switched card pull from the board‑wide list endpoint to per‑column GET `/boards/:id/columns/:col/cards`. Cards now land in their source column keyed by Fizzy column ID, with a name fallback. The board-wide list carries no column data, so pulls previously landed in an arbitrary column.
+
+Implemented steady‑state pull logic that applies remote column moves without echo‑push, ensuring local state stays in sync with server changes. During first sync, we replace/merge local columns with Fizzy column IDs to maintain identity across sessions.
+
+Deletion handling now verifies card existence via the single‑card endpoint: a 404 confirms deletion, 200 indicates survival, and unverifiable cards are retained. Per‑column lists exclude closed or non‑current cards, so missing cards are reliably detected.
+
+Added a push loop guard that skips context‑deleted cards, fixing a latent resurrection bug where soft‑deleted cards were re‑POSTed. Updated legacy test to align with the verified‑deletion contract.
+
+All 413/413 tests pass on a pinned iPhone 17 simulator, and the macOS build compiles with zero warnings.
+
+### #49 — live‑API test infrastructure (2026-06-12)
+
+Added `LiveTestEnv` (test-bundle enum) that pulls `FIZZY_TOKEN`, `FIZZY_ACCOUNT`, `FIZZY_BASE_URL`, `FIZZY_EXPECTED_CARDS`, and `FIZZY_ALLOW_MUTATION` from the process environment. Live test suites are gated with `Swift Testing .enabled(if:)`; when any credential is missing the suite self‑skips, ensuring CI runs without live traffic. Added `LiveSmokeTests` which performs a GET to `/my/identity`, decodes the response, and asserts that the returned account slug matches `FIZZY_ACCOUNT` (normalizing a leading slash).  
+
+Updated the Makefile integration target to load an optional `.env` file, prefix its variables with `TEST_RUNNER_`, and forward them to the pinned iPhone 17 simulator test runner. This keeps environment handling consistent across local and CI runs.  
+
+All unit tests now pass with the live suite skipped when credentials are absent, and a macOS build produces zero warnings. Verification confirmed via `swift test` output on the CI agent and local machine.
+
+
+---
+
+### #57 — 429 Retry-After backoff (2026-06-12)
+
+`FizzyClient.performWithRetry` now honors `Retry-After` on HTTP 429. Previously every 429 was returned immediately to the caller which threw `FizzyError.rateLimited` — there was no retry path. The fix adds a 429 branch inside the retry loop: when attempts remain, sleep `min(Retry-After, 30s)` via the injected `Clock` (falling back to the existing 1s/2s/4s ladder when the header is absent or unparseable), then continue. The 429 path shares the identical 4-request budget (attempt 0…3) as the 5xx and URLError ladders — a hostile server that always returns 429 will exhaust the budget and produce `.rateLimited` as before, not spin forever.
+
+Three new tests in `FizzyClientRetryTests` cover the behavior: (a) 429 + `Retry-After: 1` followed by 200 → call succeeds with exactly 2 requests recorded; (b) persistent 429 → throws `.rateLimited` after exactly 4 requests (exhausted budget); (c) 429 without `Retry-After` → still retries and succeeds with 2 requests, confirming ladder-delay fallback. All three were RED before the one-function change and GREEN after. Full iOS test run: 412 tests / 84 suites green, zero failures; macOS build succeeded with zero warnings.
+
+### #58 — Foreground auto-refresh + sync visibility (2026-06-12)
+
+Introduced foreground auto-sync (every 300 s while the scene is `.active`) and a set of observable sync-state surfaces so the user always knows what Fizzy is doing. The work is organized around a minimal protocol seam (`SyncTriggering`: two requirements — `isPaired` and `triggerSync()`) that keeps `SyncScheduler` free of any Fizzy internals. `FizzySyncProvider` conforms via a small extension; tests inject a `SyncSpy` that records calls without touching the network.
+
+`SyncScheduler` is `@Observable @MainActor` and owns a `Task` loop that sleeps `interval` seconds before calling the provider. Two reentrancy guards prevent double-work: the scheduler's `isSyncing` flag short-circuits the tick when the previous call hasn't returned, and `FizzySyncEngine`'s own pre-existing guard returns an empty result if the HTTP phase races through. `SyncActivityState` (also `@Observable`) carries `phase` (idle / syncing / error(String)) and `lastSyncAt`; it is exposed directly on the scheduler and forwarded into `SyncSettingsView` so the Auto-Sync section shows live status without an `@EnvironmentObject`. Cloud badges on `CardView` resolve via `CardSyncBadgeState.resolve(hasPairing:boardIsPaired:)` — a pure static function that reads `FizzyCardPairingStore.shared` at body-evaluation time, keeping all badge logic off the view layer and in testable code.
+
+RED: `SyncSchedulerTests` — 8 tests covering (a) fires after interval while active, (b) suspends when inactive, (c) no double-fire when in-flight, (d) no fire when unpaired; plus `CardSyncBadgeStateTests` — 4 badge-resolution cases. All failed with `cannot find type 'SyncTriggering'/'SyncScheduler'/'CardSyncBadgeState' in scope`. GREEN: all 421 tests / 86 suites pass (pinned sim `1CCA4B1C…`, parallel); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+
+### #59 — Apple technology archive: iOS 27 / macOS 27 Liquid Glass deltas (2026-06-12)
+
+Live-fetched (Apple docs JSON backend, iOS 27 beta release notes, WWDC26 coverage) and appended
+to docs/apple-technology-overviews.md per Captain's order before further UI dispatch. Key deltas:
+27's material refinements apply at runtime without recompile; new user transparency slider widens
+the accessibility test matrix; no glassEffect/GlassEffectContainer API changes or deprecations;
+macOS/iPadOS 27 hides menu item symbol images by default. Repo ruling recorded: deployment floor
+stays iOS 26/macOS 26, 27-only APIs behind #available(iOS 27, *), floor-raise temptations become
+gray-area issues. Toolchain note: Susanoo runs iOS 27.0 beta; the Mac mini has Xcode 26.5 only —
+on-device verification path is empirical (devicectl) until an Xcode 27 beta is installed.
+
+### #50–#69 — Mission #28 consolidated log: playground restore + fizzy parity (2026-06-12)
+
+Single-day orchestrated mission (full narrative, manifests, and elf scorecard: GitHub issue #28).
+Per-task sections were moved out of PR bodies mid-mission after EOF-append conflicts silently
+blocked CI on conflicted PRs; this consolidated entry settles the ledger.
+
+- **#50** Live E2E restore (PR #48): replaceLocal pulls all 32 Playground cards into Ready with
+  zero-delta second sync — executed green against the live server. Precondition executed the same
+  day: 160→32 dedup purge (kept lowest numbers) + triage of all survivors into Ready.
+- **#51** Susanoo runbook + deploy: build with Xcode 26.5, install/launch via Xcode 27 beta
+  devicectl (26.5 cannot mount the iOS 27 ddi). FK launched on-device.
+- **#52** fizzyctl tool target (PR #42): Foundation-only client reuse; 28 parse tests.
+- **#54** docs/fizzy-api-notes.md: live-probed toggle semantics (tag_ids on PUT rejected),
+  untriaged-card visibility, relative .json Locations, per-column ETags.
+- **#55** Live UAT automation + wire fixtures (PR pending at entry time).
+- **#56–#59** CONTRIBUTING.md (PR #32) · auto-refresh scheduler + badges (PR #38) · Liquid Glass
+  iOS 27 deltas in the tech archive (PR #37).
+- **#60** CoreData v9 (PR #39): Card.lifecycleStatusRaw/closedAt + local-only CardStep/
+  CachedComment; lightweight migration verified from v8; #22 removal deferred to v10.
+- **#61** ETag-conditional pulls (PR #40): 304 no-op polling cycles via in-memory per-column
+  card-list cache; soft-delete/LWW/push logic untouched by design.
+- **#62** BGAppRefreshTask (PR #41): bounded background sync; test-host guard hardening; the
+  300s-sleeping test spy that crashed CI runners replaced with a cancellation-correct blocker.
+- **#63/#64** Comments (PR #43) and steps (PR #44) cache-first read/write over the v9 entities.
+- **#65** Deterministic SyncScheduler timing (PR #46): ManualClock + waitForSleeper kills the
+  wall-clock flake (10/10 runs); the interim quarantine on develop is superseded.
+- **#66** AddCardIntent + board snapshot writer (PR #45); widget target deferred on an xcodegen
+  platform-filter blocker (sources shipped in-tree).
+- **#67** Lifecycle sync engine (PR #47): wire closed/postponed → lifecycleStatus; the unlisted-
+  card guard transitions instead of deleting; local edits survive transitions.
+- **#68** Lifecycle UI (PR #49): close/reopen/not-now actions with write-through + revert; closed-
+  card filter toggle per issue #34 default A.
+- **#69** Push parity (PR #50): local column moves via triage; tags/assignees as exact toggle
+  diffs against fresh remote state. Engine chain complete (conflicts land as #70).
+
+Recurring verification: every PR gated on the full unit suite (pinned/dedicated sims) + zero-
+warning macOS builds + the ~10-min CI gate; live-API suites are env-gated and skip in CI.
+
+### #70 — Conflict surfacing + offline awareness + steps retry (2026-06-12)
+
+LWW conflicts are now visible and reversible: when remote also moved past the watermark and
+title/description diverged, the engine emits a ConflictRecord (transient in FizzySyncResult,
+durable in the FizzyConflictStore sidecar) while keep-mine remains the silent default —
+convergence unchanged. resolveKeepMine PUTs local; resolveTakeTheirs re-fetches the single-card
+truth. Commutative fields never conflict. The provider routes errors into SyncActivityState
+(.error phase; lastSyncAt only advances when a cycle ran) and pendingPushCount surfaces failed
+PUTs. Provider tick also re-pushes pending step writes (task #29), symmetric with comments.
+10 tests; full suite green; macOS zero warnings. GREEN salvaged from the interrupted C11
+subagent, reviewed and adopted; steps retry by the orchestrator.
+
+### #71 — Deterministic BackgroundRefresh timing via ManualClock (2026-06-12)
+
+BackgroundRefreshCoordinator gains Clock injection (default ContinuousClock — production
+unchanged); the budget deadline uses clock.sleep. Timing tests rewritten on ManualClock +
+waitForSleeper per the #65 pattern; the wall-clock elapsed assertion removed. 10/10 consecutive
+runs green, max 0.012s per test. Completes the wall-clock-test elimination.
+
+### #72 — FenixKanbanWidgets extension target wired (2026-06-12)
+
+The #66 deferral is closed: xcodegen 2.45.4 confirmed unable to emit platformFilters on the
+embed phase, so scripts/patch-widget-platform-filter.rb (xcodeproj gem, add-ui-test-target.rb
+style) patches the generated project; make generate chains it. iOS + macOS builds green, UI-test
+overlay composes, 2 new BoardSnapshot wire-shape tests. Bonus root-cause: local Keychain-suite
+failures on unsigned runs are errSecMissingEntitlement — CI signs sim builds.
+
+### #55 (completion note) — Live UAT verified against the real server (2026-06-12)
+
+After the token refresh, UAT items 4 (golden pull), 6 (401 recovery), and 7 (re-pair merge,
+zero remote creates) all passed live; no-creds runs skip cleanly; [itest] hygiene verified —
+Playground holds exactly 32 cards post-run. Phase 5 UAT ledger items 4–7: closed.

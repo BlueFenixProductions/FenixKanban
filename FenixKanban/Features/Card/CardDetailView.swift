@@ -149,8 +149,69 @@ struct CardDetailView: View {
                     Toggle("Completed", isOn: $viewModel.isCompleted)
                 }
 
+                // MARK: Lifecycle section (issue #34)
+                // Show context-appropriate controls: only the valid transitions
+                // from the card's current state. Reopen only for closed cards;
+                // Close and Not Now only for active/notNow cards.
+                Section("Status") {
+                    switch viewModel.card.lifecycleStatus {
+                    case .active:
+                        Button {
+                            Task { await viewModel.closeCard() }
+                        } label: {
+                            SwiftUI.Label("Close Card", systemImage: "checkmark.circle")
+                        }
+                        .foregroundStyle(.secondary)
+                        .accessibilityHint("Marks this card as resolved.")
+
+                        Button {
+                            Task { await viewModel.postponeCard() }
+                        } label: {
+                            SwiftUI.Label("Not Now", systemImage: "clock.badge.xmark")
+                        }
+                        .foregroundStyle(.secondary)
+                        .accessibilityHint("Defers this card without closing it.")
+
+                    case .closed:
+                        HStack {
+                            SwiftUI.Label("Closed", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        Button {
+                            Task { await viewModel.reopenCard() }
+                        } label: {
+                            SwiftUI.Label("Reopen Card", systemImage: "arrow.counterclockwise")
+                        }
+                        .accessibilityHint("Moves this card back to active.")
+
+                    case .notNow:
+                        HStack {
+                            SwiftUI.Label("Not Now", systemImage: "clock.badge.xmark")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        Button {
+                            Task { await viewModel.closeCard() }
+                        } label: {
+                            SwiftUI.Label("Close Card", systemImage: "checkmark.circle")
+                        }
+                        .foregroundStyle(.secondary)
+                        Button {
+                            Task { await viewModel.reopenCard() }
+                        } label: {
+                            SwiftUI.Label("Reopen Card", systemImage: "arrow.counterclockwise")
+                        }
+                        .accessibilityHint("Moves this card back to active.")
+                    }
+                }
+
                 if let stepsVM = viewModel.stepsViewModel {
                     CardStepsSection(viewModel: stepsVM)
+                }
+
+                if let commentsVM = viewModel.commentsViewModel {
+                    CardCommentsSection(viewModel: commentsVM)
                 }
             }
             .navigationTitle("Card Detail")

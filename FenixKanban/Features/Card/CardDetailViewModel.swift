@@ -26,6 +26,10 @@ final class CardDetailViewModel: ObservableObject {
     /// steps checklist section (issue #19, online-only).
     let stepsViewModel: CardStepsViewModel?
 
+    /// Present only for fizzy-paired cards with a live client — drives the
+    /// comments section with cache-first read/write (issue #16).
+    let commentsViewModel: CardCommentsViewModel?
+
     var availableColumns: [Column] {
         card.column?.board?.sortedColumns ?? []
     }
@@ -48,9 +52,16 @@ final class CardDetailViewModel: ObservableObject {
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
         if card.fizzyNumber > 0, let client = fizzyClient {
-            self.stepsViewModel = CardStepsViewModel(cardNumber: Int(card.fizzyNumber), client: client)
+            let stepRepo = StepRepository(context: context)
+            self.stepsViewModel = CardStepsViewModel(card: card, client: client, repository: stepRepo)
+            self.commentsViewModel = CardCommentsViewModel(
+                cardFizzyNumber: card.fizzyNumber,
+                client: client,
+                context: context
+            )
         } else {
             self.stepsViewModel = nil
+            self.commentsViewModel = nil
         }
         observeCardChanges(context: context)
     }
@@ -265,6 +276,75 @@ final class CardDetailViewModel: ObservableObject {
             }
             errorMessage = "Couldn't update golden ticket on Fizzy."
         }
+    }
+
+    // MARK: - Lifecycle (close / reopen / not now)
+
+    /// Closes the card locally (optimistic `.closed`), then pushes to Fizzy
+    /// when paired. Reverts + surfaces errorMessage on failure.
+    /// Unpaired boards still close locally — lifecycle is a local feature too.
+    func closeCard() async {
+        let previous = card.lifecycleStatus
+        applyLifecycleLocally(.closed)
+
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        do {
+            try await client.closeCard(number: Int(card.fizzyNumber))
+        } catch {
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
+            if card.lifecycleStatus == .closed {
+                applyLifecycleLocally(previous)
+            }
+            errorMessage = "Couldn't close card on Fizzy."
+        }
+    }
+
+    /// Reopens a closed card locally (optimistic `.active`), then DELETEs the
+    /// closure on Fizzy when paired. Reverts + surfaces errorMessage on failure.
+    func reopenCard() async {
+        let previous = card.lifecycleStatus
+        applyLifecycleLocally(.active)
+
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        do {
+            try await client.reopenCard(number: Int(card.fizzyNumber))
+        } catch {
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
+            if card.lifecycleStatus == .active {
+                applyLifecycleLocally(previous)
+            }
+            errorMessage = "Couldn't reopen card on Fizzy."
+        }
+    }
+
+    /// Moves the card to "Not Now" locally (optimistic `.notNow`), then POSTs
+    /// to Fizzy when paired. Reverts + surfaces errorMessage on failure.
+    func postponeCard() async {
+        let previous = card.lifecycleStatus
+        applyLifecycleLocally(.notNow)
+
+        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        do {
+            try await client.postponeCard(number: Int(card.fizzyNumber))
+        } catch {
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
+            if card.lifecycleStatus == .notNow {
+                applyLifecycleLocally(previous)
+            }
+            errorMessage = "Couldn't set card to Not Now on Fizzy."
+        }
+    }
+
+    /// Applies a lifecycle status locally and persists to Core Data.
+    /// lifecycleStatus setter manages closedAt automatically; modifiedAt is
+    /// bumped so the next sync push carries the transition.
+    private func applyLifecycleLocally(_ status: CardLifecycleStatus) {
+        card.lifecycleStatus = status
+        card.modifiedAt = Date()
+        card.column?.modifiedAt = Date()
+        card.column?.board?.modifiedAt = Date()
+        try? card.managedObjectContext?.save()
+        objectWillChange.send()
     }
 
     /// Golden keeps its modifiedAt bump (unlike watch/pin): golden is pulled

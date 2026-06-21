@@ -93,6 +93,22 @@ struct FizzyDTOTests {
         #expect(steps.count == 2)
         #expect(steps[1].completed == true)
     }
+
+    // Live capture (2026-06-12): 32 real cards from the Playground "Ready"
+    // column. Verbatim bytes — no scrubbing. Each card carries `column`
+    // because per-column endpoint is the only list source that includes it.
+    // RED-first: this test fails until `make generate` embeds the fixture
+    // in the test bundle (project.yml resources:FenixKanbanTests/Fixtures).
+    @Test("playground_column_cards.json decodes 32 live FizzyCards with column present")
+    func playgroundColumnCards() throws {
+        let data = try loadFixture("playground_column_cards")
+        let cards = try decoder.decode([FizzyCard].self, from: data)
+        #expect(cards.count == 32, "Expected 32 cards in the Playground Ready column live capture")
+        for card in cards {
+            let column = try #require(card.column, "Every card from a per-column endpoint must carry a column field")
+            #expect(!column.id.isEmpty)
+        }
+    }
 }
 
 private final class FixtureLocator {}

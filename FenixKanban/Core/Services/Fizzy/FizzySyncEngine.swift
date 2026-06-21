@@ -25,6 +25,9 @@ final class FizzySyncEngine {
     /// Device-local pairing authority (issue #21 A′). CloudKit-synced
     /// attributes on Card are demoted to a self-healing hint channel.
     private let pairingStore: FizzyCardPairingStore
+    /// Device-local conflict store. Receives one entry per card where both
+    /// local and remote title/description diverged since the last watermark.
+    private let conflictStore: FizzyConflictStore
 
     /// Reentrancy guard. `sync()`/`syncFirst(mode:)` suspend at every HTTP
     /// await, so a second call (double-tapped Sync Now, a pair-then-sync
@@ -34,18 +37,32 @@ final class FizzySyncEngine {
     /// calls return an empty `FizzySyncResult` immediately.
     private var isSyncing = false
 
+    /// Per-column card-list cache for ETag-conditional pulls (task #61).
+    /// Keyed by request path; in-memory by design (cold start re-fetches
+    /// once, then steady-state polling 304s). Holding the cards alongside
+    /// the etag keeps the remote universe complete on a 304, which is what
+    /// lets the soft-delete and LWW logic run unchanged.
+    private struct CardListCacheEntry {
+        var etag: String
+        var singlePage: Bool
+        var cards: [FizzyCard]
+    }
+    private var cardListCache: [String: CardListCacheEntry] = [:]
+
     init(
         client: FizzyClient,
         authState: FizzyAuthState,
         mapping: FizzyBoardMapping,
         context: NSManagedObjectContext,
-        pairingStore: FizzyCardPairingStore
+        pairingStore: FizzyCardPairingStore,
+        conflictStore: FizzyConflictStore = .shared
     ) {
         self.client = client
         self.authState = authState
         self.mapping = mapping
         self.context = context
         self.pairingStore = pairingStore
+        self.conflictStore = conflictStore
     }
 
     /// One-shot first-sync. Caller must have set `authState.accessToken`,
@@ -128,13 +145,20 @@ final class FizzySyncEngine {
             into: &result
         )
 
-        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
+        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID, remoteColumns: remoteColumns)
 
         // Local cards keyed by fizzyID — pairing comes from the device-local
         // store (issue #21 A′), which CloudKit cannot clobber. Seed any
         // missing store entries from legacy hint attributes (per-card, so a
         // partially-warm store still adopts remaining hints).
         let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
+
+        // ID-keyed placement map (reconcileColumns has just paired/created
+        // local columns, so fizzyColumnID is authoritative here).
+        let localColumnsByFizzyID: [String: Column] = Dictionary(
+            localColumns.compactMap { col in col.fizzyColumnID.map { ($0, col) } },
+            uniquingKeysWith: { first, _ in first }
+        )
         let localCards: [Card] = localColumns.flatMap { col -> [Card] in
             (col.cards as? Set<Card>).map { Array($0) } ?? []
         }
@@ -178,10 +202,10 @@ final class FizzySyncEngine {
         where pairedByFizzyID[remote.id] == nil
             && !claimedRemoteIDs.contains(remote.id)
             && !blockedCardNumbers.contains(Int64(remote.number)) {
-            let targetColumn = remote.column
-                .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
-                ?? resolvedColumns.values.first
-                ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
+            let targetColumn = placementColumn(
+                for: remote, in: localBoard,
+                byFizzyID: localColumnsByFizzyID, byName: resolvedColumns
+            )
             let card = CardRepository(context: context, pairingStore: pairingStore).createCard(in: targetColumn, title: remote.title)
             applyRemote(remote, to: card)
             result.itemsCreated += 1
@@ -207,13 +231,54 @@ final class FizzySyncEngine {
             let remoteTimestamp = remote.lastActiveAt
 
             if remoteTimestamp > localFizzyTimestamp && localModified <= localFizzyTimestamp {
-                // Remote newer, local untouched → pull.
+                // Remote newer, local untouched → pull. Includes column
+                // placement: the per-column fetch stamps each card's source
+                // column, so a remote move lands here. Direct relationship
+                // assignment doesn't bump modifiedAt → no echo-push.
                 applyRemote(remote, to: card)
+                if let remoteColumnID = remote.column?.id,
+                   card.column?.fizzyColumnID != remoteColumnID,
+                   let target = localColumnsByFizzyID[remoteColumnID] {
+                    card.column = target
+                }
                 result.itemsUpdated += 1
             } else if localModified > localFizzyTimestamp {
-                // Local edited since last sync → push.
+                // Local edited since last sync → push. Beyond the PUT
+                // (title/description), parity push (#69) diffs local state
+                // against the freshly-fetched remote card: column moves ride
+                // POST /triage; tags and assignees push as EXACT toggle
+                // diffs (tag_ids on PUT is rejected by the live server, and
+                // toggles are not idempotent — docs/fizzy-api-notes.md).
+                //
+                // Conflict predicate (task #70): if remote also moved since
+                // the watermark AND title or description diverged, emit a
+                // ConflictRecord. Column moves, tags, and assignees are
+                // commutative and flow through parity diffs unchanged.
+                // The keep-mine default (PUT + parity) still proceeds so
+                // convergence is unchanged — the loss becomes visible and
+                // reversible.
+                if remoteTimestamp > localFizzyTimestamp {
+                    let localTitle = card.title ?? ""
+                    let localDesc = card.cardDescription
+                    if localTitle != remote.title || localDesc != remote.description {
+                        if let cardID = card.id {
+                            let conflict = ConflictRecord(
+                                id: cardID,
+                                fizzyNumber: p.fizzyNumber,
+                                localTitle: localTitle,
+                                localDescription: localDesc,
+                                remoteTitle: remote.title,
+                                remoteDescription: remote.description,
+                                detectedAt: .now
+                            )
+                            result.conflicts.append(conflict)
+                            conflictStore.setRecord(conflict, for: cardID)
+                        }
+                    }
+                }
                 do {
                     let updated = try await putCard(card, number: p.fizzyNumber)
+                    await pushParityDiffs(for: card, against: remote, number: p.fizzyNumber, into: &result)
                     recordPairing(for: card, fizzyID: fizzyID, number: p.fizzyNumber, updatedAt: updated.lastActiveAt)
                     card.modifiedAt = updated.lastActiveAt
                     result.itemsUpdated += 1
@@ -224,19 +289,48 @@ final class FizzySyncEngine {
             // else: both equal or remote stale → no-op.
         }
 
-        // Soft-delete: paired local cards whose fizzyID is no longer in the
-        // remote response were deleted on the server.
+        // Soft-delete / lifecycle: paired local cards missing from the
+        // per-column lists. Those lists exclude closed/not-now cards, so
+        // absence is NOT proof of deletion — confirm via the single-card
+        // endpoint. 404 deletes locally; an alive card transitions to the
+        // wire lifecycle state (#13): closed → .closed, postponed → .notNow.
+        // Content from the detail doc applies only under the usual LWW gate
+        // (local untouched) — a local edit made while the card was closed
+        // must not be clobbered. A card we can't verify (no number, network
+        // error) is kept for a later cycle.
         for (fizzyID, card) in pairedByFizzyID where remoteByID[fizzyID] == nil {
-            if let id = card.id { pairingStore.removePairing(for: id) }
-            context.delete(card)
-            result.itemsDeleted += 1
+            guard let p = pairing(for: card), p.fizzyNumber > 0 else { continue }
+            do {
+                let detail = try await client.card(number: Int(p.fizzyNumber))
+                let localModified = card.modifiedAt ?? .distantPast
+                if detail.lastActiveAt > p.fizzyUpdatedAt && localModified <= p.fizzyUpdatedAt {
+                    applyRemote(detail, to: card) // full pull incl. lifecycle
+                    result.itemsUpdated += 1
+                } else if card.lifecycleStatus != detail.wireLifecycleStatus {
+                    // Local content is newer — transition lifecycle only.
+                    card.lifecycleStatus = detail.wireLifecycleStatus
+                    result.itemsUpdated += 1
+                }
+            } catch FizzyError.notFound {
+                if let id = card.id { pairingStore.removePairing(for: id) }
+                context.delete(card)
+                result.itemsDeleted += 1
+            } catch {
+                result.errors.append("Verify '\(card.title ?? "(untitled)")': \(error)")
+            }
         }
 
         // Push: local cards with no pairing → claim a precomputed orphan or
         // POST a new card. The pairing lands in the store the moment the
         // server responds — BEFORE context.save() — so a later save failure
         // or crash cannot lose it and duplicate the card next sync.
-        for card in localCards where pairing(for: card) == nil {
+        //
+        // `!card.isDeleted` guards against resurrection: the soft-delete loop
+        // above unpairs + deletes server-gone cards, but `localCards` is a
+        // pre-delete snapshot — without the guard the just-deleted card
+        // would be POSTed straight back to the server (latent duplicate
+        // source, caught by the #48 placement suite).
+        for card in localCards where pairing(for: card) == nil && !card.isDeleted {
             if let orphanID = orphansByLocalID[card.objectID],
                let orphan = remoteByID[orphanID] {
                 recordPairing(for: card, fizzyID: orphan.id, number: Int64(orphan.number), updatedAt: orphan.lastActiveAt)
@@ -295,6 +389,38 @@ final class FizzySyncEngine {
                 }
             }
         }
+    }
+
+    // MARK: - Conflict resolution (task #70)
+
+    /// Keep-mine resolution: PUT the local title/description to the remote,
+    /// advance the pairing watermark and card.modifiedAt to the server echo,
+    /// then clear the conflict record.
+    ///
+    /// User-action entry point — never called inside sync().
+    func resolveKeepMine(cardID: UUID) async throws {
+        guard let card = fetchCard(by: cardID) else { return }
+        guard let p = pairingStore.pairing(for: cardID) else { return }
+        let updated = try await putCard(card, number: p.fizzyNumber)
+        recordPairing(for: card, fizzyID: p.fizzyID, number: p.fizzyNumber, updatedAt: updated.lastActiveAt)
+        card.modifiedAt = updated.lastActiveAt
+        conflictStore.remove(for: cardID)
+        if context.hasChanges { try? context.save() }
+    }
+
+    /// Take-theirs resolution: re-fetch fresh remote state via the single-card
+    /// endpoint (the stored ConflictRecord is a prompt, not the source of truth),
+    /// apply it via the existing `applyRemote` helper (which repairs both the
+    /// pairing watermark and card.modifiedAt), then clear the conflict record.
+    ///
+    /// User-action entry point — never called inside sync().
+    func resolveTakeTheirs(cardID: UUID) async throws {
+        guard let p = pairingStore.pairing(for: cardID) else { return }
+        guard let card = fetchCard(by: cardID) else { return }
+        let detail = try await client.card(number: Int(p.fizzyNumber))
+        applyRemote(detail, to: card)
+        conflictStore.remove(for: cardID)
+        if context.hasChanges { try? context.save() }
     }
 
     // MARK: - Pairing store access (issue #21 A′)
@@ -414,32 +540,36 @@ final class FizzySyncEngine {
             result.itemsDeleted += 1
         }
 
-        // 2. Pull remote columns + cards.
+        // 2. Pull remote columns; pair or create local columns, claiming the
+        //    fizzy column ID for keyed placement below (task #48).
         let remoteColumns = try await fetchRemoteColumns(boardID: fizzyBoardID)
-        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
-
-        // 3. Auto-create local columns for any remote name not seen.
         var resolvedColumns: [String: Column] = Dictionary(
             uniqueKeysWithValues: localColumns.compactMap { col -> (String, Column)? in
                 guard let name = col.name else { return nil }
                 return (FizzySyncMapping.normalizedColumnName(name), col)
             }
         )
+        var columnsByFizzyID: [String: Column] = [:]
         for remote in remoteColumns {
             let key = FizzySyncMapping.normalizedColumnName(remote.name)
-            if resolvedColumns[key] == nil {
-                let newColumn = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
-                resolvedColumns[key] = newColumn
+            let column: Column
+            if let existing = resolvedColumns[key] {
+                column = existing
+            } else {
+                column = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
+                resolvedColumns[key] = column
             }
+            column.fizzyColumnID = remote.id
+            columnsByFizzyID[remote.id] = column
         }
 
-        // 4. Create local cards mirroring each remote.
+        // 3. Pull cards column-by-column and mirror each in its source column.
+        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID, remoteColumns: remoteColumns)
         for remote in remoteCards {
-            let targetColumn = remote.column
-                .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
-                ?? resolvedColumns.values.first
-                ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
-
+            let targetColumn = placementColumn(
+                for: remote, in: localBoard,
+                byFizzyID: columnsByFizzyID, byName: resolvedColumns
+            )
             let card = CardRepository(context: context, pairingStore: pairingStore).createCard(in: targetColumn, title: remote.title)
             applyRemote(remote, to: card)
             result.itemsCreated += 1
@@ -454,9 +584,9 @@ final class FizzySyncEngine {
     private func syncFirstMerge(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
         var result = FizzySyncResult()
 
-        // Fetch both sides.
+        // Fetch both sides (cards per column so placement is keyed, #48).
         let remoteColumns = try await fetchRemoteColumns(boardID: fizzyBoardID)
-        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID)
+        let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID, remoteColumns: remoteColumns)
 
         let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
         let localCards: [Card] = localColumns.flatMap { column -> [Card] in
@@ -485,27 +615,34 @@ final class FizzySyncEngine {
             result.errors.append("Same-title collision: '\(displayTitle)'")
         }
 
-        // Auto-create local columns for any remote name not seen (so we have somewhere to drop pulls).
+        // Pair or create local columns for every remote one, claiming the
+        // fizzy column ID for keyed placement (task #48).
         var resolvedColumns: [String: Column] = Dictionary(
             uniqueKeysWithValues: localColumns.compactMap { col -> (String, Column)? in
                 guard let name = col.name else { return nil }
                 return (FizzySyncMapping.normalizedColumnName(name), col)
             }
         )
+        var columnsByFizzyID: [String: Column] = [:]
         for remote in remoteColumns {
             let key = FizzySyncMapping.normalizedColumnName(remote.name)
-            if resolvedColumns[key] == nil {
-                let newColumn = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
-                resolvedColumns[key] = newColumn
+            let column: Column
+            if let existing = resolvedColumns[key] {
+                column = existing
+            } else {
+                column = BoardRepository(context: context).createColumn(in: localBoard, name: remote.name, colorHex: nil)
+                resolvedColumns[key] = column
             }
+            column.fizzyColumnID = remote.id
+            columnsByFizzyID[remote.id] = column
         }
 
         // Pull remote-only cards (not in local, not a collision).
         for remote in remoteCards where !localTitles.contains(remote.title.lowercased()) {
-            let targetColumn = remote.column
-                .flatMap { resolvedColumns[FizzySyncMapping.normalizedColumnName($0.name)] }
-                ?? resolvedColumns.values.first
-                ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
+            let targetColumn = placementColumn(
+                for: remote, in: localBoard,
+                byFizzyID: columnsByFizzyID, byName: resolvedColumns
+            )
             let card = CardRepository(context: context, pairingStore: pairingStore).createCard(in: targetColumn, title: remote.title)
             applyRemote(remote, to: card)
             result.itemsCreated += 1
@@ -683,17 +820,119 @@ final class FizzySyncEngine {
         try await client.getAllPages("/boards/\(boardID)/columns", as: [FizzyColumn].self)
     }
 
-    /// Fetches all cards for a remote board via the per-board list endpoint
-    /// `GET /:account/cards?board_ids[]=<id>`. Phase 4a uses the list shape
-    /// (no `column` field per Fizzy docs) — column placement is recovered
-    /// from each card's column relationship on a follow-up GET if needed.
-    /// For the first-sync modes we accept "no column" → drop into the
-    /// first available column.
-    private func fetchRemoteCards(boardID: String) async throws -> [FizzyCard] {
-        try await client.getAllPages("/cards?board_ids[]=\(boardID)", as: [FizzyCard].self)
+    /// Fetches the board's open cards column-by-column via
+    /// `GET /boards/:id/columns/:column_id/cards` — the only list shape that
+    /// carries `column` (and `assignees`). The board-wide
+    /// `/cards?board_ids[]=` list omits both, which made pull placement
+    /// arbitrary (task #48). Defensive de-dupe by card id in case a card is
+    /// served under two columns mid-move.
+    ///
+    /// NOTE: these lists exclude closed/not-now cards, so absence here is
+    /// not proof of server-side deletion — the soft-delete path must confirm
+    /// via `GET /cards/:number` before deleting locally.
+    ///
+    /// ETag-conditional (task #61): each column's list is fetched with
+    /// `If-None-Match` when the previous response was single-page; a 304
+    /// reuses the cached card list, so the returned "universe" is always
+    /// complete and the LWW / soft-delete / push logic downstream runs
+    /// unchanged. The cache is in-memory by design — a cold start simply
+    /// re-fetches once.
+    private func fetchRemoteCards(boardID: String, remoteColumns: [FizzyColumn]) async throws -> [FizzyCard] {
+        var cards: [FizzyCard] = []
+        for column in remoteColumns {
+            let path = "/boards/\(boardID)/columns/\(column.id)/cards"
+            let cached = cardListCache[path]
+            // Conditional only when the prior response was single-page —
+            // page-1-ETag semantics across pages are unverified (probe B3-4).
+            let conditionalETag = (cached?.singlePage == true) ? cached?.etag : nil
+            let result = try await client.getAllPagesWithETag(path, etag: conditionalETag, as: [FizzyCard].self)
+            if let fresh = result.items {
+                cards += fresh
+                if let etag = result.etag {
+                    cardListCache[path] = CardListCacheEntry(etag: etag, singlePage: result.singlePage, cards: fresh)
+                } else {
+                    cardListCache[path] = nil
+                }
+            } else if let cached {
+                cards += cached.cards // 304 — unchanged since the last cycle
+            }
+        }
+        var seen = Set<String>()
+        return cards.filter { seen.insert($0.id).inserted }
+    }
+
+    /// Resolves the local column for a pulled remote card: fizzy column ID
+    /// first (authoritative), normalized name second (legacy pairs), any
+    /// existing column third, a fresh "Imported" column as a last resort.
+    private func placementColumn(
+        for remote: FizzyCard,
+        in localBoard: Board,
+        byFizzyID: [String: Column],
+        byName: [String: Column]
+    ) -> Column {
+        if let id = remote.column?.id, let column = byFizzyID[id] { return column }
+        if let name = remote.column?.name,
+           let column = byName[FizzySyncMapping.normalizedColumnName(name)] { return column }
+        return byName.values.first
+            ?? byFizzyID.values.first
+            ?? BoardRepository(context: context).createColumn(in: localBoard, name: "Imported", colorHex: nil)
     }
 
     // MARK: - Apply remote → local
+
+    // MARK: - Push parity diffs (#69: moves, tags, assignees)
+
+    /// Pushes the local-vs-remote deltas the PUT body can't carry, on the
+    /// LWW local-newer branch only. Diffs are computed against the remote
+    /// card from THIS cycle's pull (fresh state), because the toggle
+    /// endpoints are not idempotent. Errors collect into the result.
+    private func pushParityDiffs(
+        for card: Card,
+        against remote: FizzyCard,
+        number: Int64,
+        into result: inout FizzySyncResult
+    ) async {
+        // Column move → POST /cards/:n/triage with the local column's id.
+        // Requires a KNOWN remote column: payloads without one (legacy list
+        // shapes) say nothing about placement, and triaging on unknown would
+        // fabricate moves.
+        if let localColumnID = card.column?.fizzyColumnID,
+           let remoteColumnID = remote.column?.id,
+           localColumnID != remoteColumnID {
+            do {
+                try await client.triageCard(number: Int(number), columnID: localColumnID)
+            } catch {
+                result.errors.append("Push move '\(card.title ?? "(untitled)")': \(error)")
+            }
+        }
+
+        // Tags → exact toggle diff by case-insensitive title.
+        let localTags = Set(((card.labels as? Set<Label>) ?? []).compactMap { $0.name?.lowercased() })
+        let remoteTags = Set(remote.tags.map { $0.lowercased() })
+        for tag in localTags.subtracting(remoteTags).union(remoteTags.subtracting(localTags)).sorted() {
+            do {
+                try await client.toggleCardTag(number: Int(number), tagTitle: tag)
+            } catch {
+                result.errors.append("Push tag '\(tag)': \(error)")
+            }
+        }
+
+        // Assignees → exact toggle diff by user id. A nil remote array means
+        // the payload didn't carry the field — skip rather than mass-toggle.
+        if let remoteAssignees = remote.assignees {
+            let localIDs = Set(card.assignees.map(\.id))
+            let remoteIDs = Set(remoteAssignees.map(\.id))
+            for id in localIDs.subtracting(remoteIDs).union(remoteIDs.subtracting(localIDs)).sorted() {
+                do {
+                    try await client.toggleCardAssignment(number: Int(number), assigneeID: id)
+                } catch {
+                    result.errors.append("Push assignment '\(id)': \(error)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Wire lifecycle mapping (#13)
 
     /// Writes the synced fields from a `FizzyCard` onto a local `Card`.
     /// Maps every remote tag to a local `Label` (find-or-create by
@@ -722,6 +961,14 @@ final class FizzySyncEngine {
             if card.assignees != mapped {
                 card.assignees = mapped
             }
+        }
+
+        // Lifecycle (#13): wire closed/postponed map to the local status.
+        // Cards in column lists carry closed:false/postponed:false (active);
+        // the single-card doc is the truth for unlisted cards. The accessor
+        // stamps/clears closedAt on transitions.
+        if card.lifecycleStatus != remote.wireLifecycleStatus {
+            card.lifecycleStatus = remote.wireLifecycleStatus
         }
     }
 
@@ -789,5 +1036,24 @@ final class FizzySyncEngine {
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
         return (try? context.fetch(request))?.first
+    }
+
+    /// Fetches a local `Card` by its UUID. Returns `nil` if deleted.
+    private func fetchCard(by id: UUID) -> Card? {
+        let request: NSFetchRequest<Card> = Card.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        request.fetchLimit = 1
+        return (try? context.fetch(request))?.first
+    }
+}
+
+/// Sync-layer mapping from the wire `closed`/`postponed` fields to the local
+/// lifecycle enum. Lives here (not on the DTO file) so the Foundation-only
+/// DTO sources stay reusable by fizzyctl, which doesn't link CoreData.
+extension FizzyCard {
+    var wireLifecycleStatus: CardLifecycleStatus {
+        if closed == true { return .closed }
+        if postponed == true { return .notNow }
+        return .active
     }
 }

@@ -89,15 +89,19 @@ enum KeychainHelper {
             return false
         }
         
+        // kSecAttrAccessibleAfterFirstUnlock so the item is reachable even when
+        // the device is "locked" (default WhenUnlocked fails on simulator clones
+        // running tests before a simulated unlock event).
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
-        
+
         // Delete any existing item first
         SecItemDelete(query as CFDictionary)
-        
+
         // Add the new item
         let status = SecItemAdd(query as CFDictionary, nil)
         return status == errSecSuccess

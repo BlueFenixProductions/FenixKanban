@@ -37,6 +37,12 @@ extension Card {
         let set = labels as? Set<Label> ?? []
         return set.sortedByDisplayName()
     }
+
+    /// Steps sorted by sortOrder, for direct CoreData set access.
+    var sortedSteps: [CardStep] {
+        let set = steps as? Set<CardStep> ?? []
+        return set.sorted { $0.sortOrder < $1.sortOrder }
+    }
 }
 
 extension Sequence where Element == Label {

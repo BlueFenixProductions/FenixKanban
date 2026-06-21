@@ -6,7 +6,10 @@ struct SettingsView: View {
     @Environment(\.managedObjectContext) private var context
     @AppStorage("appearanceMode") private var appearanceRaw: String = AppearanceMode.system.rawValue
 
-    init(authService: AuthenticationService, persistence: PersistenceController) {
+    let syncScheduler: SyncScheduler
+
+    init(authService: AuthenticationService, persistence: PersistenceController, syncScheduler: SyncScheduler) {
+        self.syncScheduler = syncScheduler
         _viewModel = StateObject(wrappedValue: SettingsViewModel(
             authService: authService,
             persistence: persistence
@@ -82,7 +85,7 @@ struct SettingsView: View {
 
                 Section("Integrations") {
                     NavigationLink("Board Sync") {
-                        SyncSettingsView()
+                        SyncSettingsView(syncScheduler: syncScheduler)
                     }
                 }
 

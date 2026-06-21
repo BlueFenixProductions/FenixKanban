@@ -61,6 +61,42 @@ targets:
         CODE_SIGN_ENTITLEMENTS: FenixKanban/Resources/FenixKanban.entitlements
         SUPPORTS_MACCATALYST: NO
         "EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]": "LaunchScreen.storyboard"
+    dependencies:
+      # FenixKanbanWidgets is iOS-only. xcodegen 2.45.4 does not write
+      # platformFilters on the Embed Foundation Extensions build file even with
+      # `platformFilter: ios` set here, so the macOS app build would fail with
+      # "embedded content built for iOS not allowed". The post-generate script
+      # scripts/patch-widget-platform-filter.rb sets platformFilters = ["ios"]
+      # on the embed build file after `make generate` runs.
+      - target: FenixKanbanWidgets
+        embed: true
+        link: false
+
+  FenixKanbanWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+        excludes:
+          - "**/.DS_Store"
+      # BoardSnapshot is the shared Codable model — must be compiled into both
+      # the app and the widget extension (no dynamic linking across app extension
+      # sandbox boundary).
+      - path: FenixKanban/Features/Widget/BoardSnapshot.swift
+    info:
+      path: Widgets/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanban.Widgets
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Widgets/FenixKanbanWidgets.entitlements
+        SDKROOT: iphoneos
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        SKIP_INSTALL: YES
+        # WidgetKit requires the extension host app's Swift version.
+        SWIFT_VERSION: "5.9"
 
   FenixKanbanTests:
     type: bundle.unit-test
@@ -71,6 +107,9 @@ targets:
           - "**/.DS_Store"
           - "Fixtures/**/*.json"
           - "Fixtures/**/*.md"
+      # FizzyctlCommand is tested here directly (no @testable import needed —
+      # it's a plain Swift file with no target-specific linkage).
+      - path: tools/fizzyctl/FizzyctlCommand.swift
     resources:
       - path: FenixKanbanTests/Fixtures
     dependencies:
@@ -87,6 +126,37 @@ targets:
           "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/FenixKanban.app/Contents/MacOS/FenixKanban"
           "BUNDLE_LOADER[sdk=macosx*]": "$(TEST_HOST)"
 
+  fizzyctl:
+    type: tool
+    platform: macOS
+    sources:
+      - path: tools/fizzyctl
+      # Foundation-only Fizzy client files shared from the main app target.
+      # Each file imports only Foundation — verified via grep on 2026-06-12.
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Boards.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+CardActions.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Comments.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyClient+Directory.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyError.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyResponse.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Boards.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+CardActions.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Comments.swift
+      - path: FenixKanban/Core/Services/Fizzy/FizzyDTOs+Directory.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.fizzyctl
+        PRODUCT_NAME: fizzyctl
+        GENERATE_INFOPLIST_FILE: YES
+        # Override project-level SDKROOT (iphoneos) for this macOS-only tool.
+        SDKROOT: macosx
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        SUPPORTED_PLATFORMS: macosx
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGNING_ALLOWED: NO
+
 # XcodeGen owns the shared FenixKanban scheme so `make generate` no longer
 # drops the tracked file. `scripts/add-ui-test-target.rb` overlays
 # FenixKanbanUITests on top — that target is dynamically materialized and
@@ -100,11 +170,23 @@ schemes:
     test:
       config: Debug
       targets:
-        - FenixKanbanTests
+        - name: FenixKanbanTests
+          parallelizable: true
     run:
       config: Debug
     profile:
       config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  fizzyctl:
+    build:
+      targets:
+        fizzyctl: all
+    run:
+      config: Debug
     analyze:
       config: Debug
     archive:
