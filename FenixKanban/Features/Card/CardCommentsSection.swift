@@ -94,6 +94,7 @@ struct CardCommentsSection: View {
     }
 
     /// Groups reactions by emoji, returning ordered (emoji, count, isMine) tuples.
+    /// If there are more than 5 distinct emoji, returns only the top 3 by count.
     private func groupedReactions(_ reactions: [FizzyReaction]) -> [(emoji: String, count: Int, isMine: Bool)] {
         var seen = Set<String>()
         var result: [(emoji: String, count: Int, isMine: Bool)] = []
@@ -103,6 +104,9 @@ struct CardCommentsSection: View {
             let emojiReactions = reactions.filter { $0.content == reaction.content }
             let isMine = emojiReactions.contains { $0.reacter.id == viewModel.currentFizzyUserID }
             result.append((emoji: reaction.content, count: emojiReactions.count, isMine: isMine))
+        }
+        if result.count > 5 {
+            return Array(result.sorted { $0.count > $1.count }.prefix(3))
         }
         return result
     }
@@ -133,19 +137,21 @@ struct CardCommentsSection: View {
                 .accessibilityLabel("\(entry.emoji), \(entry.count) reaction\(entry.count == 1 ? "" : "s")\(entry.isMine ? ", reacted" : "")")
             }
 
-            Menu {
-                ForEach(commonEmoji, id: \.self) { emoji in
-                    Button(emoji) {
-                        Task { await viewModel.toggleReaction(emoji: emoji, for: commentID) }
+            if viewModel.currentFizzyUserID != nil {
+                Menu {
+                    ForEach(commonEmoji, id: \.self) { emoji in
+                        Button(emoji) {
+                            Task { await viewModel.toggleReaction(emoji: emoji, for: commentID) }
+                        }
                     }
+                } label: {
+                    Image(systemName: "face.smiling")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
                 }
-            } label: {
-                Image(systemName: "face.smiling")
-                    .font(.caption)
-                    .foregroundStyle(Color.secondary)
+                .menuStyle(.borderlessButton)
+                .accessibilityLabel("Add reaction")
             }
-            .menuStyle(.borderlessButton)
-            .accessibilityLabel("Add reaction")
         }
         .padding(.top, 2)
     }
