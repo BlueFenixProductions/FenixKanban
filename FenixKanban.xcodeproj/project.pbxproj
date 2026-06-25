@@ -33,6 +33,7 @@
 		1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */; };
 		1EE67FEFD13A28512384FA70 /* FizzySyncEngineLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */; };
 		1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */; };
+		BF13340001234567890ABCDE /* BoardViewModelShowClosedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF13340002234567890ABCDE /* BoardViewModelShowClosedTests.swift */; };
 		233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */; };
 		24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */; };
 		27984FA5AFF59944FC4885BE /* FizzyAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139288734275D3EB49C0F400 /* FizzyAuthView.swift */; };
@@ -306,6 +307,7 @@
 		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
 		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelGoldenTests.swift; sourceTree = "<group>"; };
+		BF13340002234567890ABCDE /* BoardViewModelShowClosedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelShowClosedTests.swift; sourceTree = "<group>"; };
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
 		35A1AAE6F0C21DEB56C73DCA /* InitialsAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialsAvatar.swift; sourceTree = "<group>"; };
 		36E8B6A25376C60961725E8B /* BackupManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifest.swift; sourceTree = "<group>"; };
@@ -858,6 +860,7 @@
 				242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */,
 				3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */,
 				A61AF1066F57E5404E2BF366 /* BoardViewModelLifecycleTests.swift */,
+				BF13340002234567890ABCDE /* BoardViewModelShowClosedTests.swift */,
 				DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */,
 				0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */,
 			);
@@ -1454,6 +1457,7 @@
 				42B28C6B6DDE0AEE871FD4D4 /* BoardSnapshotWriterTests.swift in Sources */,
 				1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */,
 				4262C459E4BA6E8674A9214F /* BoardViewModelLifecycleTests.swift in Sources */,
+				BF13340001234567890ABCDE /* BoardViewModelShowClosedTests.swift in Sources */,
 				1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */,
 				9D988B504B48016D4F626E95 /* CardCommentsViewModelTests.swift in Sources */,
 				85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */,
