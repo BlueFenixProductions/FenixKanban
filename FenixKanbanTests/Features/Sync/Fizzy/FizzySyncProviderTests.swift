@@ -3,7 +3,7 @@ import CoreData
 import Foundation
 @testable import FenixKanban
 
-@Suite("FizzySyncProvider", .serialized, .mockURLProtocolSerial)
+@Suite("FizzySyncProvider", .serialized)
 @MainActor
 struct FizzySyncProviderTests {
 
@@ -11,15 +11,16 @@ struct FizzySyncProviderTests {
     /// + MockURLProtocol-backed FizzyClient. Returns a configured provider
     /// for the test to exercise.
     private struct Harness {
+        let mock = MockHTTPState()
         let persistence: PersistenceController
         let authState: FizzyAuthState
         let mappingDefaults: UserDefaults
         let suiteName: String
+        let pairingStore: FizzyCardPairingStore
         let provider: FizzySyncProvider
 
         @MainActor
         init() {
-            MockURLProtocol.reset()
             persistence = PersistenceController(inMemory: true, useCloudKit: false)
 
             let prefix = "test.fizzy.provider.\(UUID().uuidString)"
@@ -29,23 +30,29 @@ struct FizzySyncProviderTests {
             mappingDefaults = UserDefaults(suiteName: suiteName)!
             let mapping = FizzyBoardMapping(defaults: mappingDefaults)
 
-            let config = URLSessionConfiguration.ephemeral
-            config.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: config)
+            let session = mock.makeSession()
+
+            // Temp-file pairing store — the provider's engines must never
+            // write the developer's real Application Support sidecar.
+            pairingStore = FizzyCardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+            )
 
             provider = FizzySyncProvider(
                 authState: authState,
                 mapping: mapping,
                 persistence: persistence,
                 urlSession: session,
-                clock: ImmediateClock()
+                clock: ImmediateClock(),
+                pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
             mappingDefaults.removePersistentDomain(forName: suiteName)
-            MockURLProtocol.reset()
+            try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
 
@@ -130,7 +137,7 @@ struct FizzySyncProviderTests {
           {"id":"FB2","name":"Private","all_access":false,"created_at":"2026-05-25T00:00:00Z","auto_postpone_period_in_days":3,"url":null,"creator":{"id":"U1","name":"Chris","role":"admin","active":true,"email_address":"c@e","created_at":"2026-05-25T00:00:00Z","url":null}}
         ]
         """
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
             case ("GET", let p?) where p.hasSuffix("/boards"):
                 return (json.data(using: .utf8)!, .ok(for: req))
@@ -169,8 +176,10 @@ struct FizzySyncProviderTests {
         // loop creates exactly one local card. itemsCreated must therefore
         // arrive at the public SyncResult as 1 — that proves the field carries
         // through rather than being mapped from the wrong source.
-        MockURLProtocol.handler = { req in
+        h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
+            case ("GET", let p?) where p.hasSuffix("/my/pins"):
+                return (Data("[]".utf8), .ok(for: req))
             case ("GET", let p?) where p.hasSuffix("/columns"):
                 let body = """
                 [{"id":"FC1","name":"C","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
@@ -206,5 +215,24 @@ struct FizzySyncProviderTests {
         // pairing — boardId is documented as ignored).
         h.provider.mappingRef.setLastSync(.now)
         #expect(h.provider.lastSyncDate(for: UUID()) != nil)
+    }
+
+    @Test("changePairing clears the board mapping but keeps the token (issue #18)")
+    func changePairingKeepsToken() {
+        let h = Harness(); defer { h.tearDown() }
+
+        h.authState.setAccessToken("tok")
+        h.authState.setAccountSlug("ACCT")
+        h.provider.mappingRef.setPairing(localBoardID: UUID(), fizzyBoardID: "FB1")
+        h.provider.mappingRef.setLastSync(.now)
+        #expect(h.provider.mappingRef.isPaired)
+
+        h.provider.changePairing()
+
+        #expect(!h.provider.mappingRef.isPaired)
+        #expect(h.provider.mappingRef.localBoardID == nil)
+        #expect(h.provider.mappingRef.fizzyBoardID == nil)
+        #expect(h.provider.mappingRef.lastSyncAt == nil)
+        #expect(h.provider.isAuthenticated, "re-pairing must never cost the token — minting a new one needs email, which may be unavailable")
     }
 }

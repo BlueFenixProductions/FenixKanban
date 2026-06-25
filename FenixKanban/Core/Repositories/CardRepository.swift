@@ -5,7 +5,7 @@ protocol CardRepositoryProtocol {
     func fetchAllCards(in board: Board) -> [Card]
     func fetchCardsWithDueDate() -> [Card]
     func createCard(in column: Column, title: String) -> Card
-    func updateCard(_ card: Card, title: String?, description: String?, dueDate: Date?, isCompleted: Bool?, label: Label?)
+    func updateCard(_ card: Card, title: String?, description: String?, dueDate: Date?, isCompleted: Bool?, labels: Set<Label>?)
     func deleteCard(_ card: Card)
     func moveCard(_ card: Card, to column: Column, at index: Int)
     func reorderCard(_ card: Card, to newIndex: Int, in cards: [Card])
@@ -15,9 +15,11 @@ protocol CardRepositoryProtocol {
 
 final class CardRepository: CardRepositoryProtocol {
     private let context: NSManagedObjectContext
+    private let pairingStore: FizzyCardPairingStore
 
-    init(context: NSManagedObjectContext) {
+    init(context: NSManagedObjectContext, pairingStore: FizzyCardPairingStore = .shared) {
         self.context = context
+        self.pairingStore = pairingStore
     }
 
     func fetchCards(in column: Column) -> [Card] {
@@ -56,13 +58,13 @@ final class CardRepository: CardRepositoryProtocol {
         return card
     }
 
-    func updateCard(_ card: Card, title: String? = nil, description: String? = nil, dueDate: Date? = nil, isCompleted: Bool? = nil, label: Label? = nil) {
+    func updateCard(_ card: Card, title: String? = nil, description: String? = nil, dueDate: Date? = nil, isCompleted: Bool? = nil, labels: Set<Label>? = nil) {
         if let title = title { card.title = title }
         if let description = description { card.cardDescription = description }
         if let dueDate = dueDate { card.dueDate = dueDate }
         if let isCompleted = isCompleted { card.isCompleted = isCompleted }
-        // Label can be explicitly set to nil to remove it
-        card.label = label
+        // nil = leave labels unchanged (use clearLabels to remove all)
+        if let labels = labels { card.labels = labels as NSSet }
         card.modifiedAt = Date()
         save()
     }
@@ -73,9 +75,28 @@ final class CardRepository: CardRepositoryProtocol {
         save()
     }
 
-    func clearLabel(for card: Card) {
-        card.label = nil
+    func clearLabels(for card: Card) {
+        card.labels = NSSet()
         card.modifiedAt = Date()
+        save()
+    }
+
+    func updateAssignees(for card: Card, to assignees: [CardAssignee]) {
+        card.assignees = assignees
+        card.modifiedAt = Date()
+        save()
+    }
+
+    /// Watch/pin flags deliberately do NOT bump modifiedAt: they're not part
+    /// of the card-content LWW contract (never pushed in the PUT payload) and
+    /// bumping would trigger spurious echo-PUTs on the next sync (#19 wave 3).
+    func setWatched(_ watched: Bool, for card: Card) {
+        card.isWatched = watched
+        save()
+    }
+
+    func setPinned(_ pinned: Bool, for card: Card) {
+        card.isPinned = pinned
         save()
     }
 
@@ -83,6 +104,13 @@ final class CardRepository: CardRepositoryProtocol {
         let now = Date()
         card.column?.modifiedAt = now
         card.column?.board?.modifiedAt = now
+        // Fizzy-paired cards leave a tombstone so the deletion propagates to
+        // the server on the next sync (issue #11). The number comes from the
+        // pairing store (the authority — issue #21 A′), falling back to the
+        // hint attribute for pre-A′ data whose store was never seeded.
+        let number = card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber
+        CardTombstone.record(number: number, in: context)
+        if let id = card.id { pairingStore.removePairing(for: id) }
         context.delete(card)
         save()
     }

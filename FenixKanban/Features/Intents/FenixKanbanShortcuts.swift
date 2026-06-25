@@ -3,6 +3,16 @@ import AppIntents
 struct FenixKanbanShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
+            intent: AddCardIntent(),
+            phrases: [
+                "Add a card to \(.applicationName)",
+                "Create a card in \(.applicationName)",
+                "New card in \(.applicationName)"
+            ],
+            shortTitle: "Add Card",
+            systemImageName: "plus.rectangle"
+        )
+        AppShortcut(
             intent: OpenBoardIntent(),
             phrases: [
                 "Open \(\.$board) in \(.applicationName)",

@@ -43,6 +43,15 @@ struct CardFizzyAttributesTests {
         #expect(card.fizzyEtag == "\"abc123\"")
     }
 
+    @Test("fizzyNumber defaults to 0 (unset) and round-trips through save/refresh")
+    func fizzyNumberPersists() throws {
+        #expect(card.fizzyNumber == 0)
+        card.fizzyNumber = 42
+        try persistence.viewContext.save()
+        persistence.viewContext.refresh(card, mergeChanges: false)
+        #expect(card.fizzyNumber == 42)
+    }
+
     @Test("fizzyUpdatedAt round-trips through save/refresh")
     func fizzyUpdatedAtPersists() throws {
         let date = Date(timeIntervalSince1970: 1_734_567_890)

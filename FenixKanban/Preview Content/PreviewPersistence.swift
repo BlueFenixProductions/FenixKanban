@@ -68,7 +68,7 @@ extension PersistenceController {
         card1.dueDate = Date().addingTimeInterval(86400 * 2)
         card1.sortOrder = 0
         card1.column = todo
-        card1.label = urgent
+        card1.addToLabels(urgent)
 
         let card2 = Card(context: context)
         card2.id = UUID()
@@ -77,7 +77,7 @@ extension PersistenceController {
         card2.modifiedAt = Date()
         card2.sortOrder = 1000
         card2.column = todo
-        card2.label = dev
+        card2.addToLabels(dev)
 
         let card3 = Card(context: context)
         card3.id = UUID()
@@ -87,7 +87,7 @@ extension PersistenceController {
         card3.dueDate = Date().addingTimeInterval(-86400)
         card3.sortOrder = 0
         card3.column = inProgress
-        card3.label = dev
+        card3.addToLabels(dev)
 
         let card4 = Card(context: context)
         card4.id = UUID()
