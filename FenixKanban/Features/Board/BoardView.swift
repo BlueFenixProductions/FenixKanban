@@ -15,13 +15,20 @@ struct BoardView: View {
     @State private var editingColumn: Column? = nil
     @State private var showColumnSheet = false
 
+    // Fizzy server notifications — present only when Fizzy is paired.
+    @State private var notificationsViewModel: FizzyNotificationsViewModel?
+
     init(board: Board, context: NSManagedObjectContext) {
         let provider = PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider
+        let client = provider?.makeClient()
         _viewModel = StateObject(wrappedValue: BoardViewModel(
             board: board,
             context: context,
-            fizzyClient: provider?.makeClient()
+            fizzyClient: client
         ))
+        _notificationsViewModel = State(
+            initialValue: client.map { FizzyNotificationsViewModel(client: $0) }
+        )
     }
 
     /// `true` when Fizzy has an active board pairing — used to decide whether
@@ -107,6 +114,13 @@ struct BoardView: View {
 
     @ToolbarContentBuilder
     private func boardToolbar() -> some ToolbarContent {
+        // Fizzy notifications bell — only shown when Fizzy is paired.
+        if let notificationsVM = notificationsViewModel, boardIsPaired {
+            ToolbarItem(placement: .secondaryAction) {
+                NotificationBellButton(viewModel: notificationsVM)
+            }
+        }
+
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button {
