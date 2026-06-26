@@ -120,7 +120,7 @@ struct FizzyBoardBrowserView: View {
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) { rowPendingUnpair = row } label: {
-                SwiftUI.Label("Unpair", systemImage: "link.badge.minus")
+                SwiftUI.Label("Unpair", systemImage: "minus.circle")
             }
             Button { Task { await model.syncNow(row) } } label: {
                 SwiftUI.Label("Sync Now", systemImage: "arrow.triangle.2.circlepath")
@@ -136,7 +136,7 @@ struct FizzyBoardBrowserView: View {
                               systemImage: row.syncEnabled ? "pause.circle" : "play.circle")
             }
             Button(role: .destructive) { rowPendingUnpair = row } label: {
-                SwiftUI.Label("Unpair", systemImage: "link.badge.minus")
+                SwiftUI.Label("Unpair", systemImage: "minus.circle")
             }
         }
     }
