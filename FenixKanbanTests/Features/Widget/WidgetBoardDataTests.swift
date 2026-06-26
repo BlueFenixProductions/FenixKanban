@@ -19,6 +19,7 @@ import Foundation
 @testable import FenixKanban
 
 @Suite("WidgetBoardData mapping", .serialized)
+@MainActor
 struct WidgetBoardDataTests {
 
     // MARK: - Helpers

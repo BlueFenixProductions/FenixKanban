@@ -79,8 +79,47 @@ targets:
       - path: Widgets
         excludes:
           - "**/.DS_Store"
+      # CoreData stack shared with the app. Listed here explicitly so xcodegen
+      # owns the widget's Sources-phase membership for these files. Without
+      # this block, `make generate` wipes the widget's CoreData symbols and
+      # the widget extension stops building (the widget reads the App Group
+      # store directly per issue #35). The .xcdatamodeld is listed under
+      # `resources:` so xcodegen compiles a per-target `FenixKanban.momd`
+      # into the widget bundle; `PersistenceController.sharedModel`'s
+      # `Bundle(for: SharedModelLoader.self)` then resolves to that .momd
+      # at runtime inside the widget process.
+      - path: FenixKanban/Core/Persistence/PersistenceController.swift
+      - path: FenixKanban/Core/Persistence/Board+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/CachedComment+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/Card+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/CardStep+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/CardTombstone+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/Column+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/ColumnTombstone+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/Label+CoreDataClass.swift
+      - path: FenixKanban/Core/Persistence/NSManagedObject+Extensions.swift
+      # The CoreData model goes under `sources:` (NOT `resources:`) on the
+      # widget target. The widget has no PBXResourcesBuildPhase, only Sources;
+      # xcodegen silently drops a `resources:` entry when there's no Resources
+      # phase to put it in. Sources-phase placement is also what we want
+      # functionally — xcodegen compiles the .xcdatamodeld to `FenixKanban.momd`
+      # inside the widget bundle, which is how PersistenceController.sharedModel
+      # (loaded via Bundle(for: SharedModelLoader.self)) resolves the model at
+      # runtime inside the widget process. The app target lists it under
+      # `resources:` and xcodegen smart-routes it to the app's Sources phase
+      # there too — same end state, different yaml.
+      - path: FenixKanban/Core/Persistence/FenixKanban.xcdatamodeld
     info:
       path: Widgets/Info.plist
+      properties:
+        # WidgetKit extension marker. Without NSExtensionPointIdentifier the
+        # simulator install fails with `extensionDictionary must be set in
+        # placeholder attributes` and the test runner can't launch. xcodegen
+        # overwrites Widgets/Info.plist on every `make generate`, so the dict
+        # must be declared here rather than hand-edited into the plist.
+        CFBundleDisplayName: FenixKanban Widgets
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bluefenixproductions.FenixKanban.Widgets
@@ -93,6 +132,12 @@ targets:
         SKIP_INSTALL: YES
         # WidgetKit requires the extension host app's Swift version.
         SWIFT_VERSION: "5.9"
+        # Gates the `#if !WIDGET_EXTENSION` guard in Widgets/WidgetBoardData.swift
+        # so the dual-membership file compiles in-module from the widget target
+        # (entities visible in-module) and `@testable import FenixKanban` only
+        # when compiled into the test target (where the internal sort extensions
+        # in NSManagedObject+Extensions.swift are reached via @testable).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: WIDGET_EXTENSION
 
   FenixKanbanTests:
     type: bundle.unit-test
@@ -106,6 +151,14 @@ targets:
       # FizzyctlCommand is tested here directly (no @testable import needed —
       # it's a plain Swift file with no target-specific linkage).
       - path: tools/fizzyctl/FizzyctlCommand.swift
+      # Dual membership with FenixKanbanWidgets: Widgets/WidgetBoardData.swift
+      # defines the `makeWidgetBoardData(from:)` mapping the widget calls in
+      # production. Compiling it into the test target lets WidgetBoardDataTests
+      # exercise the EXACT production code path, not a parallel reimplementation.
+      # The `#if !WIDGET_EXTENSION` guard at the top of the file activates
+      # `@testable import FenixKanban` only when compiled here (the widget target
+      # has WIDGET_EXTENSION set in SWIFT_ACTIVE_COMPILATION_CONDITIONS).
+      - path: Widgets/WidgetBoardData.swift
     resources:
       - path: FenixKanbanTests/Fixtures
     dependencies:
