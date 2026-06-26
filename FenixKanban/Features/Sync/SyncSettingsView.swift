@@ -24,6 +24,20 @@ struct SyncSettingsView: View {
                 Text("Sync your boards with cards on remote services.")
             }
 
+            // Multi-board browser (Phase 7b, issue #18)
+            if let fizzy = registry.providers.first(where: { $0 is FizzySyncProvider }) as? FizzySyncProvider,
+               fizzy.isAuthenticated {
+                Section {
+                    NavigationLink {
+                        FizzyBoardBrowserView(provider: fizzy)
+                    } label: {
+                        SwiftUI.Label("Manage Boards", systemImage: "rectangle.stack")
+                    }
+                } footer: {
+                    Text("Browse and pair every board between FenixKanban and Fizzy.")
+                }
+            }
+
             // Conflict review row (task #70)
             conflictSection
 

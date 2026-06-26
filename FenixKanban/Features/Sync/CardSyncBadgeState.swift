@@ -17,7 +17,7 @@ enum CardSyncBadgeState: Equatable {
     ///
     /// - Parameters:
     ///   - hasPairing: `true` when `FizzyCardPairingStore` has an entry for this card's UUID.
-    ///   - boardIsPaired: `true` when `FizzyBoardMapping.isPaired`.
+    ///   - boardIsPaired: `true` when `FizzyBoardPairingStore` has a pairing for this board.
     static func resolve(hasPairing: Bool, boardIsPaired: Bool) -> CardSyncBadgeState {
         guard boardIsPaired else { return .none }
         return hasPairing ? .synced : .pending

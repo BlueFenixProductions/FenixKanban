@@ -339,20 +339,12 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// Exposes the per-board activity registry to the board-browser UI.
     var boardActivityRef: FizzyBoardSyncActivity { boardActivity }
 
-    /// Builds a `FizzySyncEngine` for a specific local board. Shares the same
-    /// underlying stores as `makeEngine()` — the board ID is passed through to
-    /// `engine.sync(localBoardID:)` by the caller. Returns `nil` when
-    /// unauthenticated.
+    /// Builds a `FizzySyncEngine` for a specific local board. The engine is
+    /// board-agnostic to construct — the board ID is applied at
+    /// `engine.sync(localBoardID:)` call time — so this delegates to
+    /// `makeEngine()`. Returns `nil` when unauthenticated.
     func makeEngine(for localBoardID: UUID) -> FizzySyncEngine? {
-        guard let client = makeClient() else { return nil }
-        return FizzySyncEngine(
-            client: client,
-            authState: authState,
-            boardPairingStore: boardPairingStore,
-            context: persistence.viewContext,
-            pairingStore: pairingStore,
-            conflictStore: conflictStore
-        )
+        makeEngine()
     }
 
     // MARK: - Board pairing CRUD

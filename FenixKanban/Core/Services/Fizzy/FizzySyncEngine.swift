@@ -21,7 +21,7 @@ final class FizzySyncEngine {
 
     private let client: FizzyClient
     private let authState: FizzyAuthState
-    // was: private let mapping: FizzyBoardMapping
+    // was: private let mapping: FizzyBoardPairingStore
     private let boardPairingStore: FizzyBoardPairingStore
     private let context: NSManagedObjectContext
     /// Device-local pairing authority (issue #21 A′). CloudKit-synced
@@ -1034,7 +1034,7 @@ final class FizzySyncEngine {
     // MARK: - Lookups
 
     /// Fetches a local `Board` by its UUID (the form stored in
-    /// `FizzyBoardMapping`). Returns `nil` if the board was deleted.
+    /// `FizzyBoardPairingStore`). Returns `nil` if the board was deleted.
     private func fetchBoard(by id: UUID) -> Board? {
         let request: NSFetchRequest<Board> = Board.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
