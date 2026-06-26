@@ -107,17 +107,26 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         guard let engine = makeEngine(for: boardId) else {
             throw FizzyError.requiresInteractiveAuth
         }
-        let result = try await engine.sync(localBoardID: boardId)
-
-        WidgetCenter.shared.reloadAllTimelines()
-
-        return SyncResult(
-            itemsCreated: result.itemsCreated,
-            itemsUpdated: result.itemsUpdated,
-            itemsDeleted: result.itemsDeleted,
-            errors: result.errors,
-            syncDate: .now
-        )
+        boardActivity.markSyncing(boardId)
+        do {
+            let result = try await engine.sync(localBoardID: boardId)
+            if let e = result.errors.first {
+                boardActivity.markError(boardId, e)
+            } else {
+                boardActivity.markIdle(boardId)
+            }
+            WidgetCenter.shared.reloadAllTimelines()
+            return SyncResult(
+                itemsCreated: result.itemsCreated,
+                itemsUpdated: result.itemsUpdated,
+                itemsDeleted: result.itemsDeleted,
+                errors: result.errors,
+                syncDate: .now
+            )
+        } catch {
+            boardActivity.markError(boardId, error.localizedDescription)
+            throw error
+        }
     }
 
     /// Returns `lastSyncAt` from the board pairing store for `boardId`.
@@ -156,11 +165,18 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         var firstError: String?
         for boardID in order {
             guard let engine = makeEngine(for: boardID) else { continue }
+            boardActivity.markSyncing(boardID)
             do {
                 let result = try await engine.sync(localBoardID: boardID)
                 aggregate.merge(result)
-                if firstError == nil, let e = result.errors.first { firstError = e }
+                if let e = result.errors.first {
+                    boardActivity.markError(boardID, e)
+                    if firstError == nil { firstError = e }
+                } else {
+                    boardActivity.markIdle(boardID)
+                }
             } catch {
+                boardActivity.markError(boardID, error.localizedDescription)
                 if firstError == nil { firstError = error.localizedDescription }
             }
         }
@@ -316,6 +332,12 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// The board currently visible in the UI. The scheduler syncs this board
     /// first each round (Task 5). Set by `BoardView` on appear.
     var currentBoardID: UUID?
+
+    /// Per-board transient activity for the board browser (issue #18, Phase 7b).
+    private let boardActivity = FizzyBoardSyncActivity()
+
+    /// Exposes the per-board activity registry to the board-browser UI.
+    var boardActivityRef: FizzyBoardSyncActivity { boardActivity }
 
     /// Builds a `FizzySyncEngine` for a specific local board. Shares the same
     /// underlying stores as `makeEngine()` — the board ID is passed through to
