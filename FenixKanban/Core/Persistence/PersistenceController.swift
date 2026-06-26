@@ -172,10 +172,22 @@ final class PersistenceController: ObservableObject {
                 // WidgetKit extension (and future read paths) can reach it directly.
                 // Migrate any existing default-location store on first launch.
                 if let groupURL = Self.appGroupStoreURL() {
+                    let fileManager = FileManager.default
                     let defaultURL = NSPersistentContainer.defaultDirectoryURL()
                         .appendingPathComponent("FenixKanban.sqlite")
                     Self.migrateStoreIfNeeded(to: groupURL, from: defaultURL)
-                    description.url = groupURL
+                    // Only point at the group store if it actually exists there now
+                    // (migrated or pre-existing), or if there's no data anywhere yet
+                    // (fresh install — CloudKit will populate the group store). If the
+                    // migration failed while the default-location store still holds
+                    // data, keep pointing at it so we don't open an empty store and
+                    // strand the user's data; the next launch retries the migration.
+                    if fileManager.fileExists(atPath: groupURL.path)
+                        || !fileManager.fileExists(atPath: defaultURL.path) {
+                        description.url = groupURL
+                    } else {
+                        description.url = defaultURL
+                    }
                 }
                 // If appGroupStoreURL() returns nil (entitlement unavailable),
                 // fall through and use the default location unchanged — defensive

@@ -153,6 +153,11 @@ struct PersistenceControllerStoreLocationTests {
 
     @Test("appGroupStoreURL returns a URL ending in FenixKanban.sqlite, or nil")
     func appGroupStoreURLShape() {
+        // Pin the App Group identifier itself — the entire migration is meaningless
+        // if the wrong group is used, and the resolved URL (below) mounts under an
+        // opaque UUID path that never contains this literal, so it cannot catch a typo.
+        #expect(PersistenceController.appGroupIdentifier == "group.com.bluefenixproductions.FenixKanban")
+
         let url = PersistenceController.appGroupStoreURL()
         if let url = url {
             // The filename must be FenixKanban.sqlite.
