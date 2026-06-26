@@ -5,10 +5,11 @@ import CoreData
 /// FenixKanban board and the corresponding Fizzy board.
 ///
 /// Composition is deliberate: the engine owns no Keychain or UserDefaults
-/// access of its own — it consumes the `FizzyAuthState`, `FizzyBoardMapping`,
-/// and `FizzyCardPairingStore` instances injected at construction. Likewise,
-/// all HTTP goes through `FizzyClient`. This keeps the engine fully testable
-/// with `MockURLProtocol` and synthetic auth/mapping fixtures.
+/// access of its own — it consumes the `FizzyAuthState`,
+/// `FizzyBoardPairingStore`, and `FizzyCardPairingStore` instances injected at
+/// construction. Likewise, all HTTP goes through `FizzyClient`. This keeps the
+/// engine fully testable with `MockURLProtocol` and synthetic auth/store
+/// fixtures.
 ///
 /// `FizzyCardPairingStore` is the single authority on card pairing (issue #21
 /// A′). CloudKit-synced attributes `fizzyID`/`fizzyNumber` are demoted to a
@@ -20,7 +21,8 @@ final class FizzySyncEngine {
 
     private let client: FizzyClient
     private let authState: FizzyAuthState
-    private let mapping: FizzyBoardMapping
+    // was: private let mapping: FizzyBoardMapping
+    private let boardPairingStore: FizzyBoardPairingStore
     private let context: NSManagedObjectContext
     /// Device-local pairing authority (issue #21 A′). CloudKit-synced
     /// attributes on Card are demoted to a self-healing hint channel.
@@ -52,63 +54,65 @@ final class FizzySyncEngine {
     init(
         client: FizzyClient,
         authState: FizzyAuthState,
-        mapping: FizzyBoardMapping,
+        boardPairingStore: FizzyBoardPairingStore,
         context: NSManagedObjectContext,
         pairingStore: FizzyCardPairingStore,
         conflictStore: FizzyConflictStore = .shared
     ) {
         self.client = client
         self.authState = authState
-        self.mapping = mapping
+        self.boardPairingStore = boardPairingStore
         self.context = context
         self.pairingStore = pairingStore
         self.conflictStore = conflictStore
     }
 
     /// One-shot first-sync. Caller must have set `authState.accessToken`,
-    /// `authState.accountSlug`, `mapping.setPairing(...)` *before* invoking.
+    /// `authState.accountSlug`, and upserted a `FizzyBoardPairing` for the
+    /// given `localBoardID` in `boardPairingStore` *before* invoking.
     /// Returns an empty `FizzySyncResult` if any of those are missing.
-    func syncFirst(mode: FirstSyncMode) async throws -> FizzySyncResult {
+    func syncFirst(localBoardID: UUID, mode: FirstSyncMode) async throws -> FizzySyncResult {
         guard !isSyncing else { return FizzySyncResult() }
         isSyncing = true
         defer { isSyncing = false }
         guard authState.isConfigured,
-              let localBoardID = mapping.localBoardID,
-              let fizzyBoardID = mapping.fizzyBoardID,
-              let localBoard = fetchBoard(by: localBoardID)
+              let pairing = boardPairingStore.pairing(forLocal: localBoardID),
+              let localBoard = fetchBoard(by: pairing.localBoardID)
         else {
             return FizzySyncResult()
         }
 
         switch mode {
         case .pushLocalToFizzy:
-            return try await syncFirstPushLocal(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+            return try await syncFirstPushLocal(localBoard: localBoard, fizzyBoardID: pairing.fizzyBoardID)
         case .replaceLocalWithFizzy:
-            return try await syncFirstReplaceLocal(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+            return try await syncFirstReplaceLocal(localBoard: localBoard, fizzyBoardID: pairing.fizzyBoardID)
         case .mergeIfNoConflicts:
-            return try await syncFirstMerge(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+            return try await syncFirstMerge(localBoard: localBoard, fizzyBoardID: pairing.fizzyBoardID)
         }
     }
 
-    /// Steady-state sync. Runs the pull/push/LWW/soft-delete cycle. Caller
-    /// must have completed `syncFirst(mode:)` once before — `sync()` keys off
-    /// the device-local pairing store and won't pair anything by title.
+    /// Steady-state sync. Runs the pull/push/LWW/soft-delete cycle for the
+    /// given local board. Caller must have completed `syncFirst(localBoardID:mode:)`
+    /// once before — `sync(localBoardID:)` keys off the device-local board
+    /// pairing store and won't pair anything by title.
     ///
-    /// Returns an empty `FizzySyncResult` if the engine is unpaired.
-    /// Records `mapping.setLastSync(.now)` at the end of every successful cycle.
-    func sync() async throws -> FizzySyncResult {
+    /// Returns an empty `FizzySyncResult` if the board is not paired.
+    /// Records `boardPairingStore.setLastSync` at the end of every successful cycle.
+    func sync(localBoardID: UUID) async throws -> FizzySyncResult {
         guard !isSyncing else { return FizzySyncResult() }
         isSyncing = true
         defer { isSyncing = false }
         guard authState.isConfigured,
-              let localBoardID = mapping.localBoardID,
-              let fizzyBoardID = mapping.fizzyBoardID,
-              let localBoard = fetchBoard(by: localBoardID)
+              let pairing = boardPairingStore.pairing(forLocal: localBoardID),
+              let localBoard = fetchBoard(by: pairing.localBoardID)
         else {
             return FizzySyncResult()
         }
         do {
-            return try await steadyStateSync(localBoard: localBoard, fizzyBoardID: fizzyBoardID)
+            let result = try await steadyStateSync(localBoard: localBoard, fizzyBoardID: pairing.fizzyBoardID)
+            boardPairingStore.setLastSync(localBoardID: localBoardID, .now)
+            return result
         } catch FizzyError.unauthorized {
             // Token revoked or expired — clear Keychain entries so Phase 5's
             // UI can prompt re-auth.
@@ -354,8 +358,8 @@ final class FizzySyncEngine {
         // fetch leaves local pin state alone rather than failing the sync.
         await reconcilePins(localBoard: localBoard)
 
-        // Persist lastSyncAt.
-        mapping.setLastSync(.now)
+        // NOTE: lastSyncAt is now written by the public sync(localBoardID:)
+        // caller after a successful cycle via boardPairingStore.setLastSync.
 
         // A failed save must surface — not throw away the whole result and
         // not pass silently (issue #15). Pairing state persists in the
