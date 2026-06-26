@@ -232,6 +232,7 @@
 		EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */; };
 		F0682EFFF93FCD29D58CA7CD /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7628BACE24DA03CDF86556D /* AuthenticationService.swift */; };
 		F0A760A8A70389ED9E19DF42 /* FizzyBoardSyncActivityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3081DD66B3DE9B862EC092 /* FizzyBoardSyncActivityTests.swift */; };
+		F19C1A992AC5E3E0DA6B05D9 /* FizzyBoardBrowserOrchestrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94EE25B3D2BD81376E243C7B /* FizzyBoardBrowserOrchestrationTests.swift */; };
 		F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA08B935AE5F124F922B0769 /* FizzySyncEngineAdoptionResilienceTests.swift */; };
 		F1D35060BF2A659F14333EAD /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC0555AA6318151E788C7B4 /* BackupSettingsView.swift */; };
 		F22ED794A04139F65B21CE89 /* CardLifecycleActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF1A4FE82B7784CE44A4DCB /* CardLifecycleActionsTests.swift */; };
@@ -408,6 +409,7 @@
 		91F0817152C485773F9923C6 /* TipJarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipJarView.swift; sourceTree = "<group>"; };
 		9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Column+CoreDataClass.swift"; sourceTree = "<group>"; };
 		9408D41208AD8931538011B8 /* LabelEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelEditorSheet.swift; sourceTree = "<group>"; };
+		94EE25B3D2BD81376E243C7B /* FizzyBoardBrowserOrchestrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyBoardBrowserOrchestrationTests.swift; sourceTree = "<group>"; };
 		961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntentTests.swift; sourceTree = "<group>"; };
 		97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TombstoneEntitiesTests.swift; sourceTree = "<group>"; };
 		9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindGoldenCardsIntentTests.swift; sourceTree = "<group>"; };
@@ -634,6 +636,7 @@
 			isa = PBXGroup;
 			children = (
 				BFDEA1051EE257200D3AF010 /* BoardBrowserRowReconcileTests.swift */,
+				94EE25B3D2BD81376E243C7B /* FizzyBoardBrowserOrchestrationTests.swift */,
 				B143E35F5DAA706EA66A3A39 /* FizzyBoardBrowserViewModelTests.swift */,
 				AF3081DD66B3DE9B862EC092 /* FizzyBoardSyncActivityTests.swift */,
 				57EA3CDFC6C81A5E56B9B920 /* FizzySyncProviderMultiBoardTests.swift */,
@@ -1472,6 +1475,7 @@
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,
 				1CB04CF828EEDBD05FD6D100 /* FirstSyncModeTests.swift in Sources */,
 				AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */,
+				F19C1A992AC5E3E0DA6B05D9 /* FizzyBoardBrowserOrchestrationTests.swift in Sources */,
 				60584F06EDAFF7E8D9CB8C64 /* FizzyBoardBrowserViewModelTests.swift in Sources */,
 				7DEEC10D27380010AB679B80 /* FizzyBoardPairingStoreMigrationTests.swift in Sources */,
 				E048E92E8BB488956F8A4D3A /* FizzyBoardPairingStoreTests.swift in Sources */,

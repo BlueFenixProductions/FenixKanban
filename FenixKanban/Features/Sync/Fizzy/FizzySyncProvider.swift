@@ -347,6 +347,33 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         makeEngine()
     }
 
+    // MARK: - Orchestration (issue #18, Phase 7c)
+
+    /// Create-on-Fizzy (issue #18, Phase 7c): make a new remote board, pair the
+    /// given local board to it, then first-sync **push** (local is source of
+    /// truth; the remote starts empty). Returns the first-sync result.
+    func createRemoteTwin(localBoardID: UUID, name: String) async throws -> FizzySyncResult {
+        guard let client = makeClient() else { throw FizzyError.unauthorized }
+        let created = try await client.createBoard(FizzyBoardWrite(name: name))
+        pair(localBoardID: localBoardID, fizzyBoardID: created.id, fizzyBoardName: created.name)
+        guard let engine = makeEngine(for: localBoardID) else { return FizzySyncResult() }
+        return try await engine.syncFirst(localBoardID: localBoardID, mode: .pushLocalToFizzy)
+    }
+
+    /// Add-to-FK (issue #18, Phase 7c): create a new local board from a remote
+    /// board's name, pair it, then first-sync **replace** (remote is source of
+    /// truth; the local board was just created empty). Returns the new local id.
+    @discardableResult
+    func addToFK(fizzyBoardID: String, name: String) async throws -> UUID {
+        let board = BoardRepository(context: persistence.viewContext).createBoard(name: name)
+        guard let localBoardID = board.id else { throw FizzyError.unexpectedStatus(0) }
+        pair(localBoardID: localBoardID, fizzyBoardID: fizzyBoardID, fizzyBoardName: name)
+        if let engine = makeEngine(for: localBoardID) {
+            _ = try await engine.syncFirst(localBoardID: localBoardID, mode: .replaceLocalWithFizzy)
+        }
+        return localBoardID
+    }
+
     // MARK: - Board pairing CRUD
 
     /// Records a pairing between a local board and its Fizzy twin.
