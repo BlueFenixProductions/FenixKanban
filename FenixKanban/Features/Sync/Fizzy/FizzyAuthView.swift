@@ -10,7 +10,7 @@ import SwiftUI
 ///   transitions; mutating it forces SwiftUI to re-evaluate `phase`.
 ///
 /// `phase` is recomputed on every body render, so as soon as a sub-view
-/// writes `authState`/`mapping` and bumps `refreshTrigger`, the parent
+/// writes `authState`/the board pairing store and bumps `refreshTrigger`, the parent
 /// renders the right next sub-view.
 struct FizzyAuthView: View {
 
