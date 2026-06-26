@@ -1,5 +1,6 @@
 import Foundation
 import CoreData
+import WidgetKit
 
 /// Bridges `FizzySyncEngine` to the app's generic `BoardSyncProvider` plugin
 /// protocol. Constructed once at app launch in `FenixKanbanApp.init()` and
@@ -108,11 +109,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         }
         let result = try await engine.sync()
 
-        // Publish a fresh widget snapshot after every successful sync so
-        // the PlaygroundBoardWidget always reflects the latest board state.
-        // Failures are silent — a stale snapshot is better than a crash.
-        let writer = BoardSnapshotWriter(context: persistence.viewContext)
-        _ = try? writer.writeSnapshot()
+        WidgetCenter.shared.reloadAllTimelines()
 
         return SyncResult(
             itemsCreated: result.itemsCreated,
