@@ -7,25 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9E26E98D4F4448FC80F85314 /* Board+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */; };
-		AED625536A60419280041956 /* CachedComment+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */; };
-		E30CB6A2C1234989A1A0B723 /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */; };
-		6B2F5919D5B3425EA3217F2A /* CardStep+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3FE88AE342550F49B55BF1 /* CardStep+CoreDataClass.swift */; };
-		E3E09CA8BD144556B54A10B1 /* CardTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */; };
-		61C26ED684424A9D9CF5B3AC /* Column+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */; };
-		F3022C80D71D46D39C621D65 /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
-		699EC703B6CA4BA0A55F396F /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
-		D5034C9F1CB44CED9B17E4FC /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
-		87AB3DCDC45A409B92F1166F /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
-		B7ADB79D1ED846F88EDB6B30 /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
-		4A5CBC6B43864A6BA536F47F /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */; };
-		4A20851A5CF24888B64E087E /* WidgetBoardReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669023103186435ABE3C526F /* WidgetBoardReader.swift */; };
-		540F08C8562047F6835D5365 /* WidgetBoardDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208E5BBE8A345F1859234C1 /* WidgetBoardDataTests.swift */; };
-		99158A2D956E4D1F9BAB6850 /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */; };
 		0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
 		0052898C57571A9752CFC9A0 /* CachedComment+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */; };
 		01E3AFEC069DF18B4E2A0C4E /* SyncResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCED96777A4573DFBA0FF0AA /* SyncResult.swift */; };
-		01E63F0A3F9FDDE6F7B7C7C3 /* FenixKanbanUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BED4CF6E40316D84636F779 /* FenixKanbanUITests.swift */; };
 		033E10BB53252949904E52AA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
 		038304D92D7F6AAEBE6867EE /* CardStepsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB088C5A75FE888B531310C /* CardStepsViewModel.swift */; };
 		08B7C7B5D478946EAE9DE642 /* Card+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E58A51FEB2D7E2E3594F24 /* Card+Lifecycle.swift */; };
@@ -37,6 +21,8 @@
 		17275D2E744DB68AE345032D /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
 		17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10A143D4EF691E4A0436C89 /* NotificationService.swift */; };
 		18A304663770D25F082F2E2C /* FizzyBoardMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F61A847D1870E4D02FFCCEA /* FizzyBoardMappingTests.swift */; };
+		1967112445F51020B6D2D219 /* FizzyNotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEC5A3D3648BEE65377080C /* FizzyNotificationsView.swift */; };
+		1A798B363B114C91869D3CD3 /* CardTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */; };
 		1A8A7DADB70C45BD073693AC /* FizzyClient+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */; };
 		1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */; };
 		1AC18227D4ECC15AE10448B8 /* SyncSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76CCDC89B952EC09B79E7A1D /* SyncSchedulerTests.swift */; };
@@ -47,7 +33,6 @@
 		1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */; };
 		1EE67FEFD13A28512384FA70 /* FizzySyncEngineLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */; };
 		1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */; };
-		BF13340001234567890ABCDE /* BoardViewModelShowClosedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF13340002234567890ABCDE /* BoardViewModelShowClosedTests.swift */; };
 		233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */; };
 		24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF898B5807DF1101F6F9DF0C /* CardEntityTests.swift */; };
 		27984FA5AFF59944FC4885BE /* FizzyAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139288734275D3EB49C0F400 /* FizzyAuthView.swift */; };
@@ -66,12 +51,15 @@
 		32BA63F4742BBE3D1371E561 /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
 		32F952DF0718DED5C6CA7E3B /* ColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05B5FFB9A7288FA077C6870 /* ColumnView.swift */; };
 		33517732DB9D6DC7B0AC2655 /* CardStepsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59AFEEB67FB4B51FF48A4588 /* CardStepsSection.swift */; };
+		3354B8F8719AB6C8C2E8E7E3 /* BoardViewModelShowClosedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 866E36DF5F80EBC73FB1ABBD /* BoardViewModelShowClosedTests.swift */; };
 		355084088A21F82AA03EFFAA /* LiveUATTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE8A4F5A63E0D61FAAEF14A /* LiveUATTests.swift */; };
 		36658752FDD73D09DB8CA091 /* Color+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */; };
 		3680BDD5845AA5E618ECD06A /* ColorCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD77820B4EE492CF7AE25085 /* ColorCrossPlatformTests.swift */; };
 		36D41A6DA41AFF8E4C7E6EAB /* SyncTriggering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5058A5BADA626E6BFD2B773B /* SyncTriggering.swift */; };
 		37D4092F6735945F67D6AD4E /* FizzyAuthState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDB1F0B68F0499ABCF92B6D /* FizzyAuthState.swift */; };
 		38B76F596C9ADE228B1DBFAE /* BackupExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E681D4F4ECB3F364C0C422F0 /* BackupExporterTests.swift */; };
+		3AF5A464B64E6EDE0313E19C /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
+		3BBB8D471936902911BA36E0 /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7469688E57EC3AC92CD33E /* WidgetBoardData.swift */; };
 		3D4C3E2E8F8F59CBAFC56B8C /* AddCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8201DB6CCE759773490DEC3D /* AddCardIntentTests.swift */; };
 		3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */; };
 		3E2D89F9EEBD7CA3CB01AFE2 /* FizzyDTOs+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCF09CEDCB117837C6930E7 /* FizzyDTOs+Comments.swift */; };
@@ -88,6 +76,7 @@
 		476275FA7DBA3C5CC13A2BE2 /* FizzyDTOs+CardActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBC99D1D8C73344332292A /* FizzyDTOs+CardActions.swift */; };
 		47952C2FBEE5AFA7208296A7 /* FizzyClient+CardActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0799150A86FC83B5B880B0 /* FizzyClient+CardActions.swift */; };
 		47B7A2EF694C710937F3825E /* FizzyClientCardActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BA5DC73054F09A324E9B58 /* FizzyClientCardActionsTests.swift */; };
+		4820AE83C1D6CD888C65EF9F /* FizzyNotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228A46303577DCEB7E8D4D5A /* FizzyNotificationsViewModel.swift */; };
 		48B42F3CCACF3FBA3E7F8922 /* CardRepositoryGoldenSortTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58682DDB41C2C955C5ABD519 /* CardRepositoryGoldenSortTests.swift */; };
 		49A6CB72359D375FB13B2B7D /* FizzyDTOs+Boards.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDA0031C50989F69B37D43EE /* FizzyDTOs+Boards.swift */; };
 		49E731B3D3082D79E09013C6 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE77B96655930ABFC5A54DA /* Color+Hex.swift */; };
@@ -128,6 +117,7 @@
 		7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
 		83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */; };
+		83D9D6D0C4CB6F48C1A4E7F8 /* CardCommentsViewModelReactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AD10AB250A2FFF63597F85 /* CardCommentsViewModelReactionTests.swift */; };
 		846C40D457B0553C01645736 /* FizzySyncEngineConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCC9BC12390FEA82248D10E /* FizzySyncEngineConflictTests.swift */; };
 		857344412226E98D29897FCA /* FizzyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C814FD4AE7DCBBA14E94FAA9 /* FizzyResponse.swift */; };
 		85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */; };
@@ -135,9 +125,13 @@
 		87DFC476A5616C05386D198F /* PlaygroundBoardWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */; };
 		87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */; };
 		887D82A2C07BFB2278778129 /* FizzyError.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABA181CFB55168EB577EAA1 /* FizzyError.swift */; };
+		8A381EADF32DAC287B8FB5B3 /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */; };
 		8AFDFD97E0C0917D6B84C923 /* CommentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66E5FCABE5C50693311577B /* CommentRepository.swift */; };
+		8D0C56257B6047BC2FDBC524 /* WidgetBoardDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6241B23ABFEAB6103202A1 /* WidgetBoardDataTests.swift */; };
 		8E31AB879B3F105AC8100A2E /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FEB0BA3E783F68DD1ABFBA /* SyncScheduler.swift */; };
+		8E7517588DB9C45B0E69DCB5 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
 		9038D450761D523CDBC1AB7F /* FizzyClient+Boards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E738ED3A6BBDD9FDA17CE8D /* FizzyClient+Boards.swift */; };
+		90EF6C54831040F65EC2272A /* Column+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */; };
 		9284ACAFB9DBA9954A2DD9D2 /* CardDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88157336039C94037EF998 /* CardDetailViewModel.swift */; };
 		93F967F7144D2103D799FD3C /* FenixKanbanShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8266DABF5BF6B426312B202 /* FenixKanbanShortcuts.swift */; };
 		9493F64109A56D42E9AC52E8 /* CoreDataMigrationV7Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */; };
@@ -150,7 +144,6 @@
 		98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */; };
 		9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */; };
 		9D988B504B48016D4F626E95 /* CardCommentsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */; };
-		A1B2C3D4E5F60718293A4B5C /* CardCommentsViewModelReactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C7D8E9F0A1B2C3D4E5F607 /* CardCommentsViewModelReactionTests.swift */; };
 		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
 		A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */; };
 		A30A97626FA931BBFCD62BA3 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */; };
@@ -170,9 +163,9 @@
 		B93AABC8F465D0D71FB85737 /* BoardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1964FFB87532CE5ED41070 /* BoardRowView.swift */; };
 		B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E468616D12A084C045616D44 /* FenixKanbanTests.swift */; };
 		BC35EA5164556CC49C7F8172 /* CloudKitModelCompatibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 046EA11DE8B20663921E3177 /* CloudKitModelCompatibilityTests.swift */; };
+		BC95D2BC75A39C34A29A1532 /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
 		BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */; };
 		BD868582554AE682FFF32CEB /* StepRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC25BA16BA4E947F031969D3 /* StepRepository.swift */; };
-		897C19DE45C544E09E3DD3F9 /* PersistenceControllerStoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7FE8786CEDB47A08373CB05 /* PersistenceControllerStoreLocationTests.swift */; };
 		BDC9DE9D64570D8710CE3923 /* CoreDataMigrationV9Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */; };
 		BEBC8EDC41CD1929B34CA7A8 /* FizzyDTOs+CardActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBC99D1D8C73344332292A /* FizzyDTOs+CardActions.swift */; };
 		BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78234911E102475108AE9455 /* KeychainHelperTests.swift */; };
@@ -186,30 +179,35 @@
 		C4AA7AF76E843E21FD235E1C /* Column+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */; };
 		C678410113CD945F4AD89AFC /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE57AC031B96D8412DAB25F /* SettingsViewModel.swift */; };
 		C7DC1F515DF0710E60B122EE /* BoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCE9E085EA2F4036462C2BF /* BoardViewModel.swift */; };
+		C80446799D3E48619EC88CEA /* CachedComment+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */; };
+		CB00704FCF0E52D5B97C52CF /* CardStep+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3FE88AE342550F49B55BF1 /* CardStep+CoreDataClass.swift */; };
 		CB732A1614AF3916C0C2C058 /* NotificationSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */; };
 		CBC3D3B8D2AC5334393585B0 /* FizzyAuthVerifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 068A3D4E105877CD3E5E375D /* FizzyAuthVerifyView.swift */; };
+		CD7D8FC630A8D62301152278 /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
+		CE3EC7EA1D760CC1A71ACB42 /* Board+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */; };
 		CE45552D3BF177D8FFDF02C7 /* TipJarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91F0817152C485773F9923C6 /* TipJarView.swift */; };
+		CE595FB7314249956F3D9971 /* NotificationBellButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16C875933B053CE9A51E3456 /* NotificationBellButton.swift */; };
 		CFD2124A4025EA91037AD6BF /* BackupManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8B5CCEE07FD18D668BA849 /* BackupManifestTests.swift */; };
 		D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
 		D0B586E9137AE80BB7B0ACD9 /* ToggleGoldenIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FBA9DD9858555EF014B034 /* ToggleGoldenIntent.swift */; };
 		D3C037AAD854CDBEEEAEF968 /* FizzyDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A25B0D029F52671883DC255 /* FizzyDTOs.swift */; };
 		D5DE1AA12C428C158A806CE7 /* FontCrossPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C24E1E16D4DABFE2B4EDD2 /* FontCrossPlatformTests.swift */; };
 		D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */; };
+		D9FCE397DF4492C30495C745 /* WidgetBoardReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF27AB669C7574B9E084DC18 /* WidgetBoardReader.swift */; };
 		DB02B77935A13D58612547E9 /* Font+CrossPlatform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */; };
 		DC7454E09D93F33B9F51A899 /* FizzySyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */; };
 		DC765919BB731CC54C2A813D /* SyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7572B48C962A3EB824956E /* SyncMonitor.swift */; };
 		DCA918D48BE6C991C0F9B1A1 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */; };
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
+		DDE866194E7710B03B926840 /* PersistenceControllerStoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CABD228ACE4B5CFEB5D5D53E /* PersistenceControllerStoreLocationTests.swift */; };
 		DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */; };
+		DF03B7887AC5CEA0C341FD60 /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7469688E57EC3AC92CD33E /* WidgetBoardData.swift */; };
 		E28CEDF04F9DC799CB8AA774 /* AssigneePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1B9186731B8F85F0294268 /* AssigneePickerView.swift */; };
+		E29A30BE055C2C0F939D106F /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
 		E2E644FBE7E2A293B9E46891 /* FizzySyncEnginePushParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */; };
 		E558EBBB7243AC828B2FCC92 /* FizzyClient+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D940AFA2D7BAA47055968F /* FizzyClient+Directory.swift */; };
 		E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */; };
-		FN0000001111111111111111 /* FizzyNotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FN0000A0A0A0A0A0A0A0A0A0 /* FizzyNotificationsViewModel.swift */; };
-		FN0000002222222222222222 /* FizzyNotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FN0000B0B0B0B0B0B0B0B0B0 /* FizzyNotificationsView.swift */; };
-		FN0000003333333333333333 /* NotificationBellButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FN0000C0C0C0C0C0C0C0C0C0 /* NotificationBellButton.swift */; };
-		FN0000004444444444444444 /* FizzyNotificationsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FN0000D0D0D0D0D0D0D0D0D0 /* FizzyNotificationsViewModelTests.swift */; };
 		E7142545CF6A399053654C8C /* FizzySyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263A4B64EBC1D39BF38D2CDC /* FizzySyncEngine.swift */; };
 		E72333D9A1BF94EB09AABEA5 /* FizzyClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF14922C6549BC2260540129 /* FizzyClient.swift */; };
 		E82ED2F491D07950CC7D9A4D /* FirstSyncMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C7E3DD35C16245540AD34D /* FirstSyncMode.swift */; };
@@ -229,25 +227,18 @@
 		F22ED794A04139F65B21CE89 /* CardLifecycleActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF1A4FE82B7784CE44A4DCB /* CardLifecycleActionsTests.swift */; };
 		F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */; };
 		F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */; };
+		F7C3D20410F05CAA29602FD0 /* FizzyNotificationsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B19ECA933836D06364839C /* FizzyNotificationsViewModelTests.swift */; };
 		F8CFCB9761DFDE1E3B27990B /* FizzySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */; };
 		FA69352B11E2800440F5C0CA /* BackgroundRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */; };
 		FBE1E15BE388FCB6CC58D7FF /* BackupExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0838D934889E230674EF4DE4 /* BackupExporter.swift */; };
 		FBEE679BCF1A845D4AD3521B /* FizzyDTOs+Directory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D477B9EB12FF832B4E19D6 /* FizzyDTOs+Directory.swift */; };
 		FD233A5D322CB0F5C5C6526F /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */; };
-		FD40FD6D0F2677128AC88470 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1725825A4B3EA0BFDF7B7D1 /* Foundation.framework */; };
 		FD67D2436B58C8ECCB4073AB /* FizzyClientCommentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C48C9144B3593287090B842 /* FizzyClientCommentsTests.swift */; };
 		FDE100082D4EC59095D416DD /* BoardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */; };
 		FE02DAB0229879D619CBFD25 /* CardLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F71A7D0BFBA7DD53B71816A /* CardLifecycleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		10618D956C97B648C7EBA74C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = FA3C663B872EBD2B6D95718D /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 29B0805C04158CE223599CD4;
-			remoteInfo = FenixKanban;
-		};
 		8BCCB11DF2158D802A5BFC16 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FA3C663B872EBD2B6D95718D /* Project object */;
@@ -298,6 +289,7 @@
 		139288734275D3EB49C0F400 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
 		140F9619D806C4B36AF13C6B /* CardStepsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStepsViewModelTests.swift; sourceTree = "<group>"; };
 		146BF439A2D63D25EFFE7357 /* LabelManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementViewModel.swift; sourceTree = "<group>"; };
+		16C875933B053CE9A51E3456 /* NotificationBellButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBellButton.swift; sourceTree = "<group>"; };
 		177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEnginePullPlacementTests.swift; sourceTree = "<group>"; };
 		187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRepositoryTests.swift; sourceTree = "<group>"; };
 		1AC67CF978FD710B34B6FC3E /* FenixKanban 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "FenixKanban 2.xcdatamodel"; sourceTree = "<group>"; };
@@ -310,24 +302,20 @@
 		1FA469A42CF81C75F8BEF5CB /* fizzyctl */ = {isa = PBXFileReference; includeInIndex = 0; path = fizzyctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceModeTests.swift; sourceTree = "<group>"; };
 		2253B2841E2AA6BE67DDC30B /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
+		228A46303577DCEB7E8D4D5A /* FizzyNotificationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyNotificationsViewModel.swift; sourceTree = "<group>"; };
 		236DA19A55EE9EA81DE3FE89 /* FizzyBoardMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyBoardMapping.swift; sourceTree = "<group>"; };
 		242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardListViewModelTests.swift; sourceTree = "<group>"; };
 		25D477B9EB12FF832B4E19D6 /* FizzyDTOs+Directory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyDTOs+Directory.swift"; sourceTree = "<group>"; };
 		263A4B64EBC1D39BF38D2CDC /* FizzySyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngine.swift; sourceTree = "<group>"; };
 		27A14F077027BF8262193AEE /* LabelBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelBadge.swift; sourceTree = "<group>"; };
 		2AB088C5A75FE888B531310C /* CardStepsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStepsViewModel.swift; sourceTree = "<group>"; };
-		2BED4CF6E40316D84636F779 /* FenixKanbanUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FenixKanbanUITests.swift; sourceTree = "<group>"; };
 		2C88157336039C94037EF998 /* CardDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailViewModel.swift; sourceTree = "<group>"; };
 		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelGoldenTests.swift; sourceTree = "<group>"; };
-		BF13340002234567890ABCDE /* BoardViewModelShowClosedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelShowClosedTests.swift; sourceTree = "<group>"; };
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
 		35A1AAE6F0C21DEB56C73DCA /* InitialsAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialsAvatar.swift; sourceTree = "<group>"; };
 		36E8B6A25376C60961725E8B /* BackupManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifest.swift; sourceTree = "<group>"; };
 		38A57D39B2CCA5985144EF4A /* FizzyClientBoardsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientBoardsTests.swift; sourceTree = "<group>"; };
-		9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardData.swift; sourceTree = "<group>"; };
-		669023103186435ABE3C526F /* WidgetBoardReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardReader.swift; sourceTree = "<group>"; };
-		7208E5BBE8A345F1859234C1 /* WidgetBoardDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardDataTests.swift; sourceTree = "<group>"; };
 		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
 		3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineTests.swift; sourceTree = "<group>"; };
@@ -359,7 +347,6 @@
 		61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTestEnv.swift; sourceTree = "<group>"; };
 		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV9Tests.swift; sourceTree = "<group>"; };
-		B7FE8786CEDB47A08373CB05 /* PersistenceControllerStoreLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceControllerStoreLocationTests.swift; sourceTree = "<group>"; };
 		65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV7Tests.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
 		6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardSheet.swift; sourceTree = "<group>"; };
@@ -387,6 +374,7 @@
 		85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanApp.swift; sourceTree = "<group>"; };
 		85FEB0BA3E783F68DD1ABFBA /* SyncScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
 		86315EDE59D44548FA6B0B57 /* FenixKanban.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = FenixKanban.xcdatamodel; sourceTree = "<group>"; };
+		866E36DF5F80EBC73FB1ABBD /* BoardViewModelShowClosedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelShowClosedTests.swift; sourceTree = "<group>"; };
 		86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColumnTombstone+CoreDataClass.swift"; sourceTree = "<group>"; };
 		86FBA9DD9858555EF014B034 /* ToggleGoldenIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntent.swift; sourceTree = "<group>"; };
 		870D6BACC9C7C7F961F93FEF /* LivePlaygroundRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaygroundRestoreTests.swift; sourceTree = "<group>"; };
@@ -417,7 +405,6 @@
 		9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaygroundBoardWidget.swift; sourceTree = "<group>"; };
 		9E0882A3E6ADAC8A1E2A8608 /* Font+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+CrossPlatform.swift"; sourceTree = "<group>"; };
 		9E20A59A4E9DDCD06081E6A7 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
-		9F986E44D6B15A61D1A06684 /* FenixKanbanUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FenixKanbanUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1E87D54C1B073A40441ED37 /* NavigationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationModelTests.swift; sourceTree = "<group>"; };
 		A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelManagementView.swift; sourceTree = "<group>"; };
 		A472D8FA16F1EB9A071E6E64 /* FizzyClientDirectoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientDirectoryTests.swift; sourceTree = "<group>"; };
@@ -426,6 +413,7 @@
 		A9C7E3DD35C16245540AD34D /* FirstSyncMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstSyncMode.swift; sourceTree = "<group>"; };
 		AC3FE88AE342550F49B55BF1 /* CardStep+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardStep+CoreDataClass.swift"; sourceTree = "<group>"; };
 		AD1964FFB87532CE5ED41070 /* BoardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardRowView.swift; sourceTree = "<group>"; };
+		B0AD10AB250A2FFF63597F85 /* CardCommentsViewModelReactionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCommentsViewModelReactionTests.swift; sourceTree = "<group>"; };
 		B2BB675BD426DD316D476C37 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
 		B36134843F5683038443D750 /* TipJarProducts.storekit */ = {isa = PBXFileReference; path = TipJarProducts.storekit; sourceTree = "<group>"; };
 		B4F592F755DD0739220B0604 /* CardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardQuery.swift; sourceTree = "<group>"; };
@@ -438,6 +426,7 @@
 		BA18A6DED6332B607DDA0C1E /* CoreDataMigrationV6Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV6Tests.swift; sourceTree = "<group>"; };
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
 		BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineLifecycleTests.swift; sourceTree = "<group>"; };
+		BF27AB669C7574B9E084DC18 /* WidgetBoardReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardReader.swift; sourceTree = "<group>"; };
 		C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CachedComment+CoreDataClass.swift"; sourceTree = "<group>"; };
 		C0EFA207632914E750978F8F /* ConflictListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictListView.swift; sourceTree = "<group>"; };
 		C0FFB074417669C9B6CD3E92 /* AddCardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCardIntent.swift; sourceTree = "<group>"; };
@@ -446,7 +435,9 @@
 		C8266DABF5BF6B426312B202 /* FenixKanbanShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanShortcuts.swift; sourceTree = "<group>"; };
 		C88DE2CFAB1D67DA8824B424 /* BoardSyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSyncProvider.swift; sourceTree = "<group>"; };
 		C9D9F931CC1F616741916216 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CABD228ACE4B5CFEB5D5D53E /* PersistenceControllerStoreLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceControllerStoreLocationTests.swift; sourceTree = "<group>"; };
 		CACAAF5DC4AC402C5BBD81E2 /* CardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepository.swift; sourceTree = "<group>"; };
+		CAEC5A3D3648BEE65377080C /* FizzyNotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyNotificationsView.swift; sourceTree = "<group>"; };
 		CB0799150A86FC83B5B880B0 /* FizzyClient+CardActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FizzyClient+CardActions.swift"; sourceTree = "<group>"; };
 		CCED96777A4573DFBA0FF0AA /* SyncResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncResult.swift; sourceTree = "<group>"; };
 		CD208E7FEC3CDAB1ACD3238E /* FindGoldenCardsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindGoldenCardsIntent.swift; sourceTree = "<group>"; };
@@ -459,7 +450,6 @@
 		D1C257D017738FEE517DB1CA /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
 		D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEnginePushParityTests.swift; sourceTree = "<group>"; };
 		D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCommentsViewModelTests.swift; sourceTree = "<group>"; };
-		B6C7D8E9F0A1B2C3D4E5F607 /* CardCommentsViewModelReactionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCommentsViewModelReactionTests.swift; sourceTree = "<group>"; };
 		D26870A7B74A1F2FDA417A7D /* FizzySyncMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMappingTests.swift; sourceTree = "<group>"; };
 		D613029DDB577CD954C47EEC /* FirstSyncModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstSyncModeTests.swift; sourceTree = "<group>"; };
 		D9864DD5AE3F9D3B1B6B2348 /* NavigationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationModel.swift; sourceTree = "<group>"; };
@@ -474,7 +464,6 @@
 		DF5619875D16CD1B3B74E215 /* BoardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardQuery.swift; sourceTree = "<group>"; };
 		E0435462C469D8222A55798D /* CardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntity.swift; sourceTree = "<group>"; };
 		E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
-		E1725825A4B3EA0BFDF7B7D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		E22CB144486430B2801DB56B /* FizzyDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyDTOTests.swift; sourceTree = "<group>"; };
 		E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
 		E468616D12A084C045616D44 /* FenixKanbanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanTests.swift; sourceTree = "<group>"; };
@@ -491,6 +480,7 @@
 		F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBoardIntent.swift; sourceTree = "<group>"; };
 		F640DD5BBAFE1620B8DF9C57 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		F66E5FCABE5C50693311577B /* CommentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentRepository.swift; sourceTree = "<group>"; };
+		F6B19ECA933836D06364839C /* FizzyNotificationsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyNotificationsViewModelTests.swift; sourceTree = "<group>"; };
 		F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSmokeTests.swift; sourceTree = "<group>"; };
 		F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		FABA181CFB55168EB577EAA1 /* FizzyError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyError.swift; sourceTree = "<group>"; };
@@ -498,32 +488,11 @@
 		FBCC7A00A449AE22617DACC7 /* ManualClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualClock.swift; sourceTree = "<group>"; };
 		FDC0555AA6318151E788C7B4 /* BackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsView.swift; sourceTree = "<group>"; };
 		FF14922C6549BC2260540129 /* FizzyClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClient.swift; sourceTree = "<group>"; };
-		FN0000A0A0A0A0A0A0A0A0A0 /* FizzyNotificationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyNotificationsViewModel.swift; sourceTree = "<group>"; };
-		FN0000B0B0B0B0B0B0B0B0B0 /* FizzyNotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyNotificationsView.swift; sourceTree = "<group>"; };
-		FN0000C0C0C0C0C0C0C0C0C0 /* NotificationBellButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBellButton.swift; sourceTree = "<group>"; };
-		FN0000D0D0D0D0D0D0D0D0D0 /* FizzyNotificationsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyNotificationsViewModelTests.swift; sourceTree = "<group>"; };
+		FF6241B23ABFEAB6103202A1 /* WidgetBoardDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardDataTests.swift; sourceTree = "<group>"; };
+		FF7469688E57EC3AC92CD33E /* WidgetBoardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		E7D2F5C98A07A11724A2F71F /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				FD40FD6D0F2677128AC88470 /* Foundation.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
-		0556EADA133585EE7A275CF0 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				33602D9321AA9045E039BEFA /* iOS */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		05B48BF4B473AEFDFC63906C /* Labels */ = {
 			isa = PBXGroup;
 			children = (
@@ -596,15 +565,6 @@
 			path = Tools;
 			sourceTree = "<group>";
 		};
-		1CE7CB1D780FF1327079BE4D /* FenixKanbanUITests */ = {
-			isa = PBXGroup;
-			children = (
-				2BED4CF6E40316D84636F779 /* FenixKanbanUITests.swift */,
-			);
-			name = FenixKanbanUITests;
-			path = FenixKanbanUITests;
-			sourceTree = "<group>";
-		};
 		1E279A33AD90043CFE8686B0 = {
 			isa = PBXGroup;
 			children = (
@@ -614,8 +574,6 @@
 				3B870940BDB183084D652B3A /* tools */,
 				8D1264E6D99E3B467A83C3FF /* Widgets */,
 				F16B1B49246B6D4A03A47839 /* Products */,
-				0556EADA133585EE7A275CF0 /* Frameworks */,
-				1CE7CB1D780FF1327079BE4D /* FenixKanbanUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -628,6 +586,14 @@
 				8311753D4E7179A377F3C7DD /* NewColumnSheet.swift */,
 			);
 			path = Board;
+			sourceTree = "<group>";
+		};
+		222FE366A6E063A4E8962604 /* FizzyNotifications */ = {
+			isa = PBXGroup;
+			children = (
+				F6B19ECA933836D06364839C /* FizzyNotificationsViewModelTests.swift */,
+			);
+			path = FizzyNotifications;
 			sourceTree = "<group>";
 		};
 		2234D747A95BEE4D21580ED2 /* Repositories */ = {
@@ -659,8 +625,8 @@
 				65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */,
 				9A81AFE70D5624FFC49D0D56 /* CoreDataMigrationV8Tests.swift */,
 				65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */,
-				B7FE8786CEDB47A08373CB05 /* PersistenceControllerStoreLocationTests.swift */,
 				B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */,
+				CABD228ACE4B5CFEB5D5D53E /* PersistenceControllerStoreLocationTests.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -688,14 +654,6 @@
 				961DC5177F1B1026D80284E7 /* ToggleGoldenIntentTests.swift */,
 			);
 			path = Intents;
-			sourceTree = "<group>";
-		};
-		33602D9321AA9045E039BEFA /* iOS */ = {
-			isa = PBXGroup;
-			children = (
-				E1725825A4B3EA0BFDF7B7D1 /* Foundation.framework */,
-			);
-			name = iOS;
 			sourceTree = "<group>";
 		};
 		3A956BD31899F5633C596B02 /* Components */ = {
@@ -736,26 +694,15 @@
 				213B05F03EA16355A3DD3E04 /* Board */,
 				C437AC694A256CC96E54074C /* BoardList */,
 				0CDD1CAD1F142D563C1A612B /* Card */,
-				FN0000E0E0E0E0E0E0E0E0E0 /* FizzyNotifications */,
+				8CA36CBAB85115B082784628 /* FizzyNotifications */,
 				0B78ECEF227AF1BB1067D6CC /* Intents */,
 				05B48BF4B473AEFDFC63906C /* Labels */,
 				779EF2C8544DF10626586B60 /* Notifications */,
 				7EFB1A22FB14A9100724309C /* Settings */,
 				9460B5BC7EB210D2C3DBA37F /* Sync */,
 				3C4672B05850148A572D74F7 /* TipJar */,
-				E4276F05748DFEFDE99541C4 /* Widget */,
 			);
 			path = Features;
-			sourceTree = "<group>";
-		};
-		FN0000E0E0E0E0E0E0E0E0E0 /* FizzyNotifications */ = {
-			isa = PBXGroup;
-			children = (
-				FN0000A0A0A0A0A0A0A0A0A0 /* FizzyNotificationsViewModel.swift */,
-				FN0000B0B0B0B0B0B0B0B0B0 /* FizzyNotificationsView.swift */,
-				FN0000C0C0C0C0C0C0C0C0C0 /* NotificationBellButton.swift */,
-			);
-			path = FizzyNotifications;
 			sourceTree = "<group>";
 		};
 		498E8C11D23914AF73EE7AAB /* Core */ = {
@@ -783,8 +730,8 @@
 		50FDB3E0608169A23DB40E68 /* Card */ = {
 			isa = PBXGroup;
 			children = (
+				B0AD10AB250A2FFF63597F85 /* CardCommentsViewModelReactionTests.swift */,
 				D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */,
-				B6C7D8E9F0A1B2C3D4E5F607 /* CardCommentsViewModelReactionTests.swift */,
 				9CF1A4FE82B7784CE44A4DCB /* CardLifecycleActionsTests.swift */,
 				140F9619D806C4B36AF13C6B /* CardStepsViewModelTests.swift */,
 			);
@@ -892,7 +839,7 @@
 				242CA846949A90DC9B41F766 /* BoardListViewModelTests.swift */,
 				3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */,
 				A61AF1066F57E5404E2BF366 /* BoardViewModelLifecycleTests.swift */,
-				BF13340002234567890ABCDE /* BoardViewModelShowClosedTests.swift */,
+				866E36DF5F80EBC73FB1ABBD /* BoardViewModelShowClosedTests.swift */,
 				DB041FBA0AE74AA75078C039 /* BoardViewModelTests.swift */,
 				0773EA35195C125F7BB6AB6B /* CardDetailViewModelTests.swift */,
 			);
@@ -914,14 +861,24 @@
 			path = FenixKanban;
 			sourceTree = "<group>";
 		};
+		8CA36CBAB85115B082784628 /* FizzyNotifications */ = {
+			isa = PBXGroup;
+			children = (
+				CAEC5A3D3648BEE65377080C /* FizzyNotificationsView.swift */,
+				228A46303577DCEB7E8D4D5A /* FizzyNotificationsViewModel.swift */,
+				16C875933B053CE9A51E3456 /* NotificationBellButton.swift */,
+			);
+			path = FizzyNotifications;
+			sourceTree = "<group>";
+		};
 		8D1264E6D99E3B467A83C3FF /* Widgets */ = {
 			isa = PBXGroup;
 			children = (
 				EACBCBD231CE21C868A017F6 /* FenixKanbanWidgets.entitlements */,
 				12879304376681EE625271BC /* Info.plist */,
 				9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */,
-				9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */,
-				669023103186435ABE3C526F /* WidgetBoardReader.swift */,
+				FF7469688E57EC3AC92CD33E /* WidgetBoardData.swift */,
+				BF27AB669C7574B9E084DC18 /* WidgetBoardReader.swift */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -977,19 +934,11 @@
 			children = (
 				4B004A08072329F2FB9EF382 /* Backup */,
 				50FDB3E0608169A23DB40E68 /* Card */,
-				FN0000F0F0F0F0F0F0F0F0F0 /* FizzyNotifications */,
+				222FE366A6E063A4E8962604 /* FizzyNotifications */,
 				2E22745F4F482FA3823879D8 /* Sync */,
 				F656DC9BFC0012A09D6803D7 /* Widget */,
 			);
 			path = Features;
-			sourceTree = "<group>";
-		};
-		FN0000F0F0F0F0F0F0F0F0F0 /* FizzyNotifications */ = {
-			isa = PBXGroup;
-			children = (
-				FN0000D0D0D0D0D0D0D0D0D0 /* FizzyNotificationsViewModelTests.swift */,
-			);
-			path = FizzyNotifications;
 			sourceTree = "<group>";
 		};
 		C324BCF806B80C2A14FFB431 /* Fixtures */ = {
@@ -1098,13 +1047,6 @@
 			path = Navigation;
 			sourceTree = "<group>";
 		};
-		E4276F05748DFEFDE99541C4 /* Widget */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Widget;
-			sourceTree = "<group>";
-		};
 		ED92A51CF99AD7208A720C96 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -1122,7 +1064,6 @@
 				2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */,
 				1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */,
 				1FA469A42CF81C75F8BEF5CB /* fizzyctl */,
-				9F986E44D6B15A61D1A06684 /* FenixKanbanUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1142,7 +1083,7 @@
 		F656DC9BFC0012A09D6803D7 /* Widget */ = {
 			isa = PBXGroup;
 			children = (
-				7208E5BBE8A345F1859234C1 /* WidgetBoardDataTests.swift */,
+				FF6241B23ABFEAB6103202A1 /* WidgetBoardDataTests.swift */,
 			);
 			path = Widget;
 			sourceTree = "<group>";
@@ -1269,24 +1210,6 @@
 			productReference = 1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		8B441F998F51006DF866918E /* FenixKanbanUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 80F348ACFA4A2D145EE654B0 /* Build configuration list for PBXNativeTarget "FenixKanbanUITests" */;
-			buildPhases = (
-				6CC2659EC6545E5F4FAE19ED /* Sources */,
-				E7D2F5C98A07A11724A2F71F /* Frameworks */,
-				6BE73A794EE348509384BDAE /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				5F5F03969FA6CD3EFA387376 /* PBXTargetDependency */,
-			);
-			name = FenixKanbanUITests;
-			productName = FenixKanbanUITests;
-			productReference = 9F986E44D6B15A61D1A06684 /* FenixKanbanUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1297,19 +1220,19 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					29B0805C04158CE223599CD4 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 					5FBE7EC4307D66DC5CD8CF44 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Manual;
 					};
 					62212B85E018F8DAAD57EB30 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 					6A3B334D6010135CEFEA59B5 = {
-						DevelopmentTeam = YOUR_TEAM_ID_HERE;
+						DevelopmentTeam = QU2C2R55C4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1332,7 +1255,6 @@
 				62212B85E018F8DAAD57EB30 /* FenixKanbanTests */,
 				6A3B334D6010135CEFEA59B5 /* FenixKanbanWidgets */,
 				5FBE7EC4307D66DC5CD8CF44 /* fizzyctl */,
-				8B441F998F51006DF866918E /* FenixKanbanUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -1345,13 +1267,6 @@
 				6B8CCB3D027AFF0260256D06 /* Assets.xcassets in Resources */,
 				6721B436DE044A5FB471EA5C /* LaunchScreen.storyboard in Resources */,
 				A75962D2AFEEB01E10CFDEAF /* TipJarProducts.storekit in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		6BE73A794EE348509384BDAE /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1415,8 +1330,6 @@
 				93F967F7144D2103D799FD3C /* FenixKanbanShortcuts.swift in Sources */,
 				6D71EC62F098049DA2784D72 /* FindGoldenCardsIntent.swift in Sources */,
 				E82ED2F491D07950CC7D9A4D /* FirstSyncMode.swift in Sources */,
-				FN0000002222222222222222 /* FizzyNotificationsView.swift in Sources */,
-				FN0000001111111111111111 /* FizzyNotificationsViewModel.swift in Sources */,
 				E8F4885003A7443637FADF62 /* FizzyAuthPairView.swift in Sources */,
 				5795522A430FAB8B0D9E3425 /* FizzyAuthPhase.swift in Sources */,
 				37D4092F6735945F67D6AD4E /* FizzyAuthState.swift in Sources */,
@@ -1437,6 +1350,8 @@
 				FBEE679BCF1A845D4AD3521B /* FizzyDTOs+Directory.swift in Sources */,
 				2F13B71B01BE8EB33100F976 /* FizzyDTOs.swift in Sources */,
 				C071193A6B7A63C7AC32817D /* FizzyError.swift in Sources */,
+				1967112445F51020B6D2D219 /* FizzyNotificationsView.swift in Sources */,
+				4820AE83C1D6CD888C65EF9F /* FizzyNotificationsViewModel.swift in Sources */,
 				857344412226E98D29897FCA /* FizzyResponse.swift in Sources */,
 				E7142545CF6A399053654C8C /* FizzySyncEngine.swift in Sources */,
 				DC7454E09D93F33B9F51A899 /* FizzySyncMapping.swift in Sources */,
@@ -1455,7 +1370,7 @@
 				58F792A039D26E85E170C0A6 /* NavigationModel.swift in Sources */,
 				E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */,
 				EFF022CD792DF26605523F37 /* NewColumnSheet.swift in Sources */,
-				FN0000003333333333333333 /* NotificationBellButton.swift in Sources */,
+				CE595FB7314249956F3D9971 /* NotificationBellButton.swift in Sources */,
 				17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */,
 				3234809B8B3230567DA0DF54 /* NotificationSettingsView.swift in Sources */,
 				CB732A1614AF3916C0C2C058 /* NotificationSettingsViewModel.swift in Sources */,
@@ -1496,10 +1411,10 @@
 				6821052820164D6848537418 /* BoardRepositoryTests.swift in Sources */,
 				1FC7C8014EFC4F2A11140203 /* BoardViewModelGoldenTests.swift in Sources */,
 				4262C459E4BA6E8674A9214F /* BoardViewModelLifecycleTests.swift in Sources */,
-				BF13340001234567890ABCDE /* BoardViewModelShowClosedTests.swift in Sources */,
+				3354B8F8719AB6C8C2E8E7E3 /* BoardViewModelShowClosedTests.swift in Sources */,
 				1A8EDCFA9E34232FEF82D754 /* BoardViewModelTests.swift in Sources */,
+				83D9D6D0C4CB6F48C1A4E7F8 /* CardCommentsViewModelReactionTests.swift in Sources */,
 				9D988B504B48016D4F626E95 /* CardCommentsViewModelTests.swift in Sources */,
-				A1B2C3D4E5F60718293A4B5C /* CardCommentsViewModelReactionTests.swift in Sources */,
 				85D310E387A4F93267DA63C6 /* CardDetailViewModelTests.swift in Sources */,
 				24B29C740BBF59C7B9D78678 /* CardEntityTests.swift in Sources */,
 				5784E51B2890575C8CD43F0C /* CardFizzyAttributesTests.swift in Sources */,
@@ -1514,14 +1429,12 @@
 				A94FB2127558BBF22138921D /* CoreDataMigrationV6Tests.swift in Sources */,
 				9493F64109A56D42E9AC52E8 /* CoreDataMigrationV7Tests.swift in Sources */,
 				AD4DAC969973666BD0A6DADC /* CoreDataMigrationV8Tests.swift in Sources */,
-				897C19DE45C544E09E3DD3F9 /* PersistenceControllerStoreLocationTests.swift in Sources */,
 				BDC9DE9D64570D8710CE3923 /* CoreDataMigrationV9Tests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,
 				1CB04CF828EEDBD05FD6D100 /* FirstSyncModeTests.swift in Sources */,
 				AE5022DDFA982D34C385844B /* FizzyAuthStateTests.swift in Sources */,
 				18A304663770D25F082F2E2C /* FizzyBoardMappingTests.swift in Sources */,
-				FN0000004444444444444444 /* FizzyNotificationsViewModelTests.swift in Sources */,
 				581A0F62E089D73D4BB54A06 /* FizzyCardPairingStoreTests.swift in Sources */,
 				42100AF5E2377B639D8C7043 /* FizzyClientBoardsTests.swift in Sources */,
 				47B7A2EF694C710937F3825E /* FizzyClientCardActionsTests.swift in Sources */,
@@ -1530,6 +1443,7 @@
 				957D0C7287B2CAB192BC4E96 /* FizzyClientTests.swift in Sources */,
 				AF2920C69E992CB4BEA0637C /* FizzyDTOTests.swift in Sources */,
 				BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */,
+				F7C3D20410F05CAA29602FD0 /* FizzyNotificationsViewModelTests.swift in Sources */,
 				F1CC3FEAFCE416CBBFE145EE /* FizzySyncEngineAdoptionResilienceTests.swift in Sources */,
 				A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */,
 				846C40D457B0553C01645736 /* FizzySyncEngineConflictTests.swift in Sources */,
@@ -1557,6 +1471,7 @@
 				41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */,
 				3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */,
 				B708F58FB566F7D50425EA4D /* OpenCardIntentTests.swift in Sources */,
+				DDE866194E7710B03B926840 /* PersistenceControllerStoreLocationTests.swift in Sources */,
 				C1BAF30C84B8A9779C622AB3 /* SFSymbolValidityTests.swift in Sources */,
 				BFA7112B4AC02616859C2445 /* SyncMonitorTests.swift in Sources */,
 				C3476FFC4259355BF0F3555D /* SyncResultTests.swift in Sources */,
@@ -1564,8 +1479,8 @@
 				73049301642A0A1EBFFAC8CA /* TipJarStoreTests.swift in Sources */,
 				EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */,
 				F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */,
-				540F08C8562047F6835D5365 /* WidgetBoardDataTests.swift in Sources */,
-				99158A2D956E4D1F9BAB6850 /* WidgetBoardData.swift in Sources */,
+				3BBB8D471936902911BA36E0 /* WidgetBoardData.swift in Sources */,
+				8D0C56257B6047BC2FDBC524 /* WidgetBoardDataTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1590,32 +1505,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6CC2659EC6545E5F4FAE19ED /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				01E63F0A3F9FDDE6F7B7C7C3 /* FenixKanbanUITests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		84517D65076A75558C623250 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE3EC7EA1D760CC1A71ACB42 /* Board+CoreDataClass.swift in Sources */,
+				C80446799D3E48619EC88CEA /* CachedComment+CoreDataClass.swift in Sources */,
+				8A381EADF32DAC287B8FB5B3 /* Card+CoreDataClass.swift in Sources */,
+				CB00704FCF0E52D5B97C52CF /* CardStep+CoreDataClass.swift in Sources */,
+				1A798B363B114C91869D3CD3 /* CardTombstone+CoreDataClass.swift in Sources */,
+				90EF6C54831040F65EC2272A /* Column+CoreDataClass.swift in Sources */,
+				CD7D8FC630A8D62301152278 /* ColumnTombstone+CoreDataClass.swift in Sources */,
+				E29A30BE055C2C0F939D106F /* FenixKanban.xcdatamodeld in Sources */,
+				8E7517588DB9C45B0E69DCB5 /* Label+CoreDataClass.swift in Sources */,
+				BC95D2BC75A39C34A29A1532 /* NSManagedObject+Extensions.swift in Sources */,
+				3AF5A464B64E6EDE0313E19C /* PersistenceController.swift in Sources */,
 				87DFC476A5616C05386D198F /* PlaygroundBoardWidget.swift in Sources */,
-				9E26E98D4F4448FC80F85314 /* Board+CoreDataClass.swift in Sources */,
-				AED625536A60419280041956 /* CachedComment+CoreDataClass.swift in Sources */,
-				E30CB6A2C1234989A1A0B723 /* Card+CoreDataClass.swift in Sources */,
-				6B2F5919D5B3425EA3217F2A /* CardStep+CoreDataClass.swift in Sources */,
-				E3E09CA8BD144556B54A10B1 /* CardTombstone+CoreDataClass.swift in Sources */,
-				61C26ED684424A9D9CF5B3AC /* Column+CoreDataClass.swift in Sources */,
-				F3022C80D71D46D39C621D65 /* ColumnTombstone+CoreDataClass.swift in Sources */,
-				699EC703B6CA4BA0A55F396F /* Label+CoreDataClass.swift in Sources */,
-				D5034C9F1CB44CED9B17E4FC /* NSManagedObject+Extensions.swift in Sources */,
-				87AB3DCDC45A409B92F1166F /* PersistenceController.swift in Sources */,
-				B7ADB79D1ED846F88EDB6B30 /* FenixKanban.xcdatamodeld in Sources */,
-				4A5CBC6B43864A6BA536F47F /* WidgetBoardData.swift in Sources */,
-				4A20851A5CF24888B64E087E /* WidgetBoardReader.swift in Sources */,
+				DF03B7887AC5CEA0C341FD60 /* WidgetBoardData.swift in Sources */,
+				D9FCE397DF4492C30495C745 /* WidgetBoardReader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1626,12 +1533,6 @@
 			isa = PBXTargetDependency;
 			target = 6A3B334D6010135CEFEA59B5 /* FenixKanbanWidgets */;
 			targetProxy = 93CF08EA249E6A6A7AB8098E /* PBXContainerItemProxy */;
-		};
-		5F5F03969FA6CD3EFA387376 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = FenixKanban;
-			target = 29B0805C04158CE223599CD4 /* FenixKanban */;
-			targetProxy = 10618D956C97B648C7EBA74C /* PBXContainerItemProxy */;
 		};
 		FABC1CD086BE8C4BD632A95F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1824,24 +1725,6 @@
 			};
 			name = Release;
 		};
-		3FD18518A3DF14573FE45F12 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bluefenixproductions.FenixKanbanUITests;
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = FenixKanban;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		65A576C47E64E7F84FB86614 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1934,7 +1817,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG WIDGET_EXTENSION";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = WIDGET_EXTENSION;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1962,23 +1845,6 @@
 			};
 			name = Release;
 		};
-		FE52F0C4E3BBDCDF37B443D0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bluefenixproductions.FenixKanbanUITests;
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = FenixKanban;
-			};
-			name = Debug;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1999,15 +1865,6 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
-		};
-		80F348ACFA4A2D145EE654B0 /* Build configuration list for PBXNativeTarget "FenixKanbanUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				3FD18518A3DF14573FE45F12 /* Release */,
-				FE52F0C4E3BBDCDF37B443D0 /* Debug */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
 		};
 		85D5340FEE4C212FE6974E6B /* Build configuration list for PBXNativeTarget "FenixKanbanTests" */ = {
 			isa = XCConfigurationList;
