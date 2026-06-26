@@ -62,6 +62,7 @@
 		3D4C3E2E8F8F59CBAFC56B8C /* AddCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8201DB6CCE759773490DEC3D /* AddCardIntentTests.swift */; };
 		3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */; };
 		3E2D89F9EEBD7CA3CB01AFE2 /* FizzyDTOs+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCF09CEDCB117837C6930E7 /* FizzyDTOs+Comments.swift */; };
+		40F1155201FC19301D019A29 /* BoardBrowserRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8742DB1C788D638E1F9D49AA /* BoardBrowserRow.swift */; };
 		41945B9C390740A8D93C3ADF /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AC2296425D56EBD2D865F6 /* NotificationServiceTests.swift */; };
 		41D59D4CD494CE3FF0C722AE /* CardAssignee.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA5CC12ADA6D06949A786EDC /* CardAssignee.swift */; };
 		42100AF5E2377B639D8C7043 /* FizzyClientBoardsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A57D39B2CCA5985144EF4A /* FizzyClientBoardsTests.swift */; };
@@ -142,6 +143,7 @@
 		97B4886590DB0DFC0CAE82B1 /* BackgroundRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7802287CDDC8F175E4CCC7C /* BackgroundRefreshCoordinator.swift */; };
 		98658EB79D1180F38108C352 /* BackupDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417CA11519C84AC01EEEE7B7 /* BackupDocument.swift */; };
 		98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9814F76F5D1AB67F43B0B7CE /* FindGoldenCardsIntentTests.swift */; };
+		9A7E0A6CF0BEA760AF482EE6 /* BoardBrowserRowReconcileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFDEA1051EE257200D3AF010 /* BoardBrowserRowReconcileTests.swift */; };
 		9C31D6BE994B45F7AEC637E9 /* LiveSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD5B55E5E4F71B9BC8F77 /* LiveSmokeTests.swift */; };
 		9D988B504B48016D4F626E95 /* CardCommentsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */; };
 		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
@@ -387,6 +389,7 @@
 		86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColumnTombstone+CoreDataClass.swift"; sourceTree = "<group>"; };
 		86FBA9DD9858555EF014B034 /* ToggleGoldenIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleGoldenIntent.swift; sourceTree = "<group>"; };
 		870D6BACC9C7C7F961F93FEF /* LivePlaygroundRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaygroundRestoreTests.swift; sourceTree = "<group>"; };
+		8742DB1C788D638E1F9D49AA /* BoardBrowserRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardBrowserRow.swift; sourceTree = "<group>"; };
 		8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
 		8A25B0D029F52671883DC255 /* FizzyDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyDTOs.swift; sourceTree = "<group>"; };
 		8B76E484FF062D61BAA7F2E1 /* FizzyBoardPairingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyBoardPairingStore.swift; sourceTree = "<group>"; };
@@ -437,6 +440,7 @@
 		BBD6409104882DAF7C55FF7D /* PreviewPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPersistence.swift; sourceTree = "<group>"; };
 		BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineLifecycleTests.swift; sourceTree = "<group>"; };
 		BF27AB669C7574B9E084DC18 /* WidgetBoardReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardReader.swift; sourceTree = "<group>"; };
+		BFDEA1051EE257200D3AF010 /* BoardBrowserRowReconcileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardBrowserRowReconcileTests.swift; sourceTree = "<group>"; };
 		C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CachedComment+CoreDataClass.swift"; sourceTree = "<group>"; };
 		C0EFA207632914E750978F8F /* ConflictListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictListView.swift; sourceTree = "<group>"; };
 		C0FFB074417669C9B6CD3E92 /* AddCardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCardIntent.swift; sourceTree = "<group>"; };
@@ -623,6 +627,7 @@
 		2532EED83F28CDBD8101A208 /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				BFDEA1051EE257200D3AF010 /* BoardBrowserRowReconcileTests.swift */,
 				AF3081DD66B3DE9B862EC092 /* FizzyBoardSyncActivityTests.swift */,
 				57EA3CDFC6C81A5E56B9B920 /* FizzySyncProviderMultiBoardTests.swift */,
 				DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */,
@@ -1029,6 +1034,7 @@
 		DA6953239889AC5CD72F2074 /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				8742DB1C788D638E1F9D49AA /* BoardBrowserRow.swift */,
 				98505E6C18C3691F83519972 /* FizzyAuthPairView.swift */,
 				F24019D9090EA00DA9C7D193 /* FizzyAuthPhase.swift */,
 				824D0B1348180DDDB6480B5D /* FizzyAuthStatusView.swift */,
@@ -1307,6 +1313,7 @@
 				A8BA33B4E95C7DC1B5BCB89F /* BackupManifest.swift in Sources */,
 				F1D35060BF2A659F14333EAD /* BackupSettingsView.swift in Sources */,
 				443FC87C48FE4092546E9C78 /* Board+CoreDataClass.swift in Sources */,
+				40F1155201FC19301D019A29 /* BoardBrowserRow.swift in Sources */,
 				7B489206B8BFF570139BFC5E /* BoardEntity.swift in Sources */,
 				4C558BCB1F1A5E83A77D351E /* BoardListView.swift in Sources */,
 				C41A3DA3DA19E0BBB8B02D36 /* BoardListViewModel.swift in Sources */,
@@ -1425,6 +1432,7 @@
 				FA69352B11E2800440F5C0CA /* BackgroundRefreshTests.swift in Sources */,
 				38B76F596C9ADE228B1DBFAE /* BackupExporterTests.swift in Sources */,
 				CFD2124A4025EA91037AD6BF /* BackupManifestTests.swift in Sources */,
+				9A7E0A6CF0BEA760AF482EE6 /* BoardBrowserRowReconcileTests.swift in Sources */,
 				12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */,
 				FDE100082D4EC59095D416DD /* BoardListViewModelTests.swift in Sources */,
 				6821052820164D6848537418 /* BoardRepositoryTests.swift in Sources */,
