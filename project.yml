@@ -79,10 +79,6 @@ targets:
       - path: Widgets
         excludes:
           - "**/.DS_Store"
-      # BoardSnapshot is the shared Codable model — must be compiled into both
-      # the app and the widget extension (no dynamic linking across app extension
-      # sandbox boundary).
-      - path: FenixKanban/Features/Widget/BoardSnapshot.swift
     info:
       path: Widgets/Info.plist
     settings:

@@ -18,8 +18,7 @@ import CoreData
 #endif
 
 /// A plain, non-Codable summary of a single board for the widget layer.
-/// Same shape the UI consumed from `BoardSnapshot`, minus the Codable /
-/// `generatedAt` plumbing (the widget now reads CoreData directly).
+/// The widget reads CoreData directly via `makeWidgetBoardData(from:)`.
 struct WidgetBoardData {
     let boardName: String
     let columns: [ColumnSummary]
@@ -37,8 +36,7 @@ struct WidgetBoardData {
 /// in `context`, or returns `nil` when there is no board (the widget view
 /// renders a "No board data" empty state in that case).
 ///
-/// Replicates `BoardSnapshotWriter.buildSnapshot()` semantics exactly:
-/// per column (`board.sortedColumns`) the name falls back to "Untitled",
+/// Per column (`board.sortedColumns`) the name falls back to "Untitled",
 /// `cardCount` is the full count, and `topCardTitles` is the first three
 /// non-nil titles of `column.sortedCards` (golden-first ordering comes free).
 func makeWidgetBoardData(from context: NSManagedObjectContext) -> WidgetBoardData? {

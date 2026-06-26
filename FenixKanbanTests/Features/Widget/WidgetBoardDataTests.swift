@@ -7,7 +7,7 @@
 // (guarded by the WIDGET_EXTENSION compilation condition), so this test covers the
 // exact code path the widget runs — not a parallel reimplementation.
 //
-// Semantics under test mirror the legacy BoardSnapshotWriter.buildSnapshot():
+// Semantics under test:
 //   - first Board by sortOrder ascending,
 //   - per column (board.sortedColumns) → name, cardCount, top-3 titles,
 //   - card ordering is golden-first then sortOrder (Column.sortedCards),
