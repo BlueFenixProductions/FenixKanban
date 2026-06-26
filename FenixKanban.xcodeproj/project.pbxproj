@@ -158,6 +158,7 @@
 		BC35EA5164556CC49C7F8172 /* CloudKitModelCompatibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 046EA11DE8B20663921E3177 /* CloudKitModelCompatibilityTests.swift */; };
 		BCD3E5F03E90F0C89E6CD52B /* FizzyErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DA7FF40821224EB0A36F25 /* FizzyErrorTests.swift */; };
 		BD868582554AE682FFF32CEB /* StepRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC25BA16BA4E947F031969D3 /* StepRepository.swift */; };
+		897C19DE45C544E09E3DD3F9 /* PersistenceControllerStoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7FE8786CEDB47A08373CB05 /* PersistenceControllerStoreLocationTests.swift */; };
 		BDC9DE9D64570D8710CE3923 /* CoreDataMigrationV9Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */; };
 		BEBC8EDC41CD1929B34CA7A8 /* FizzyDTOs+CardActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBC99D1D8C73344332292A /* FizzyDTOs+CardActions.swift */; };
 		BF5FF5794901DDF9B4E808C8 /* KeychainHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78234911E102475108AE9455 /* KeychainHelperTests.swift */; };
@@ -342,6 +343,7 @@
 		61D689F2729CA0AD77E3AA50 /* LiveTestEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTestEnv.swift; sourceTree = "<group>"; };
 		628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV9Tests.swift; sourceTree = "<group>"; };
+		B7FE8786CEDB47A08373CB05 /* PersistenceControllerStoreLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceControllerStoreLocationTests.swift; sourceTree = "<group>"; };
 		65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV7Tests.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
 		6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardSheet.swift; sourceTree = "<group>"; };
@@ -638,6 +640,7 @@
 				65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */,
 				9A81AFE70D5624FFC49D0D56 /* CoreDataMigrationV8Tests.swift */,
 				65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */,
+				B7FE8786CEDB47A08373CB05 /* PersistenceControllerStoreLocationTests.swift */,
 				B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */,
 			);
 			path = Persistence;
@@ -1470,6 +1473,7 @@
 				A94FB2127558BBF22138921D /* CoreDataMigrationV6Tests.swift in Sources */,
 				9493F64109A56D42E9AC52E8 /* CoreDataMigrationV7Tests.swift in Sources */,
 				AD4DAC969973666BD0A6DADC /* CoreDataMigrationV8Tests.swift in Sources */,
+				897C19DE45C544E09E3DD3F9 /* PersistenceControllerStoreLocationTests.swift in Sources */,
 				BDC9DE9D64570D8710CE3923 /* CoreDataMigrationV9Tests.swift in Sources */,
 				B9B5AC6F8033B72BB7BC089E /* FenixKanbanTests.swift in Sources */,
 				98A60AD902D5EF49A45FB91D /* FindGoldenCardsIntentTests.swift in Sources */,

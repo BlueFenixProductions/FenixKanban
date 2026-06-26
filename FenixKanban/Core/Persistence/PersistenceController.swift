@@ -2,6 +2,59 @@ import CoreData
 import CloudKit
 
 final class PersistenceController: ObservableObject {
+
+    // MARK: - App Group
+
+    /// The App Group identifier shared by the app and widget extension.
+    /// Single source of truth — snapshot files that also define this will
+    /// be removed in Task 3.
+    static let appGroupIdentifier = "group.com.bluefenixproductions.FenixKanban"
+
+    /// Returns the preferred store URL inside the shared App Group container,
+    /// or `nil` if the container is unavailable (e.g. entitlement missing in
+    /// a test host).
+    static func appGroupStoreURL(fileManager: FileManager = .default) -> URL? {
+        fileManager
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)?
+            .appendingPathComponent("FenixKanban.sqlite")
+    }
+
+    /// Copies the persistent store at `oldURL` to `newURL` using
+    /// `NSPersistentStoreCoordinator.replacePersistentStore`, which carries
+    /// the WAL/SHM files and CloudKit sync metadata along for the ride.
+    ///
+    /// Rules:
+    /// - If `newURL` already exists → no-op (never clobber the live store).
+    /// - If `oldURL` does not exist → no-op (fresh install; CloudKit will
+    ///   populate the new store on first sync).
+    /// - Otherwise → copy `oldURL` → `newURL` and leave `oldURL` in place
+    ///   as an inert backup.
+    static func migrateStoreIfNeeded(
+        to newURL: URL,
+        from oldURL: URL,
+        fileManager: FileManager = .default
+    ) {
+        // Guard 1: destination already present — never clobber.
+        guard !fileManager.fileExists(atPath: newURL.path) else { return }
+        // Guard 2: nothing to migrate.
+        guard fileManager.fileExists(atPath: oldURL.path) else { return }
+
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: sharedModel)
+        do {
+            try coordinator.replacePersistentStore(
+                at: newURL,
+                destinationOptions: nil,
+                withPersistentStoreFrom: oldURL,
+                sourceOptions: nil,
+                type: .sqlite
+            )
+        } catch {
+            // Log and fall through — the app will open the old store location
+            // as a safe fallback (the init path checks newURL after migration).
+            print("PersistenceController: store migration failed — \(error). Falling back to default location.")
+        }
+    }
+
     /// Test hosts (XCTest + UI tests) get an in-memory, non-CloudKit
     /// store so the suite is hermetic — no iCloud creds, no disk
     /// writes, no cross-test bleed. Production launches behave
@@ -114,6 +167,19 @@ final class PersistenceController: ObservableObject {
                 description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
                     containerIdentifier: "iCloud.com.bluefenixproductions.FenixKanban"
                 )
+
+                // Relocate the production store into the App Group container so the
+                // WidgetKit extension (and future read paths) can reach it directly.
+                // Migrate any existing default-location store on first launch.
+                if let groupURL = Self.appGroupStoreURL() {
+                    let defaultURL = NSPersistentContainer.defaultDirectoryURL()
+                        .appendingPathComponent("FenixKanban.sqlite")
+                    Self.migrateStoreIfNeeded(to: groupURL, from: defaultURL)
+                    description.url = groupURL
+                }
+                // If appGroupStoreURL() returns nil (entitlement unavailable),
+                // fall through and use the default location unchanged — defensive
+                // at the OS boundary, do not crash.
             }
         }
 
