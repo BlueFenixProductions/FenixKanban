@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Phase-switching parent that hosts one of three sub-views based on the
-/// current `FizzyAuthState` + `FizzyBoardMapping` state. Owns:
+/// current `FizzyAuthState` + `FizzyBoardPairingStore` state. Owns:
 /// - The `FizzySyncProvider` reference (passed down to sub-views).
 /// - A `forceVerify` flag the Status view's "Re-enter Token" CTA sets
 ///   when authState was cleared by a 401 — the parent then routes to the
@@ -62,7 +62,7 @@ struct FizzyAuthView: View {
 
     private func computePhase() -> FizzyAuthPhase {
         let configured = provider.authStateRef.isConfigured
-        let paired = provider.mappingRef.isPaired
+        let paired = !provider.boardPairingStoreRef.isEmpty
         switch (configured, paired) {
         case (false, false): return .unconfigured
         case (true,  false): return .unpaired

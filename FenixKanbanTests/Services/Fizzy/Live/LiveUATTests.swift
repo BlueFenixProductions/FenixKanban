@@ -35,12 +35,6 @@ struct LiveUAT401RecoveryTests {
         authState.setAccountSlug(LiveTestEnv.accountSlug)
         defer { authState.clear() }
 
-        // Isolated mapping with a fake pairing (sandbox board).
-        let suiteName = "test.uat6.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-
         // In-memory persistence so we never touch the user's real store.
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let context = persistence.viewContext
@@ -49,7 +43,6 @@ struct LiveUAT401RecoveryTests {
         // without a pairing even if it 401s on the first request).
         let board = BoardRepository(context: context).createBoard(name: "UAT6 Board")
         try context.save()
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: sandboxBoardID)
 
         // Isolated pairing stores.
         let boardPairingStore = FizzyBoardPairingStore(
@@ -161,15 +154,9 @@ struct LiveUATPullGoldenTests {
         authState.setAccountSlug(LiveTestEnv.accountSlug)
         defer { authState.clear() }
 
-        let suiteName = "test.uat4.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-
         // Create a local board and pair it to Sandbox-2.
         let localBoard = BoardRepository(context: context).createBoard(name: "UAT4 Board")
         try context.save()
-        mapping.setPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID)
 
         let boardPairingStore4 = FizzyBoardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
@@ -248,11 +235,6 @@ struct LiveUATRePairMergeTests {
         authState.setAccountSlug(LiveTestEnv.accountSlug)
         defer { authState.clear() }
 
-        let suiteName = "test.uat7.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-
         let boardPairingStore7 = FizzyBoardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("fk-uat7-board-pairings-\(UUID().uuidString).json")
@@ -271,7 +253,6 @@ struct LiveUATRePairMergeTests {
 
         let localBoard = BoardRepository(context: context).createBoard(name: "UAT7 Board")
         try context.save()
-        mapping.setPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID)
         boardPairingStore7.upsert(FizzyBoardPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID))
 
         let engine = FizzySyncEngine(
@@ -287,13 +268,11 @@ struct LiveUATRePairMergeTests {
         #expect(firstResult.errors.isEmpty, "Initial replaceLocal must succeed: \(firstResult.errors)")
 
         // --- Simulate signOut's board-mapping clear (FizzySyncProvider.changePairing) ---
-        // Per FizzySyncProvider.changePairing: clear the mapping but keep the
-        // Keychain token (re-pairing must never cost the token).
-        mapping.clear()
-        // Pairing store: keep (the engine re-seeds from store on next sync).
+        // Per FizzySyncProvider.changePairing: clear the board pairing store but
+        // keep the Keychain token (re-pairing must never cost the token).
+        boardPairingStore7.clearAll()
 
         // --- Re-pair to the same Sandbox-2 board ---
-        mapping.setPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID)
         boardPairingStore7.upsert(FizzyBoardPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID))
 
         // Fresh engine instance (provider rebuilds it on re-pair, matching

@@ -308,7 +308,7 @@ struct FizzyAuthPairView: View {
             pairError = "Provider isn't authenticated — sign in first."
             return
         }
-        provider.mappingRef.setPairing(localBoardID: localID, fizzyBoardID: fizzyID)
+        provider.pair(localBoardID: localID, fizzyBoardID: fizzyID, fizzyBoardName: nil)
         let mode = pickedMode
         pairError = nil
         isSyncing = true

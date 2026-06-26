@@ -4,8 +4,8 @@ import WidgetKit
 
 /// Bridges `FizzySyncEngine` to the app's generic `BoardSyncProvider` plugin
 /// protocol. Constructed once at app launch in `FenixKanbanApp.init()` and
-/// registered in `PluginRegistry.shared`. Holds Phase 2's `FizzyAuthState`
-/// and `FizzyBoardMapping` for the lifetime of the app process; rebuilds
+/// registered in `PluginRegistry.shared`. Holds `FizzyAuthState` and
+/// `FizzyBoardPairingStore` for the lifetime of the app process; rebuilds
 /// `FizzyClient` + `FizzySyncEngine` on demand so changes to `authState`
 /// (token paste, slug refresh) are picked up without re-registration.
 ///
@@ -18,7 +18,6 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     let iconName: String = "bolt.circle.fill"
 
     private let authState: FizzyAuthState
-    private let mapping: FizzyBoardMapping
     private let persistence: PersistenceController
     private let urlSession: URLSession
     private let clock: any Clock<Duration> & Sendable
@@ -35,7 +34,6 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
 
     init(
         authState: FizzyAuthState,
-        mapping: FizzyBoardMapping,
         persistence: PersistenceController,
         urlSession: URLSession = .shared,
         clock: any Clock<Duration> & Sendable = ContinuousClock(),
@@ -44,7 +42,6 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         conflictStore: FizzyConflictStore = .shared
     ) {
         self.authState = authState
-        self.mapping = mapping
         self.persistence = persistence
         self.urlSession = urlSession
         self.clock = clock
@@ -72,7 +69,6 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// later will re-bind cards via the engine's orphan-claim logic.
     func signOut() async throws {
         authState.clear()
-        mapping.clear()
         boardPairingStore.clearAll()
     }
 
@@ -81,7 +77,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// new one requires the email flow, which may be unavailable. The UI
     /// routes back to `FizzyAuthPairView` after calling this.
     func changePairing() {
-        mapping.clear()
+        boardPairingStore.clearAll()
     }
 
     /// `GET /:account/boards` — maps the Fizzy DTOs to the generic
@@ -274,9 +270,8 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     // MARK: - Internal accessors (used by FizzyAuthView sub-views)
 
     /// Exposed so `FizzyAuthView` and its sub-views can drive verify / pair
-    /// flows without each constructing their own auth/mapping handles.
+    /// flows without each constructing their own auth handles.
     var authStateRef: FizzyAuthState { authState }
-    var mappingRef: FizzyBoardMapping { mapping }
     var persistenceRef: PersistenceController { persistence }
 
     /// Builds a `FizzyClient` using a caller-supplied token + slug.

@@ -90,13 +90,8 @@ struct MultiBoardHarness {
         // Provider — shares the same board pairing store so seeded pairings are
         // visible to orderedBoardsToSync(). Uses the same mock session so HTTP
         // requests are recorded in `mock.requests`.
-        let mappingDefaults = UserDefaults(
-            suiteName: "test.fizzy.multiboard.mapping.\(UUID().uuidString)"
-        )!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
         provider = FizzySyncProvider(
             authState: authState,
-            mapping: mapping,
             persistence: persistence,
             urlSession: session,
             clock: ImmediateClock(),

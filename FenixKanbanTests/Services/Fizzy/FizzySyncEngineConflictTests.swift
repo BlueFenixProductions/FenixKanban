@@ -99,9 +99,6 @@ private struct ConflictHarness {
     let engine: FizzySyncEngine
     let authState: FizzyAuthState
     let boardPairingStore: FizzyBoardPairingStore
-    // Kept for FizzySyncProvider calls in Task 4 tests (not yet migrated)
-    let mappingDefaults: UserDefaults
-    let suiteName: String
     let pairingStore: FizzyCardPairingStore
     let conflictStore: FizzyConflictStore
 
@@ -136,12 +133,6 @@ private struct ConflictHarness {
         )
         boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
-        // Kept for FizzySyncProvider tests (Task 4 will migrate these too)
-        suiteName = "test.fizzy.conflict.mapping.\(uniqueID)"
-        mappingDefaults = UserDefaults(suiteName: suiteName)!
-        let legacyMapping = FizzyBoardMapping(defaults: mappingDefaults)
-        legacyMapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
-
         let session = mock.makeSession()
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -163,7 +154,6 @@ private struct ConflictHarness {
 
     func tearDown() {
         authState.clear()
-        mappingDefaults.removePersistentDomain(forName: suiteName)
         try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
         try? FileManager.default.removeItem(at: pairingStore.fileURL)
         try? FileManager.default.removeItem(at: conflictStore.fileURL)
@@ -485,10 +475,10 @@ struct FizzySyncEngineConflictTests {
         // Authenticated + paired provider
         let provider = FizzySyncProvider(
             authState: h.authState,
-            mapping: FizzyBoardMapping(defaults: h.mappingDefaults),
             persistence: h.persistence,
             urlSession: h.mock.makeSession(),
             clock: ImmediateClock(),
+            boardPairingStore: h.boardPairingStore,
             pairingStore: h.pairingStore,
             conflictStore: h.conflictStore
         )
@@ -553,10 +543,10 @@ struct FizzySyncEngineConflictTests {
         // activityState.pendingPushCount reflects the failures
         let provider = FizzySyncProvider(
             authState: h.authState,
-            mapping: FizzyBoardMapping(defaults: h.mappingDefaults),
             persistence: h.persistence,
             urlSession: h.mock.makeSession(),
             clock: ImmediateClock(),
+            boardPairingStore: h.boardPairingStore,
             pairingStore: h.pairingStore,
             conflictStore: h.conflictStore
         )
@@ -592,10 +582,10 @@ struct ProviderStepsRetryTests {
 
         let provider = FizzySyncProvider(
             authState: h.authState,
-            mapping: FizzyBoardMapping(defaults: h.mappingDefaults),
             persistence: h.persistence,
             urlSession: h.mock.makeSession(),
             clock: ImmediateClock(),
+            boardPairingStore: h.boardPairingStore,
             pairingStore: h.pairingStore,
             conflictStore: h.conflictStore
         )
@@ -633,10 +623,10 @@ struct ProviderStepsRetryTests {
 
         let provider = FizzySyncProvider(
             authState: h.authState,
-            mapping: FizzyBoardMapping(defaults: h.mappingDefaults),
             persistence: h.persistence,
             urlSession: h.mock.makeSession(),
             clock: ImmediateClock(),
+            boardPairingStore: h.boardPairingStore,
             pairingStore: h.pairingStore,
             conflictStore: h.conflictStore
         )

@@ -144,11 +144,11 @@ struct SyncSettingsView: View {
         guard let fizzy = provider as? FizzySyncProvider else {
             return provider.isAuthenticated ? "Connected" : "Not set up"
         }
-        if fizzy.mappingRef.isPaired && !fizzy.authStateRef.isConfigured {
+        if !fizzy.boardPairingStoreRef.isEmpty && !fizzy.authStateRef.isConfigured {
             return "Tap to re-enter token"
         }
-        if fizzy.isAuthenticated && fizzy.mappingRef.isPaired {
-            if let last = fizzy.mappingRef.lastSyncAt {
+        if fizzy.isAuthenticated && !fizzy.boardPairingStoreRef.isEmpty {
+            if let last = fizzy.boardPairingStoreRef.all().first?.lastSyncAt {
                 let formatter = RelativeDateTimeFormatter()
                 formatter.unitsStyle = .short
                 return "Synced \(formatter.localizedString(for: last, relativeTo: .now))"
@@ -164,10 +164,10 @@ struct SyncSettingsView: View {
     @ViewBuilder
     private func statusBadge(for provider: any BoardSyncProvider) -> some View {
         if let fizzy = provider as? FizzySyncProvider {
-            if fizzy.mappingRef.isPaired && !fizzy.authStateRef.isConfigured {
+            if !fizzy.boardPairingStoreRef.isEmpty && !fizzy.authStateRef.isConfigured {
                 Image(systemName: "exclamationmark.circle.fill")
                     .foregroundStyle(.orange)
-            } else if fizzy.isAuthenticated && fizzy.mappingRef.isPaired {
+            } else if fizzy.isAuthenticated && !fizzy.boardPairingStoreRef.isEmpty {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             }

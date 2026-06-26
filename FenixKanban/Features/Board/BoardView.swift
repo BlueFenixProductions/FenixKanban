@@ -40,6 +40,9 @@ struct BoardView: View {
 
     var body: some View {
         boardContent
+            .onAppear {
+                (PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider)?.currentBoardID = viewModel.board.id
+            }
             .navigationTitle(viewModel.board.name ?? "Board")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

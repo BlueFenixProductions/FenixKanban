@@ -12,11 +12,8 @@ struct FizzySyncProviderMultiBoardTests {
         )
         let prefix = "test.fizzy.multiboard.\(UUID().uuidString)"
         let authState = FizzyAuthState(keyPrefix: prefix)
-        let mappingDefaults = UserDefaults(suiteName: "test.fizzy.multiboard.mapping.\(UUID().uuidString)")!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
         let provider = FizzySyncProvider(
             authState: authState,
-            mapping: mapping,
             persistence: PersistenceController(inMemory: true, useCloudKit: false),
             boardPairingStore: store
         )

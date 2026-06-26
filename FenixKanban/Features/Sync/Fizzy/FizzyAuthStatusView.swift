@@ -22,11 +22,11 @@ struct FizzyAuthStatusView: View {
     @State private var showRepairConfirm = false
 
     private var fizzyBoardName: String {
-        provider.mappingRef.fizzyBoardID ?? "—"
+        provider.boardPairingStoreRef.all().first?.fizzyBoardID ?? "—"
     }
 
     private var localBoardName: String {
-        guard let id = provider.mappingRef.localBoardID else { return "—" }
+        guard let id = provider.boardPairingStoreRef.all().first?.localBoardID else { return "—" }
         let request: NSFetchRequest<Board> = Board.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
@@ -34,7 +34,7 @@ struct FizzyAuthStatusView: View {
     }
 
     private var lastSyncDescription: String {
-        guard let lastSync = provider.mappingRef.lastSyncAt else { return "Never" }
+        guard let lastSync = provider.boardPairingStoreRef.all().first?.lastSyncAt else { return "Never" }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
         return formatter.localizedString(for: lastSync, relativeTo: .now)
@@ -43,7 +43,7 @@ struct FizzyAuthStatusView: View {
     // fizzyID hint attributes are healed every sync by FizzySyncEngine;
     // this count is cosmetic and eventually consistent (issue #21 A′).
     private var cardsSyncedCount: Int {
-        guard let id = provider.mappingRef.localBoardID else { return 0 }
+        guard let id = provider.boardPairingStoreRef.all().first?.localBoardID else { return 0 }
         let request: NSFetchRequest<Card> = Card.fetchRequest()
         request.predicate = NSPredicate(format: "fizzyID != nil AND column.board.id == %@", id as CVarArg)
         return (try? provider.persistenceRef.viewContext.count(for: request)) ?? 0
@@ -154,7 +154,7 @@ struct FizzyAuthStatusView: View {
     private func syncNow() {
         guard !isSyncing else { return }
         guard let engine = provider.makeEngine(),
-              let localBoardID = provider.mappingRef.localBoardID else {
+              let localBoardID = provider.boardPairingStoreRef.all().first?.localBoardID else {
             syncError = "Provider isn't authenticated."
             return
         }
