@@ -16,7 +16,7 @@
 		0908EEB3330789590BEB75D2 /* CardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0435462C469D8222A55798D /* CardEntity.swift */; };
 		098FD4FF85070443FBF44DF5 /* FenixKanbanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85494C22E08296B97AE0FA5C /* FenixKanbanApp.swift */; };
 		0DC9196E56E5472F3A3A12AA /* FizzyDTOs+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCF09CEDCB117837C6930E7 /* FizzyDTOs+Comments.swift */; };
-		1211AEE1BEEDC22F1060F004 /* FenixKanbanWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1211AEE1BEEDC22F1060F004 /* FenixKanbanWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		12851253CACE6154745B79E3 /* BoardEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E8E42CB99AC86B2F3EE7E8F /* BoardEntityTests.swift */; };
 		17275D2E744DB68AE345032D /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
 		17B189DE5F79704AE4FDF910 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10A143D4EF691E4A0436C89 /* NotificationService.swift */; };
@@ -230,6 +230,7 @@
 		F22ED794A04139F65B21CE89 /* CardLifecycleActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF1A4FE82B7784CE44A4DCB /* CardLifecycleActionsTests.swift */; };
 		F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CBC36EEDDDB591544788B6 /* TombstoneEntitiesTests.swift */; };
 		F6F8F0977B16D421E5AC1978 /* DueDateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C17518B1F3DAB1848DD2356 /* DueDateBadge.swift */; };
+		F71E37F74D827D7794F4D903 /* FizzySyncEngineMultiBoardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 332FF59856BC1A83EFC6E54A /* FizzySyncEngineMultiBoardTests.swift */; };
 		F7C3D20410F05CAA29602FD0 /* FizzyNotificationsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B19ECA933836D06364839C /* FizzyNotificationsViewModelTests.swift */; };
 		F8CFCB9761DFDE1E3B27990B /* FizzySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */; };
 		FA69352B11E2800440F5C0CA /* BackgroundRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */; };
@@ -316,6 +317,7 @@
 		2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FenixKanbanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3111A5D05410056866896FCB /* BoardViewModelGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewModelGoldenTests.swift; sourceTree = "<group>"; };
 		311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginRegistry.swift; sourceTree = "<group>"; };
+		332FF59856BC1A83EFC6E54A /* FizzySyncEngineMultiBoardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineMultiBoardTests.swift; sourceTree = "<group>"; };
 		35A1AAE6F0C21DEB56C73DCA /* InitialsAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialsAvatar.swift; sourceTree = "<group>"; };
 		36E8B6A25376C60961725E8B /* BackupManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifest.swift; sourceTree = "<group>"; };
 		38A57D39B2CCA5985144EF4A /* FizzyClientBoardsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientBoardsTests.swift; sourceTree = "<group>"; };
@@ -985,6 +987,7 @@
 				7FCC9BC12390FEA82248D10E /* FizzySyncEngineConflictTests.swift */,
 				D18968874E78EB2EDD474B05 /* FizzySyncEngineETagTests.swift */,
 				BF01511B907D39483068BC2D /* FizzySyncEngineLifecycleTests.swift */,
+				332FF59856BC1A83EFC6E54A /* FizzySyncEngineMultiBoardTests.swift */,
 				177BD7C5276E01988386E418 /* FizzySyncEnginePullPlacementTests.swift */,
 				D201003BBFD4EC2F7DEDD79F /* FizzySyncEnginePushParityTests.swift */,
 				3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */,
@@ -1169,6 +1172,8 @@
 				4A774485F07DDF0FCA7D63B0 /* PBXTargetDependency */,
 			);
 			name = FenixKanban;
+			packageProductDependencies = (
+			);
 			productName = FenixKanban;
 			productReference = 3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */;
 			productType = "com.apple.product-type.application";
@@ -1184,6 +1189,8 @@
 			dependencies = (
 			);
 			name = fizzyctl;
+			packageProductDependencies = (
+			);
 			productName = fizzyctl;
 			productReference = 1FA469A42CF81C75F8BEF5CB /* fizzyctl */;
 			productType = "com.apple.product-type.tool";
@@ -1200,6 +1207,8 @@
 				FABC1CD086BE8C4BD632A95F /* PBXTargetDependency */,
 			);
 			name = FenixKanbanTests;
+			packageProductDependencies = (
+			);
 			productName = FenixKanbanTests;
 			productReference = 2F1791B47F1ED656029C1A08 /* FenixKanbanTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -1215,6 +1224,8 @@
 			dependencies = (
 			);
 			name = FenixKanbanWidgets;
+			packageProductDependencies = (
+			);
 			productName = FenixKanbanWidgets;
 			productReference = 1AE28A4DC3B58819C08D914C /* FenixKanbanWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -1461,6 +1472,7 @@
 				846C40D457B0553C01645736 /* FizzySyncEngineConflictTests.swift in Sources */,
 				1DDBA80628EF2F9759EEF34F /* FizzySyncEngineETagTests.swift in Sources */,
 				1EE67FEFD13A28512384FA70 /* FizzySyncEngineLifecycleTests.swift in Sources */,
+				F71E37F74D827D7794F4D903 /* FizzySyncEngineMultiBoardTests.swift in Sources */,
 				233055E81253557CFCF35550 /* FizzySyncEnginePullPlacementTests.swift in Sources */,
 				E2E644FBE7E2A293B9E46891 /* FizzySyncEnginePushParityTests.swift in Sources */,
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,

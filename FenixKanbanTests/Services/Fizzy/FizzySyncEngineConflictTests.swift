@@ -98,6 +98,8 @@ private struct ConflictHarness {
     let triage: Column
     let engine: FizzySyncEngine
     let authState: FizzyAuthState
+    let boardPairingStore: FizzyBoardPairingStore
+    // Kept for FizzySyncProvider calls in Task 4 tests (not yet migrated)
     let mappingDefaults: UserDefaults
     let suiteName: String
     let pairingStore: FizzyCardPairingStore
@@ -127,10 +129,18 @@ private struct ConflictHarness {
         authState.setAccessToken("t")
         authState.setAccountSlug("ACCT")
 
+        // Board pairing store for the engine (Task 3 refactor)
+        boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(uniqueID).json")
+        )
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
+
+        // Kept for FizzySyncProvider tests (Task 4 will migrate these too)
         suiteName = "test.fizzy.conflict.mapping.\(uniqueID)"
         mappingDefaults = UserDefaults(suiteName: suiteName)!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        let legacyMapping = FizzyBoardMapping(defaults: mappingDefaults)
+        legacyMapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
 
         let session = mock.makeSession()
         let client = FizzyClient(
@@ -144,7 +154,7 @@ private struct ConflictHarness {
         engine = FizzySyncEngine(
             client: client,
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore,
             context: persistence.viewContext,
             pairingStore: pairingStore,
             conflictStore: conflictStore
@@ -154,6 +164,7 @@ private struct ConflictHarness {
     func tearDown() {
         authState.clear()
         mappingDefaults.removePersistentDomain(forName: suiteName)
+        try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
         try? FileManager.default.removeItem(at: pairingStore.fileURL)
         try? FileManager.default.removeItem(at: conflictStore.fileURL)
     }
@@ -213,7 +224,7 @@ struct FizzySyncEngineConflictTests {
         #expect((card.modifiedAt ?? .distantPast) > pairing.fizzyUpdatedAt,
                 "localModified must be > watermark")
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         // Also check errors to understand what happened
         if !result.errors.isEmpty {
@@ -247,7 +258,7 @@ struct FizzySyncEngineConflictTests {
         let board = ConflictBoard(remoteCardsJSON: "[\(remoteCardJSON)]")
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.conflicts.isEmpty, "no conflict expected when only local moved")
         // PUT must still fire (local newer branch)
@@ -280,7 +291,7 @@ struct FizzySyncEngineConflictTests {
         let board = ConflictBoard(remoteCardsJSON: "[\(remoteCardJSON)]")
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.conflicts.isEmpty, "no conflict for commutative field differences only")
         // Toggle diffs still fire
@@ -452,7 +463,7 @@ struct FizzySyncEngineConflictTests {
         let board = ConflictBoard(remoteCardsJSON: "[\(remoteAfterJSON)]")
         h.mock.handler = { try board.handler($0) }
 
-        let result2 = try await h.engine.sync()
+        let result2 = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result2.itemsUpdated == 0, "second sync must be a no-op (itemsUpdated==0)")
         #expect(result2.conflicts.isEmpty, "second sync must produce zero conflicts")
@@ -533,7 +544,7 @@ struct FizzySyncEngineConflictTests {
         board.shouldReturn500ForPUT = true
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         // Two push errors in result
         let pushErrors = result.errors.filter { $0.hasPrefix("Push update") }

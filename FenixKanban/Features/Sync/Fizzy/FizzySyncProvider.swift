@@ -22,6 +22,9 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     private let persistence: PersistenceController
     private let urlSession: URLSession
     private let clock: any Clock<Duration> & Sendable
+    /// Device-local board pairing authority (issue #18). Injectable so tests
+    /// never touch the real Application Support sidecar.
+    private let boardPairingStore: FizzyBoardPairingStore
     /// Device-local pairing authority handed to every engine the provider
     /// builds (issue #21 A′). Injectable so tests never touch the real
     /// Application Support sidecar.
@@ -36,6 +39,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         persistence: PersistenceController,
         urlSession: URLSession = .shared,
         clock: any Clock<Duration> & Sendable = ContinuousClock(),
+        boardPairingStore: FizzyBoardPairingStore = .shared,
         pairingStore: FizzyCardPairingStore = .shared,
         conflictStore: FizzyConflictStore = .shared
     ) {
@@ -44,6 +48,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         self.persistence = persistence
         self.urlSession = urlSession
         self.clock = clock
+        self.boardPairingStore = boardPairingStore
         self.pairingStore = pairingStore
         self.conflictStore = conflictStore
     }
@@ -96,18 +101,16 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         }
     }
 
-    /// Runs the steady-state sync cycle via `FizzySyncEngine.sync()` and
+    /// Runs the steady-state sync cycle via `FizzySyncEngine.sync(localBoardID:)` and
     /// translates the engine's `FizzySyncResult` into the generic
-    /// `SyncResult` returned by `BoardSyncProvider`. The `boardId` and
-    /// `remoteProjectId` parameters are required by the protocol but
-    /// Phase 5's engine pairs on a singleton basis — pairing must already
-    /// match these IDs (the provider doesn't currently switch pairings
-    /// per-call). They're accepted but unused.
+    /// `SyncResult` returned by `BoardSyncProvider`. The `remoteProjectId`
+    /// parameter is required by the protocol but unused here — the
+    /// `boardPairingStore` keyed on `boardId` is the authoritative source.
     func sync(boardId: UUID, remoteProjectId: String) async throws -> SyncResult {
         guard let engine = makeEngine() else {
             throw FizzyError.requiresInteractiveAuth
         }
-        let result = try await engine.sync()
+        let result = try await engine.sync(localBoardID: boardId)
 
         WidgetCenter.shared.reloadAllTimelines()
 
@@ -120,10 +123,9 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         )
     }
 
-    /// Returns `mapping.lastSyncAt` (singleton — `boardId` is ignored
-    /// since Phase 5 pairs at most one local board).
+    /// Returns `lastSyncAt` from the board pairing store for `boardId`.
     func lastSyncDate(for boardId: UUID) -> Date? {
-        mapping.lastSyncAt
+        boardPairingStore.pairing(forLocal: boardId)?.lastSyncAt
     }
 
     // MARK: - SyncTriggering (Phase 6 foreground scheduler)
@@ -140,9 +142,9 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// `.error` rather than `.idle`; `lastSyncAt` advances on partial failures
     /// because the cycle ran. Also re-posts pending comments.
     func triggerSync(activityState: SyncActivityState) async {
-        guard let engine = makeEngine() else { return }
+        guard let engine = makeEngine(), let localBoardID = mapping.localBoardID else { return }
         do {
-            let result = try await engine.sync()
+            let result = try await engine.sync(localBoardID: localBoardID)
             activityState.update(from: result, conflictStore: conflictStore)
             if !result.errors.isEmpty {
                 let summary = result.errors.first ?? "Sync error"
@@ -166,8 +168,8 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// This hook lives here rather than in FizzySyncEngine or FizzyClient so
     /// neither orchestrator is aware of the comment cache (single-responsibility).
     func triggerSync() async {
-        guard let engine = makeEngine() else { return }
-        _ = try? await engine.sync()
+        guard let engine = makeEngine(), let localBoardID = mapping.localBoardID else { return }
+        _ = try? await engine.sync(localBoardID: localBoardID)
         await retryPendingComments()
         await retryPendingSteps()
     }
@@ -285,14 +287,14 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         return makeClient(accessToken: token, accountSlug: slug)
     }
 
-    /// Builds a `FizzySyncEngine` wired to the current auth + mapping +
-    /// persistence. Returns `nil` when unauthenticated.
+    /// Builds a `FizzySyncEngine` wired to the current auth + board pairing
+    /// store + persistence. Returns `nil` when unauthenticated.
     func makeEngine() -> FizzySyncEngine? {
         guard let client = makeClient() else { return nil }
         return FizzySyncEngine(
             client: client,
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore,
             context: persistence.viewContext,
             pairingStore: pairingStore,
             conflictStore: conflictStore

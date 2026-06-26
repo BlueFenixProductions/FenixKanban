@@ -27,9 +27,8 @@ struct FizzySyncEnginePullPlacementTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -50,10 +49,11 @@ struct FizzySyncEnginePullPlacementTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.placement.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -67,7 +67,7 @@ struct FizzySyncEnginePullPlacementTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -75,7 +75,7 @@ struct FizzySyncEnginePullPlacementTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
 
@@ -208,7 +208,7 @@ struct FizzySyncEnginePullPlacementTests {
             legacyCardsJSON: "[\(Self.legacyCardJSON(id: "fzA", number: 10, title: "Alpha")),\(Self.legacyCardJSON(id: "03f5vaeq985jlvwv3arl4srq2", number: 1, title: "First!"))]"
         )
 
-        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .replaceLocalWithFizzy)
         #expect(result.errors.isEmpty)
         #expect(result.itemsCreated == 2)
 
@@ -264,7 +264,7 @@ struct FizzySyncEnginePullPlacementTests {
             legacyCardsJSON: "[\(Self.legacyCardJSON(id: "fz9", number: 9, title: "Mover"))]"
         )
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
 
         #expect(card.column?.fizzyColumnID == "FC2",
@@ -306,7 +306,7 @@ struct FizzySyncEnginePullPlacementTests {
             cardDetailByNumber: ["7": (200, Data(closedDetail.utf8))]
         )
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
         #expect(result.itemsDeleted == 0)
         #expect(h.allLocalCards().compactMap(\.title) == ["Closed Remotely"],
@@ -337,7 +337,7 @@ struct FizzySyncEnginePullPlacementTests {
             cardDetailByNumber: ["5": (404, Data())]
         )
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.itemsDeleted == 1)
         #expect(result.errors.isEmpty)
         #expect(h.allLocalCards().isEmpty, "a 404'd remote card must be deleted locally")

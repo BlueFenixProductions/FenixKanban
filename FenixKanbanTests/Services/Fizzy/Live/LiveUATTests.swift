@@ -51,7 +51,14 @@ struct LiveUAT401RecoveryTests {
         try context.save()
         mapping.setPairing(localBoardID: board.id!, fizzyBoardID: sandboxBoardID)
 
-        // Isolated pairing store.
+        // Isolated pairing stores.
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-uat6-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: sandboxBoardID))
+
         let pairingStore = FizzyCardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("fk-uat6-pairings-\(UUID().uuidString).json")
@@ -75,14 +82,14 @@ struct LiveUAT401RecoveryTests {
         let engine = FizzySyncEngine(
             client: client,
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore,
             context: context,
             pairingStore: pairingStore
         )
 
         // The sync must throw .unauthorized.
         do {
-            _ = try await engine.sync()
+            _ = try await engine.sync(localBoardID: board.id!)
             Issue.record("Expected FizzyError.unauthorized — engine must throw on 401")
         } catch FizzyError.unauthorized {
             // Expected path.
@@ -164,6 +171,13 @@ struct LiveUATPullGoldenTests {
         try context.save()
         mapping.setPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID)
 
+        let boardPairingStore4 = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-uat4-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore4.fileURL) }
+        boardPairingStore4.upsert(FizzyBoardPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID))
+
         let pairingStore = FizzyCardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("fk-uat4-pairings-\(UUID().uuidString).json")
@@ -178,13 +192,13 @@ struct LiveUATPullGoldenTests {
         let engine = FizzySyncEngine(
             client: liveClient,
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore4,
             context: context,
             pairingStore: pairingStore
         )
 
         // 5. First-sync in replace mode (pulls remote → local).
-        let result = try await engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let result = try await engine.syncFirst(localBoardID: localBoard.id!, mode: .replaceLocalWithFizzy)
         #expect(result.errors.isEmpty, "syncFirst must produce no errors: \(result.errors)")
 
         // 6. Find the local card that corresponds to the newly golden remote card.
@@ -239,6 +253,12 @@ struct LiveUATRePairMergeTests {
         let mapping = FizzyBoardMapping(defaults: mappingDefaults)
         defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
 
+        let boardPairingStore7 = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-uat7-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore7.fileURL) }
+
         let pairingStore = FizzyCardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent("fk-uat7-pairings-\(UUID().uuidString).json")
@@ -252,17 +272,18 @@ struct LiveUATRePairMergeTests {
         let localBoard = BoardRepository(context: context).createBoard(name: "UAT7 Board")
         try context.save()
         mapping.setPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID)
+        boardPairingStore7.upsert(FizzyBoardPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID))
 
         let engine = FizzySyncEngine(
             client: LiveTestEnv.makeClient(),
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore7,
             context: context,
             pairingStore: pairingStore
         )
 
         // First sync: pull Sandbox-2 → local.
-        let firstResult = try await engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let firstResult = try await engine.syncFirst(localBoardID: localBoard.id!, mode: .replaceLocalWithFizzy)
         #expect(firstResult.errors.isEmpty, "Initial replaceLocal must succeed: \(firstResult.errors)")
 
         // --- Simulate signOut's board-mapping clear (FizzySyncProvider.changePairing) ---
@@ -273,19 +294,20 @@ struct LiveUATRePairMergeTests {
 
         // --- Re-pair to the same Sandbox-2 board ---
         mapping.setPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID)
+        boardPairingStore7.upsert(FizzyBoardPairing(localBoardID: localBoard.id!, fizzyBoardID: sandboxBoardID))
 
         // Fresh engine instance (provider rebuilds it on re-pair, matching
         // FizzySyncProvider.makeEngine() semantics).
         let engine2 = FizzySyncEngine(
             client: LiveTestEnv.makeClient(),
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore7,
             context: context,
             pairingStore: pairingStore
         )
 
         // Re-pair sync in merge mode.
-        let mergeResult = try await engine2.syncFirst(mode: .mergeIfNoConflicts)
+        let mergeResult = try await engine2.syncFirst(localBoardID: localBoard.id!, mode: .mergeIfNoConflicts)
         #expect(mergeResult.errors.isEmpty, "Merge after re-pair must succeed: \(mergeResult.errors)")
 
         // --- Verify: zero cards CREATED on Sandbox-2 ---

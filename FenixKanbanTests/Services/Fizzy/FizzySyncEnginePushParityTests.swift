@@ -114,9 +114,8 @@ struct FizzySyncEnginePushParityTests {
         let triage: Column
         let doing: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -140,10 +139,11 @@ struct FizzySyncEnginePushParityTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.parity.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -157,7 +157,7 @@ struct FizzySyncEnginePushParityTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -165,7 +165,7 @@ struct FizzySyncEnginePushParityTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
 
@@ -192,7 +192,7 @@ struct FizzySyncEnginePushParityTests {
         let board = ParityBoard(cardsJSON: "[\(parityCardJSON(id: "fz9", number: 9, title: "Edited"))]")
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
 
         let triages = board.mutations.filter { $0.path.hasSuffix("/cards/9/triage") }
@@ -214,7 +214,7 @@ struct FizzySyncEnginePushParityTests {
         let board = ParityBoard(cardsJSON: "[\(parityCardJSON(id: "fz9", number: 9, title: "Edited", tags: ["alpha", "gamma"]))]")
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
 
         let toggles = board.mutations.filter { $0.path.hasSuffix("/cards/9/taggings") }
@@ -235,7 +235,7 @@ struct FizzySyncEnginePushParityTests {
         let board = ParityBoard(cardsJSON: "[\(parityCardJSON(id: "fz9", number: 9, title: "Edited", assigneeIDs: ["u2"]))]")
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
 
         let toggles = board.mutations.filter { $0.path.hasSuffix("/cards/9/assignments") }
@@ -253,7 +253,7 @@ struct FizzySyncEnginePushParityTests {
         let board = ParityBoard(cardsJSON: "[\(parityCardJSON(id: "fz9", number: 9, title: "Edited"))]")
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
 
         let extras = board.mutations.filter { !$0.path.hasSuffix("/cards/9") }

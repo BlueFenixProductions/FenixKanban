@@ -153,7 +153,8 @@ struct FizzyAuthStatusView: View {
 
     private func syncNow() {
         guard !isSyncing else { return }
-        guard let engine = provider.makeEngine() else {
+        guard let engine = provider.makeEngine(),
+              let localBoardID = provider.mappingRef.localBoardID else {
             syncError = "Provider isn't authenticated."
             return
         }
@@ -162,7 +163,7 @@ struct FizzyAuthStatusView: View {
         syncTask = Task { @MainActor in
             defer { isSyncing = false }
             do {
-                _ = try await engine.sync()
+                _ = try await engine.sync(localBoardID: localBoardID)
                 lastSyncedRefresh = UUID()  // force LabeledContent re-eval for lastSyncedDescription
                 onSyncFinished()
             } catch FizzyError.unauthorized {

@@ -34,11 +34,12 @@ struct LivePlaygroundRestoreTests {
         let board = boardRepo.createBoard(name: "FenixKanban")
         try persistence.viewContext.save()
 
-        let suiteName = "test.fizzy.live.restore.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: playground.id)
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-live-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: playground.id))
 
         let pairingStore = FizzyCardPairingStore(
             fileURL: FileManager.default.temporaryDirectory
@@ -54,13 +55,13 @@ struct LivePlaygroundRestoreTests {
         let engine = FizzySyncEngine(
             client: client,
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore,
             context: persistence.viewContext,
             pairingStore: pairingStore
         )
 
         // Act 1 — the restore.
-        let restore = try await engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let restore = try await engine.syncFirst(localBoardID: board.id!, mode: .replaceLocalWithFizzy)
         #expect(restore.errors.isEmpty, "restore errors: \(restore.errors)")
         #expect(restore.itemsCreated == LiveTestEnv.expectedCards)
 
@@ -81,7 +82,7 @@ struct LivePlaygroundRestoreTests {
 
         // Act 2 — the anti-duplicate invariant: an immediate steady-state
         // cycle must change nothing, locally or remotely.
-        let second = try await engine.sync()
+        let second = try await engine.sync(localBoardID: board.id!)
         #expect(second.errors.isEmpty, "second sync errors: \(second.errors)")
         #expect(second.itemsCreated == 0, "second sync must create nothing")
         #expect(second.itemsDeleted == 0, "second sync must delete nothing")

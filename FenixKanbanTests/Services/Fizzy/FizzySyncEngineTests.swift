@@ -15,10 +15,11 @@ struct FizzySyncEnginePairingTests {
         // Auth + mapping using unique test prefixes/suites
         let authState = FizzyAuthState(keyPrefix: "test.fizzy.engine.\(UUID().uuidString)")
         defer { authState.clear() }
-        let suiteName = "test.fizzy.engine.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
 
         // Engine — not paired
         let client = FizzyClient(
@@ -34,12 +35,12 @@ struct FizzySyncEnginePairingTests {
         let engine = FizzySyncEngine(
             client: client,
             authState: authState,
-            mapping: mapping,
+            boardPairingStore: boardPairingStore,
             context: persistence.viewContext,
             pairingStore: pairingStore
         )
 
-        let result = try await engine.syncFirst(mode: .pushLocalToFizzy)
+        let result = try await engine.syncFirst(localBoardID: UUID(), mode: .pushLocalToFizzy)
         #expect(result == FizzySyncResult())
     }
 }
@@ -57,9 +58,8 @@ struct FizzySyncEnginePushLocalTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -80,10 +80,11 @@ struct FizzySyncEnginePushLocalTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.push.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -97,7 +98,7 @@ struct FizzySyncEnginePushLocalTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -105,7 +106,7 @@ struct FizzySyncEnginePushLocalTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -163,7 +164,7 @@ struct FizzySyncEnginePushLocalTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .pushLocalToFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .pushLocalToFizzy)
 
         #expect(postCount == 2)
         #expect(result.itemsCreated == 2)
@@ -210,7 +211,7 @@ struct FizzySyncEnginePushLocalTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .pushLocalToFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .pushLocalToFizzy)
 
         #expect(postCount == 1, "only the unpushed card should be POSTed")
         #expect(result.itemsCreated == 1)
@@ -236,9 +237,8 @@ struct FizzySyncEngineReplaceLocalTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -260,10 +260,11 @@ struct FizzySyncEngineReplaceLocalTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.replace.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -277,7 +278,7 @@ struct FizzySyncEngineReplaceLocalTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -285,7 +286,7 @@ struct FizzySyncEngineReplaceLocalTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -331,7 +332,7 @@ struct FizzySyncEngineReplaceLocalTests {
         """
         h.mock.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
 
-        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .replaceLocalWithFizzy)
 
         #expect(result.itemsDeleted == 3)
         #expect(result.itemsCreated == 2)
@@ -362,7 +363,7 @@ struct FizzySyncEngineReplaceLocalTests {
         let cardsJSON = "[]"
         h.mock.handler = Self.mockBoardState(columnsJSON: columnsJSON, cardsJSON: cardsJSON)
 
-        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .replaceLocalWithFizzy)
 
         #expect(result.errors.isEmpty)
 
@@ -385,9 +386,8 @@ struct FizzySyncEngineMergeTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -408,10 +408,11 @@ struct FizzySyncEngineMergeTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.merge.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -425,7 +426,7 @@ struct FizzySyncEngineMergeTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -433,7 +434,7 @@ struct FizzySyncEngineMergeTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -488,7 +489,7 @@ struct FizzySyncEngineMergeTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .mergeIfNoConflicts)
 
         #expect(postCount == 2, "both local cards pushed")
         #expect(result.itemsCreated == 4, "2 POSTs + 2 local creates from remote")
@@ -545,7 +546,7 @@ struct FizzySyncEngineMergeTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .mergeIfNoConflicts)
 
         #expect(postCount == 1, "only Only local is pushed; Shared title is skipped due to collision")
         #expect(result.errors.count == 1)
@@ -566,10 +567,11 @@ struct FizzySyncEngineSyncPairingTests {
         let persistence = PersistenceController(inMemory: true, useCloudKit: false)
         let authState = FizzyAuthState(keyPrefix: "test.fizzy.sync.\(UUID().uuidString)")
         defer { authState.clear() }
-        let suiteName = "test.fizzy.sync.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
 
         let client = FizzyClient(
             baseURL: URL(string: "https://example.invalid")!,
@@ -582,11 +584,11 @@ struct FizzySyncEngineSyncPairingTests {
         )
         defer { try? FileManager.default.removeItem(at: pairingStore.fileURL) }
         let engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
 
-        let result = try await engine.sync()
+        let result = try await engine.sync(localBoardID: UUID())
         #expect(result == FizzySyncResult())
     }
 }
@@ -603,10 +605,8 @@ struct FizzySyncEngineSteadyPullTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let mapping: FizzyBoardMapping
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -627,10 +627,11 @@ struct FizzySyncEngineSteadyPullTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.steadypull.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -640,14 +641,14 @@ struct FizzySyncEngineSteadyPullTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -681,7 +682,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.itemsCreated == 3)
         #expect(result.errors.isEmpty)
@@ -716,7 +717,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.itemsCreated == 0, "no new cards — fz1 already paired")
     }
 
@@ -745,7 +746,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         let card = h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 11 }
         let names = card?.sortedLabels.compactMap(\.name)
@@ -780,7 +781,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 13 })
         #expect(card.sortedLabels.count == 1)
@@ -830,7 +831,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(card.sortedLabels.isEmpty)
     }
 
@@ -859,7 +860,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         let card = h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 21 }
         #expect(card?.assignees == [CardAssignee(id: "u1", name: "Ada Lovelace")])
@@ -904,7 +905,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(card.assignees == [], "empty remote array clears the blob")
 
         // Re-seed the blob so round 2 genuinely distinguishes "left alone"
@@ -933,7 +934,7 @@ struct FizzySyncEngineSteadyPullTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         // fizzyUpdatedAt lives in the pairing store now (issue #21 A′) —
         // the attribute is a hint that only heals fizzyID/number.
         let cardUUID = try #require(card.id)
@@ -956,9 +957,8 @@ struct FizzySyncEngineSteadyPushTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -978,10 +978,11 @@ struct FizzySyncEngineSteadyPushTests {
             authState = FizzyAuthState(keyPrefix: prefix)
             authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.steadypush.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -991,14 +992,14 @@ struct FizzySyncEngineSteadyPushTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -1038,7 +1039,7 @@ struct FizzySyncEngineSteadyPushTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(postCount == 1)
         #expect(result.itemsCreated == 1)
@@ -1059,9 +1060,8 @@ struct FizzySyncEngineLWWTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -1081,10 +1081,11 @@ struct FizzySyncEngineLWWTests {
             authState = FizzyAuthState(keyPrefix: prefix)
             authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.lww.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -1094,14 +1095,14 @@ struct FizzySyncEngineLWWTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -1137,7 +1138,7 @@ struct FizzySyncEngineLWWTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.itemsUpdated == 1)
         h.persistence.viewContext.refresh(card, mergeChanges: false)
         #expect(card.title == "New title")
@@ -1181,7 +1182,7 @@ struct FizzySyncEngineLWWTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(putCount == 1)
         #expect(result.itemsUpdated == 1)
     }
@@ -1211,11 +1212,12 @@ struct FizzySyncEngineSoftDeleteTests {
         defer { authState.clear() }
         authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-        let suiteName = "test.fizzy.delete.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         // Paired local card; remote will return empty list. The number hint
         // matters: deletion is only confirmed via GET /cards/:number → 404
@@ -1251,10 +1253,10 @@ struct FizzySyncEngineSoftDeleteTests {
         }
 
         let engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
-        let result = try await engine.sync()
+        let result = try await engine.sync(localBoardID: board.id!)
 
         #expect(result.itemsDeleted == 1)
         // The card should be deleted from the context.
@@ -1287,11 +1289,12 @@ struct FizzySyncEngineCrashRecoveryTests {
         defer { authState.clear() }
         authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-        let suiteName = "test.fizzy.crash.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = cardRepo.createCard(in: column, title: "Orphan-prone")
@@ -1327,11 +1330,11 @@ struct FizzySyncEngineCrashRecoveryTests {
             urlSession: session, clock: ImmediateClock()
         )
         let engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
 
-        let result = try await engine.sync()
+        let result = try await engine.sync(localBoardID: board.id!)
 
         #expect(postCount == 0, "should NOT POST — orphan claimed")
         persistence.viewContext.refresh(card, mergeChanges: false)
@@ -1359,11 +1362,12 @@ struct FizzySyncEngineCrashRecoveryTests {
         defer { authState.clear() }
         authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-        let suiteName = "test.fizzy.crashdup.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = cardRepo.createCard(in: column, title: "Orphan-prone")
@@ -1398,11 +1402,11 @@ struct FizzySyncEngineCrashRecoveryTests {
             urlSession: session, clock: ImmediateClock()
         )
         let engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
 
-        _ = try await engine.sync()
+        _ = try await engine.sync(localBoardID: board.id!)
 
         // Across the entire board there should be exactly ONE local card with
         // fizzyID == "fz-orphan" — the original claimer. The pull loop must
@@ -1432,11 +1436,12 @@ struct FizzySyncEngineIdempotenceTests {
         defer { authState.clear() }
         authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-        let suiteName = "test.fizzy.idemp.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         let stableISO = "2026-05-25T00:00:00Z"
         mock.handler = { req in
@@ -1467,12 +1472,12 @@ struct FizzySyncEngineIdempotenceTests {
             urlSession: session, clock: ImmediateClock()
         )
         let engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
 
-        let first = try await engine.sync()
-        let second = try await engine.sync()
+        let first = try await engine.sync(localBoardID: board.id!)
+        let second = try await engine.sync(localBoardID: board.id!)
 
         #expect(first.itemsCreated == 1)
         #expect(second.itemsCreated == 0)
@@ -1501,11 +1506,12 @@ struct FizzySyncEngine401Tests {
         authState.setAccessToken("revoked-token")
         authState.setAccountSlug("ACCT")
 
-        let suiteName = "test.fizzy.401.mapping.\(UUID().uuidString)"
-        let mappingDefaults = UserDefaults(suiteName: suiteName)!
-        defer { mappingDefaults.removePersistentDomain(forName: suiteName) }
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        let boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: boardPairingStore.fileURL) }
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         mock.handler = { req in
             (Data(), .response(for: req, status: 401))
@@ -1523,7 +1529,7 @@ struct FizzySyncEngine401Tests {
             urlSession: session, clock: ImmediateClock()
         )
         let engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
 
@@ -1531,7 +1537,7 @@ struct FizzySyncEngine401Tests {
         #expect(authState.accessToken == "revoked-token")
 
         do {
-            _ = try await engine.sync()
+            _ = try await engine.sync(localBoardID: board.id!)
             Issue.record("expected sync() to throw on 401")
         } catch let error as FizzyError {
             #expect(error == .unauthorized)
@@ -1554,9 +1560,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -1576,10 +1581,11 @@ struct FizzySyncEngineNumberReentrancyTests {
             authState = FizzyAuthState(keyPrefix: prefix)
             authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.numre.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -1589,14 +1595,14 @@ struct FizzySyncEngineNumberReentrancyTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -1639,7 +1645,7 @@ struct FizzySyncEngineNumberReentrancyTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(putPaths == ["/ACCT/cards/7"])
         #expect(card.fizzyNumber == 7)
     }
@@ -1676,7 +1682,7 @@ struct FizzySyncEngineNumberReentrancyTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(card.fizzyID == "fzNEW")
         #expect(card.fizzyNumber == 12)
     }
@@ -1717,8 +1723,8 @@ struct FizzySyncEngineNumberReentrancyTests {
             }
         }
 
-        let first = try await h.engine.sync()
-        let second = try await h.engine.sync()
+        let first = try await h.engine.sync(localBoardID: h.board.id!)
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(postCount == 1)
         #expect(first.itemsCreated == 1)
@@ -1760,8 +1766,8 @@ struct FizzySyncEngineNumberReentrancyTests {
             }
         }
 
-        async let a = h.engine.sync()
-        async let b = h.engine.sync()
+        async let a = h.engine.sync(localBoardID: h.board.id!)
+        async let b = h.engine.sync(localBoardID: h.board.id!)
         let (ra, rb) = try await (a, b)
 
         #expect(postCount == 1)
@@ -1793,7 +1799,7 @@ struct FizzySyncEngineNumberReentrancyTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.itemsCreated == 2)
 
         let fetch = Card.fetchRequest()
@@ -1814,9 +1820,8 @@ struct FizzySyncEngineDeletePropagationTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -1836,10 +1841,11 @@ struct FizzySyncEngineDeletePropagationTests {
             authState = FizzyAuthState(keyPrefix: prefix)
             authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.delprop.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -1849,14 +1855,14 @@ struct FizzySyncEngineDeletePropagationTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
 
@@ -1898,7 +1904,7 @@ struct FizzySyncEngineDeletePropagationTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(requestLog.first == "DELETE /ACCT/cards/7", "deletions push BEFORE pulls")
         #expect(requestLog.filter { $0.hasPrefix("DELETE") } == ["DELETE /ACCT/cards/7"])
@@ -1932,7 +1938,7 @@ struct FizzySyncEngineDeletePropagationTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty, "404 means already deleted remotely — not an error")
         #expect(try h.cardTombstones().isEmpty, "tombstone purged on 404")
@@ -1963,7 +1969,7 @@ struct FizzySyncEngineDeletePropagationTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.count == 1)
         #expect(result.itemsDeleted == 0)
@@ -2000,7 +2006,7 @@ struct FizzySyncEngineDeletePropagationTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.itemsCreated == 0, "tombstoned card must not resurrect")
         let cards = try h.persistence.viewContext.fetch(Card.fetchRequest())
@@ -2035,7 +2041,7 @@ struct FizzySyncEngineDeletePropagationTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(deleteCount == 0, "stale tombstones are abandoned, not retried")
         #expect(result.errors.isEmpty)
@@ -2055,9 +2061,8 @@ struct FizzySyncEngineColumnPushTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -2077,10 +2082,11 @@ struct FizzySyncEngineColumnPushTests {
             authState = FizzyAuthState(keyPrefix: prefix)
             authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.colpush.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -2090,14 +2096,14 @@ struct FizzySyncEngineColumnPushTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
 
@@ -2142,7 +2148,7 @@ struct FizzySyncEngineColumnPushTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(postPaths == ["/ACCT/boards/FB1/columns"])
         #expect(result.errors.isEmpty)
@@ -2171,7 +2177,7 @@ struct FizzySyncEngineColumnPushTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty)
         h.persistence.viewContext.refresh(h.column, mergeChanges: false)
@@ -2206,7 +2212,7 @@ struct FizzySyncEngineColumnPushTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(putPaths == ["/ACCT/boards/FB1/columns/FC1"])
         #expect(result.errors.isEmpty)
@@ -2246,7 +2252,7 @@ struct FizzySyncEngineColumnPushTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(deletePaths == ["/ACCT/boards/FB1/columns/FC1"])
         #expect(result.itemsDeleted == 1)
@@ -2280,7 +2286,7 @@ struct FizzySyncEngineColumnPushTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.count == 1)
         let columns = (h.board.columns as? Set<Column>) ?? []
@@ -2305,9 +2311,8 @@ struct FizzySyncEnginePinReconciliationTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -2328,10 +2333,11 @@ struct FizzySyncEnginePinReconciliationTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.pins.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -2341,14 +2347,14 @@ struct FizzySyncEnginePinReconciliationTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -2405,7 +2411,7 @@ struct FizzySyncEnginePinReconciliationTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         let cards = h.cardRepo.fetchAllCards(in: h.board)
         #expect(cards.first { $0.fizzyNumber == 31 }?.isPinned == true)
@@ -2441,7 +2447,7 @@ struct FizzySyncEnginePinReconciliationTests {
         }
 
         // Round 1: card pulled and paired.
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 41 })
 
         // Pin locally, then sync again with an empty remote pin set.
@@ -2450,7 +2456,7 @@ struct FizzySyncEnginePinReconciliationTests {
         card.isPinned = true
         try h.persistence.viewContext.save()
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(card.isPinned == false, "remote pin set is authoritative — absent means unpinned")
     }
@@ -2481,7 +2487,7 @@ struct FizzySyncEnginePinReconciliationTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 42 })
         #expect(card.isPinned == true, "round 1 seeded the pin")
 
@@ -2502,7 +2508,7 @@ struct FizzySyncEnginePinReconciliationTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(card.isPinned == true, "failed pins fetch leaves pin state alone")
     }

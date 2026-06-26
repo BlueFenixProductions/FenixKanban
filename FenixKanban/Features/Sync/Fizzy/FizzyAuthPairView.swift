@@ -315,7 +315,7 @@ struct FizzyAuthPairView: View {
         pairTask = Task { @MainActor in
             defer { isSyncing = false }
             do {
-                _ = try await engine.syncFirst(mode: mode)
+                _ = try await engine.syncFirst(localBoardID: localID, mode: mode)
                 onPaired()
             } catch FizzyError.unauthorized {
                 // Engine cleared authState. Parent will recompute phase to
