@@ -117,6 +117,42 @@ final class FizzyBoardPairingStore: @unchecked Sendable {
         }
     }
 
+    /// One-time, idempotent fold of the legacy `FizzyBoardMapping` singleton
+    /// (three `UserDefaults` keys) into row 1. Writes the new row BEFORE
+    /// deleting the legacy keys, so a crash mid-migration never loses the
+    /// pairing. Returns `true` only when a legacy pairing was folded in.
+    @discardableResult
+    func migrateLegacyMappingIfNeeded(defaults: UserDefaults = .standard) -> Bool {
+        let migratedKey = "fizzy.pairing.migratedToBoardStore.v1"
+        guard !defaults.bool(forKey: migratedKey) else { return false }
+
+        let localKey = "fizzy.pairing.localBoardID"
+        let fizzyKey = "fizzy.pairing.fizzyBoardID"
+        let lastSyncKey = "fizzy.pairing.lastSyncAt"
+
+        guard let localStr = defaults.string(forKey: localKey),
+              let localID = UUID(uuidString: localStr),
+              let fizzyID = defaults.string(forKey: fizzyKey) else {
+            defaults.set(true, forKey: migratedKey)   // nothing to migrate; don't recheck
+            return false
+        }
+
+        let lastSync = defaults.string(forKey: lastSyncKey)
+            .flatMap { ISO8601DateFormatter().date(from: $0) }
+
+        upsert(FizzyBoardPairing(
+            localBoardID: localID,
+            fizzyBoardID: fizzyID,
+            lastSyncAt: lastSync
+        ))   // new row persisted to sidecar first
+
+        defaults.removeObject(forKey: localKey)
+        defaults.removeObject(forKey: fizzyKey)
+        defaults.removeObject(forKey: lastSyncKey)
+        defaults.set(true, forKey: migratedKey)
+        return true
+    }
+
     /// Must be called with `lock` held. Atomic write. Default Codable Date
     /// representation keeps exact fidelity (do NOT switch to .iso8601).
     private func persistLocked() {
