@@ -49,6 +49,29 @@ final class FizzyBoardBrowserViewModel {
         rebuildRows()
     }
 
+    /// Flips `syncEnabled` for a paired row (pause / resume), then reprojects.
+    func toggleSync(_ row: BoardBrowserRow) {
+        guard row.kind == .paired, let id = row.localBoardID else { return }
+        provider.setSyncEnabled(localBoardID: id, !row.syncEnabled)
+        rebuildRows()
+    }
+
+    /// Removes the pairing for a paired row (never touches `Card` data), then
+    /// reprojects — the board reappears as a local-only row.
+    func unpair(_ row: BoardBrowserRow) {
+        guard row.kind == .paired, let id = row.localBoardID else { return }
+        provider.unpair(localBoardID: id)
+        rebuildRows()
+    }
+
+    /// Runs a one-board sync. Errors are swallowed here; the per-board activity
+    /// registry (`provider.boardActivityRef`) records them for the row to show.
+    func syncNow(_ row: BoardBrowserRow) async {
+        guard row.kind == .paired, let id = row.localBoardID, let fizzyID = row.fizzyBoardID else { return }
+        _ = try? await provider.sync(boardId: id, remoteProjectId: fizzyID)
+        rebuildRows()
+    }
+
     private func rebuildRows() {
         rows = BoardBrowserRow.reconcile(
             localBoards: fetchLocalBoards(),

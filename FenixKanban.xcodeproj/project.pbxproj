@@ -118,6 +118,7 @@
 		7DF7FBBAA6F37C21DABE7B52 /* LabelRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187191DF06C44E34E0554DE1 /* LabelRepositoryTests.swift */; };
 		7E2A5B97A7C05FC5C74DAA07 /* LabelManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A323FD39A6012DC3E52CC2E3 /* LabelManagementView.swift */; };
 		7F544F9BCF81BF33D0F84D8F /* MigrationModelLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65EC8BB09483649E6158D7F /* MigrationModelLoading.swift */; };
+		81B3EF41DC2D6C42A2EE3569 /* FizzyBoardBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F7C63142CD56D131016573D /* FizzyBoardBrowserView.swift */; };
 		81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A78B1699150F1C5A72D387C /* LabelRepository.swift */; };
 		83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B2F6FD904F3307539762E8 /* OpenBoardIntent.swift */; };
 		83D9D6D0C4CB6F48C1A4E7F8 /* CardCommentsViewModelReactionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AD10AB250A2FFF63597F85 /* CardCommentsViewModelReactionTests.swift */; };
@@ -294,6 +295,7 @@
 		0C407F37B22981DEA9599C6C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		0E2D11BAE72815F0D7F274CD /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		0EB4EFAD01CE12778897E024 /* FizzyAuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthStateTests.swift; sourceTree = "<group>"; };
+		0F7C63142CD56D131016573D /* FizzyBoardBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyBoardBrowserView.swift; sourceTree = "<group>"; };
 		0FC40B241554124652DF6B03 /* BackgroundRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshTests.swift; sourceTree = "<group>"; };
 		12879304376681EE625271BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		139288734275D3EB49C0F400 /* FizzyAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyAuthView.swift; sourceTree = "<group>"; };
@@ -1045,6 +1047,7 @@
 				824D0B1348180DDDB6480B5D /* FizzyAuthStatusView.swift */,
 				068A3D4E105877CD3E5E375D /* FizzyAuthVerifyView.swift */,
 				139288734275D3EB49C0F400 /* FizzyAuthView.swift */,
+				0F7C63142CD56D131016573D /* FizzyBoardBrowserView.swift */,
 				5F800DED9FC892E7050A9CC1 /* FizzyBoardBrowserViewModel.swift */,
 				5C9EBD2C2AFF4EA1B088F1C8 /* FizzyBoardSyncActivity.swift */,
 				701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */,
@@ -1367,6 +1370,7 @@
 				514361CF37BCE7CEB710CCD8 /* FizzyAuthStatusView.swift in Sources */,
 				CBC3D3B8D2AC5334393585B0 /* FizzyAuthVerifyView.swift in Sources */,
 				27984FA5AFF59944FC4885BE /* FizzyAuthView.swift in Sources */,
+				81B3EF41DC2D6C42A2EE3569 /* FizzyBoardBrowserView.swift in Sources */,
 				10A55A443CD1E4FC06969811 /* FizzyBoardBrowserViewModel.swift in Sources */,
 				60A5AEE6CCC0559133CA5A87 /* FizzyBoardPairingStore.swift in Sources */,
 				E35C84AEB7834A691596323D /* FizzyBoardSyncActivity.swift in Sources */,
