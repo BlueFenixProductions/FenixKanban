@@ -360,6 +360,16 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         return try await engine.syncFirst(localBoardID: localBoardID, mode: .pushLocalToFizzy)
     }
 
+    /// Link-existing (issue #18, Phase 7c): pair two boards that both already
+    /// have content, then first-sync **merge** (push local-only + pull
+    /// Fizzy-only; same-title collisions are returned in `result.errors`, not
+    /// applied). The riskiest flow — the UI warns and confirms before calling.
+    func linkExisting(localBoardID: UUID, fizzyBoardID: String, fizzyBoardName: String?) async throws -> FizzySyncResult {
+        pair(localBoardID: localBoardID, fizzyBoardID: fizzyBoardID, fizzyBoardName: fizzyBoardName)
+        guard let engine = makeEngine(for: localBoardID) else { return FizzySyncResult() }
+        return try await engine.syncFirst(localBoardID: localBoardID, mode: .mergeIfNoConflicts)
+    }
+
     /// Add-to-FK (issue #18, Phase 7c): create a new local board from a remote
     /// board's name, pair it, then first-sync **replace** (remote is source of
     /// truth; the local board was just created empty). Returns the new local id.

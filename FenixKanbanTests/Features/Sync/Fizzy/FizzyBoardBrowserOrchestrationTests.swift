@@ -61,4 +61,23 @@ struct FizzyBoardBrowserOrchestrationTests {
         let pairing = try #require(h.boardPairingStore.pairing(forLocal: newLocalID))
         #expect(pairing.fizzyBoardID == "fz-REMOTE")
     }
+
+    @Test("linkExisting pairs the two boards and runs a merge first-sync")
+    func linkExistingPairsAndMerges() async throws {
+        let h = Harness(); defer { h.tearDown() }
+        Self.stubCreateAndEmptySync(h.mock, newID: "unused", name: "n/a")
+
+        let repo = BoardRepository(context: h.persistence.viewContext)
+        let local = repo.createBoard(name: "Roadmap")
+        try h.persistence.viewContext.save()
+
+        let result = try await h.provider.linkExisting(
+            localBoardID: local.id!, fizzyBoardID: "fz-RDMP", fizzyBoardName: "Roadmap (Fizzy)")
+
+        let pairing = try #require(h.boardPairingStore.pairing(forLocal: local.id!))
+        #expect(pairing.fizzyBoardID == "fz-RDMP")
+        #expect(pairing.fizzyBoardName == "Roadmap (Fizzy)")
+        // Empty boards → merge produces no collision errors.
+        #expect(result.errors.isEmpty)
+    }
 }
