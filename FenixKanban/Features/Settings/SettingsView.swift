@@ -16,6 +16,13 @@ struct SettingsView: View {
         ))
     }
 
+    private var appVersionDisplay: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "\(version) (\(build))"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -92,6 +99,15 @@ struct SettingsView: View {
                 Section("Support") {
                     NavigationLink("Tip Jar") {
                         TipJarView()
+                    }
+                }
+
+                Section("About") {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text(appVersionDisplay)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
