@@ -108,7 +108,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// parameter is required by the protocol but unused here — the
     /// `boardPairingStore` keyed on `boardId` is the authoritative source.
     func sync(boardId: UUID, remoteProjectId: String) async throws -> SyncResult {
-        guard let engine = makeEngine() else {
+        guard let engine = makeEngine(for: boardId) else {
             throw FizzyError.requiresInteractiveAuth
         }
         let result = try await engine.sync(localBoardID: boardId)
