@@ -147,4 +147,58 @@ struct FizzyBoardBrowserViewModelActionTests {
         // Alpha now reconciles as local-only.
         #expect(model.rows.contains { $0.kind == .localOnly && $0.localBoardID == alpha.id! })
     }
+
+    @Test("createOnFizzy pairs the local-only row and it reprojects as paired")
+    func createOnFizzyPairs() async throws {
+        let h = FizzyBoardBrowserViewModelTests.Harness(); defer { h.tearDown() }
+        FizzyBoardBrowserOrchestrationTests.stubCreateAndEmptySync(h.mock, newID: "fz-NEW", name: "Personal")
+        let repo = BoardRepository(context: h.persistence.viewContext)
+        let local = repo.createBoard(name: "Personal")
+        try h.persistence.viewContext.save()
+
+        let model = FizzyBoardBrowserViewModel(provider: h.provider)
+        model.seedRemoteBoardsForTesting([])           // no remote list; local-only row present
+        model.refreshFromStore()
+        let row = try #require(model.rows.first { $0.kind == .localOnly })
+
+        await model.createOnFizzy(row)
+
+        #expect(h.boardPairingStore.pairing(forLocal: local.id!)?.fizzyBoardID == "fz-NEW")
+        #expect(model.rows.contains { $0.kind == .paired && $0.localBoardID == local.id! })
+        #expect(model.actionError == nil)
+    }
+
+    @Test("addToFK creates a local board and the remote-only row becomes paired")
+    func addToFKPairs() async throws {
+        let h = FizzyBoardBrowserViewModelTests.Harness(); defer { h.tearDown() }
+        FizzyBoardBrowserOrchestrationTests.stubCreateAndEmptySync(h.mock, newID: "unused", name: "Design")
+        let model = FizzyBoardBrowserViewModel(provider: h.provider)
+        let remote = RemoteBoard(id: "fz-DSGN", name: "Design", provider: "fizzy")
+        model.seedRemoteBoardsForTesting([remote])
+        model.refreshFromStore()
+        let row = try #require(model.rows.first { $0.kind == .remoteOnly })
+
+        await model.addToFK(row)
+
+        let boards = try h.persistence.viewContext.fetch(Board.fetchRequest()) as [Board]
+        #expect(boards.contains { $0.name == "Design" })
+        #expect(model.rows.contains { $0.kind == .paired })
+    }
+
+    @Test("unpairedRemoteBoards excludes already-paired remote boards")
+    func unpairedRemoteBoardsFiltersPaired() async throws {
+        let h = FizzyBoardBrowserViewModelTests.Harness(); defer { h.tearDown() }
+        let repo = BoardRepository(context: h.persistence.viewContext)
+        let alpha = repo.createBoard(name: "Alpha")
+        try h.persistence.viewContext.save()
+        h.boardPairingStore.upsert(FizzyBoardPairing(localBoardID: alpha.id!, fizzyBoardID: "fz-A"))
+
+        let model = FizzyBoardBrowserViewModel(provider: h.provider)
+        model.seedRemoteBoardsForTesting([
+            RemoteBoard(id: "fz-A", name: "Alpha", provider: "fizzy"),
+            RemoteBoard(id: "fz-B", name: "Beta", provider: "fizzy"),
+        ])
+
+        #expect(model.unpairedRemoteBoards.map(\.id) == ["fz-B"])
+    }
 }

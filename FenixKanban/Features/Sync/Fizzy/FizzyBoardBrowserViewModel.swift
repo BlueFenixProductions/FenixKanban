@@ -22,10 +22,21 @@ final class FizzyBoardBrowserViewModel {
     private(set) var state: LoadState = .loading
     private(set) var rows: [BoardBrowserRow] = []
     private(set) var remoteBoards: [RemoteBoard] = []
+    private(set) var actionError: String?
+    private(set) var lastLinkCollisions: [String]?
 
     init(provider: FizzySyncProvider) {
         self.provider = provider
     }
+
+    /// Remote boards with no pairing yet — the candidates a "Local only" board
+    /// can link to. Drives the Link picker.
+    var unpairedRemoteBoards: [RemoteBoard] {
+        remoteBoards.filter { provider.boardPairingStoreRef.pairing(forFizzy: $0.id) == nil }
+    }
+
+    /// Test seam: set the cached remote list without a network fetch.
+    func seedRemoteBoardsForTesting(_ boards: [RemoteBoard]) { remoteBoards = boards }
 
     /// Fetches local + remote boards, then rebuilds rows. On remote failure the
     /// state goes `.error` but paired + local-only rows still render from cached
@@ -71,6 +82,47 @@ final class FizzyBoardBrowserViewModel {
         _ = try? await provider.sync(boardId: id, remoteProjectId: fizzyID)
         rebuildRows()
     }
+
+    /// Create-on-Fizzy: make a remote twin of a local-only board (named after
+    /// the local board) and push. Reprojects to a paired row on success.
+    func createOnFizzy(_ row: BoardBrowserRow) async {
+        guard row.kind == .localOnly, let id = row.localBoardID else { return }
+        do {
+            _ = try await provider.createRemoteTwin(localBoardID: id, name: row.title)
+        } catch {
+            actionError = "Couldn't create the board on Fizzy: \(error)"
+        }
+        rebuildRows()
+    }
+
+    /// Add-to-FK: create a local board from a remote-only board and replace-pull.
+    func addToFK(_ row: BoardBrowserRow) async {
+        guard row.kind == .remoteOnly, let fizzyID = row.fizzyBoardID else { return }
+        do {
+            _ = try await provider.addToFK(fizzyBoardID: fizzyID, name: row.title)
+        } catch {
+            actionError = "Couldn't add the board to FenixKanban: \(error)"
+        }
+        rebuildRows()
+    }
+
+    /// Link-existing: merge a local-only board with a chosen unpaired remote
+    /// board. Same-title collisions (returned in `result.errors`) are exposed
+    /// via `lastLinkCollisions` for the view to show.
+    func linkExisting(_ localRow: BoardBrowserRow, toFizzyBoardID fizzyID: String, fizzyBoardName: String?) async {
+        guard localRow.kind == .localOnly, let id = localRow.localBoardID else { return }
+        do {
+            let result = try await provider.linkExisting(
+                localBoardID: id, fizzyBoardID: fizzyID, fizzyBoardName: fizzyBoardName)
+            if !result.errors.isEmpty { lastLinkCollisions = result.errors }
+        } catch {
+            actionError = "Couldn't link the boards: \(error)"
+        }
+        rebuildRows()
+    }
+
+    func dismissActionError() { actionError = nil }
+    func dismissLinkCollisions() { lastLinkCollisions = nil }
 
     private func rebuildRows() {
         rows = BoardBrowserRow.reconcile(
