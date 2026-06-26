@@ -78,7 +78,8 @@ final class FizzyBoardBrowserViewModel {
     /// Runs a one-board sync. Errors are swallowed here; the per-board activity
     /// registry (`provider.boardActivityRef`) records them for the row to show.
     func syncNow(_ row: BoardBrowserRow) async {
-        guard row.kind == .paired, let id = row.localBoardID, let fizzyID = row.fizzyBoardID else { return }
+        guard row.kind == .paired, row.syncEnabled,
+              let id = row.localBoardID, let fizzyID = row.fizzyBoardID else { return }
         _ = try? await provider.sync(boardId: id, remoteProjectId: fizzyID)
         rebuildRows()
     }

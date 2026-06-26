@@ -47,9 +47,10 @@ struct FizzyBoardActivityProviderTests {
         """
         let innerHandler = h.mock.handler
         h.mock.handler = { req in
-            guard let url = req.url, let path = url.path as String? else {
+            guard let url = req.url else {
                 return (Data(), .response(for: req, status: 500))
             }
+            let path = url.path
             // POST .../columns → 201 + Location (the column resource URL)
             if req.httpMethod == "POST", path.hasSuffix("/columns") {
                 let location = url.absoluteString + "/fc-todo"

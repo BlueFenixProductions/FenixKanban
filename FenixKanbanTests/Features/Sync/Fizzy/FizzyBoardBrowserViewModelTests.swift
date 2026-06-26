@@ -247,4 +247,23 @@ struct FizzyBoardBrowserViewModelActionTests {
 
         #expect(model.actionError == nil)
     }
+
+    @Test("syncNow is a no-op on a paused board (does not issue a network sync)")
+    func syncNowSkipsPausedBoard() async throws {
+        let h = FizzyBoardBrowserViewModelTests.Harness(); defer { h.tearDown() }
+        h.stubTwoRemoteBoards()
+        let repo = BoardRepository(context: h.persistence.viewContext)
+        let alpha = repo.createBoard(name: "Alpha")
+        try h.persistence.viewContext.save()
+        h.boardPairingStore.upsert(FizzyBoardPairing(localBoardID: alpha.id!, fizzyBoardID: "fz-A", syncEnabled: false))
+
+        let model = FizzyBoardBrowserViewModel(provider: h.provider)
+        await model.load()
+        let row = try #require(model.rows.first { $0.kind == .paired })
+        h.mock.resetRequests()
+
+        await model.syncNow(row)
+
+        #expect(h.mock.requests.isEmpty)   // paused → no sync issued
+    }
 }

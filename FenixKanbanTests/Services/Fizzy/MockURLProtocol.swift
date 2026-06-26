@@ -79,6 +79,13 @@ final class MockHTTPState: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }; _requests.append(request)
     }
 
+    /// Clears all recorded requests. Use in tests to isolate a specific
+    /// code path after setup traffic (e.g. after `model.load()` to verify
+    /// that a subsequent action issues no network requests).
+    func resetRequests() {
+        lock.lock(); defer { lock.unlock() }; _requests.removeAll()
+    }
+
     /// Builds a session whose requests resolve back to this state instance.
     func makeSession() -> URLSession {
         let config = URLSessionConfiguration.ephemeral

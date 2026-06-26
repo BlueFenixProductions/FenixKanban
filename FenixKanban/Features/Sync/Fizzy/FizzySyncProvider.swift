@@ -400,6 +400,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// re-pairing the same board later re-binds via orphan-claim logic.
     func unpair(localBoardID: UUID) {
         boardPairingStore.remove(localBoardID: localBoardID)
+        boardActivity.markIdle(localBoardID)
     }
 
     /// Enables or disables scheduled sync for a specific board.
