@@ -86,6 +86,8 @@ final class FizzyBoardBrowserViewModel {
     /// Create-on-Fizzy: make a remote twin of a local-only board (named after
     /// the local board) and push. Reprojects to a paired row on success.
     func createOnFizzy(_ row: BoardBrowserRow) async {
+        actionError = nil
+        lastLinkCollisions = nil
         guard row.kind == .localOnly, let id = row.localBoardID else { return }
         do {
             _ = try await provider.createRemoteTwin(localBoardID: id, name: row.title)
@@ -97,6 +99,8 @@ final class FizzyBoardBrowserViewModel {
 
     /// Add-to-FK: create a local board from a remote-only board and replace-pull.
     func addToFK(_ row: BoardBrowserRow) async {
+        actionError = nil
+        lastLinkCollisions = nil
         guard row.kind == .remoteOnly, let fizzyID = row.fizzyBoardID else { return }
         do {
             _ = try await provider.addToFK(fizzyBoardID: fizzyID, name: row.title)
@@ -110,6 +114,8 @@ final class FizzyBoardBrowserViewModel {
     /// board. Same-title collisions (returned in `result.errors`) are exposed
     /// via `lastLinkCollisions` for the view to show.
     func linkExisting(_ localRow: BoardBrowserRow, toFizzyBoardID fizzyID: String, fizzyBoardName: String?) async {
+        actionError = nil
+        lastLinkCollisions = nil
         guard localRow.kind == .localOnly, let id = localRow.localBoardID else { return }
         do {
             let result = try await provider.linkExisting(

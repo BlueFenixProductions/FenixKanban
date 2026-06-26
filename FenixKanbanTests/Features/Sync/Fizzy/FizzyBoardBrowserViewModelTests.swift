@@ -201,4 +201,50 @@ struct FizzyBoardBrowserViewModelActionTests {
 
         #expect(model.unpairedRemoteBoards.map(\.id) == ["fz-B"])
     }
+
+    @Test("linkExisting pairs the row and it reprojects as paired")
+    func linkExistingPairsAndReprojects() async throws {
+        let h = FizzyBoardBrowserViewModelTests.Harness(); defer { h.tearDown() }
+        FizzyBoardBrowserOrchestrationTests.stubCreateAndEmptySync(h.mock, newID: "unused", name: "n/a")
+
+        let repo = BoardRepository(context: h.persistence.viewContext)
+        let local = repo.createBoard(name: "Roadmap")
+        try h.persistence.viewContext.save()
+
+        let model = FizzyBoardBrowserViewModel(provider: h.provider)
+        model.seedRemoteBoardsForTesting([RemoteBoard(id: "fz-X", name: "X (Fizzy)", provider: "fizzy")])
+        model.refreshFromStore()
+        let row = try #require(model.rows.first { $0.kind == .localOnly })
+
+        await model.linkExisting(row, toFizzyBoardID: "fz-X", fizzyBoardName: "X (Fizzy)")
+
+        #expect(h.boardPairingStore.pairing(forLocal: local.id!)?.fizzyBoardID == "fz-X")
+        #expect(model.rows.contains { $0.kind == .paired && $0.localBoardID == local.id! })
+        #expect(model.lastLinkCollisions == nil)
+        #expect(model.actionError == nil)
+    }
+
+    @Test("failed action surfaces actionError and dismissActionError clears it")
+    func failedActionSurfacesAndDismissesError() async throws {
+        let h = FizzyBoardBrowserViewModelTests.Harness(); defer { h.tearDown() }
+        // Clear auth so makeClient() returns nil → createRemoteTwin throws .unauthorized.
+        h.authState.clear()
+
+        let repo = BoardRepository(context: h.persistence.viewContext)
+        let local = repo.createBoard(name: "Solo")
+        try h.persistence.viewContext.save()
+
+        let model = FizzyBoardBrowserViewModel(provider: h.provider)
+        model.seedRemoteBoardsForTesting([])
+        model.refreshFromStore()
+        let row = try #require(model.rows.first { $0.kind == .localOnly })
+
+        await model.createOnFizzy(row)
+
+        #expect(model.actionError != nil)
+
+        model.dismissActionError()
+
+        #expect(model.actionError == nil)
+    }
 }
