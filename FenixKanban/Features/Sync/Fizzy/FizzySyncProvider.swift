@@ -73,6 +73,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     func signOut() async throws {
         authState.clear()
         mapping.clear()
+        boardPairingStore.clearAll()
     }
 
     /// Clears the board pairing while keeping the Keychain token (issue
@@ -130,9 +131,9 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
 
     // MARK: - SyncTriggering (Phase 6 foreground scheduler)
 
-    /// `true` when both token and board pairing are configured.
+    /// `true` when both token and at least one board pairing exist.
     var isPaired: Bool {
-        authState.isConfigured && mapping.isPaired
+        authState.isConfigured && !boardPairingStore.isEmpty
     }
 
     /// Fires one sync cycle via the engine and routes results to the provided
@@ -300,4 +301,52 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
             conflictStore: conflictStore
         )
     }
+
+    // MARK: - Per-board routing (Task 4 / issue #18)
+
+    /// The board currently visible in the UI. The scheduler syncs this board
+    /// first each round (Task 5). Set by `BoardView` on appear.
+    var currentBoardID: UUID?
+
+    /// Builds a `FizzySyncEngine` for a specific local board. Shares the same
+    /// underlying stores as `makeEngine()` — the board ID is passed through to
+    /// `engine.sync(localBoardID:)` by the caller. Returns `nil` when
+    /// unauthenticated.
+    func makeEngine(for localBoardID: UUID) -> FizzySyncEngine? {
+        guard let client = makeClient() else { return nil }
+        return FizzySyncEngine(
+            client: client,
+            authState: authState,
+            boardPairingStore: boardPairingStore,
+            context: persistence.viewContext,
+            pairingStore: pairingStore,
+            conflictStore: conflictStore
+        )
+    }
+
+    // MARK: - Board pairing CRUD
+
+    /// Records a pairing between a local board and its Fizzy twin.
+    /// Idempotent — a second call with the same `localBoardID` updates the row.
+    func pair(localBoardID: UUID, fizzyBoardID: String, fizzyBoardName: String?) {
+        boardPairingStore.upsert(FizzyBoardPairing(
+            localBoardID: localBoardID,
+            fizzyBoardID: fizzyBoardID,
+            fizzyBoardName: fizzyBoardName
+        ))
+    }
+
+    /// Removes the pairing for `localBoardID`. **Never touches Card data** —
+    /// re-pairing the same board later re-binds via orphan-claim logic.
+    func unpair(localBoardID: UUID) {
+        boardPairingStore.remove(localBoardID: localBoardID)
+    }
+
+    /// Enables or disables scheduled sync for a specific board.
+    func setSyncEnabled(localBoardID: UUID, _ enabled: Bool) {
+        boardPairingStore.setSyncEnabled(localBoardID: localBoardID, enabled)
+    }
+
+    /// Exposes the board pairing store for the board-browser UI (Task 5+).
+    var boardPairingStoreRef: FizzyBoardPairingStore { boardPairingStore }
 }

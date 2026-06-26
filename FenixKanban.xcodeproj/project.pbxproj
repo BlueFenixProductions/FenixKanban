@@ -148,6 +148,7 @@
 		9D988B504B48016D4F626E95 /* CardCommentsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23D26B5A48CB195655A3C6F /* CardCommentsViewModelTests.swift */; };
 		9E1CD87EE9E3281D8E49A47D /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628233BE2FC64E86E8D2B332 /* EmptyStateView.swift */; };
 		A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311DF4986085B0CEA06EEAC9 /* PluginRegistry.swift */; };
+		A0F4C07E6C5409ECE951ABD3 /* FizzySyncProviderMultiBoardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57EA3CDFC6C81A5E56B9B920 /* FizzySyncProviderMultiBoardTests.swift */; };
 		A30A97626FA931BBFCD62BA3 /* AppearanceModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB394427B5B7CFF081C696F /* AppearanceModeTests.swift */; };
 		A51CF1F91BC6B087980919DB /* FizzyctlCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2C7A31781D9463A63DB35F /* FizzyctlCommand.swift */; };
 		A523853319B92FACCF46BFBF /* FizzySyncEngineBoardIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */; };
@@ -343,6 +344,7 @@
 		51DE8D7DBCA451BE1FDADEB8 /* FizzySyncEngineBoardIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineBoardIsolationTests.swift; sourceTree = "<group>"; };
 		55C24E1E16D4DABFE2B4EDD2 /* FontCrossPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontCrossPlatformTests.swift; sourceTree = "<group>"; };
 		56BA5DC73054F09A324E9B58 /* FizzyClientCardActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientCardActionsTests.swift; sourceTree = "<group>"; };
+		57EA3CDFC6C81A5E56B9B920 /* FizzySyncProviderMultiBoardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProviderMultiBoardTests.swift; sourceTree = "<group>"; };
 		58682DDB41C2C955C5ABD519 /* CardRepositoryGoldenSortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryGoldenSortTests.swift; sourceTree = "<group>"; };
 		5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Board+CoreDataClass.swift"; sourceTree = "<group>"; };
 		59AFEEB67FB4B51FF48A4588 /* CardStepsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStepsSection.swift; sourceTree = "<group>"; };
@@ -619,6 +621,7 @@
 		2532EED83F28CDBD8101A208 /* Fizzy */ = {
 			isa = PBXGroup;
 			children = (
+				57EA3CDFC6C81A5E56B9B920 /* FizzySyncProviderMultiBoardTests.swift */,
 				DE7390530D1BAF4F5AA79B68 /* FizzySyncProviderTests.swift */,
 			);
 			path = Fizzy;
@@ -1477,6 +1480,7 @@
 				E2E644FBE7E2A293B9E46891 /* FizzySyncEnginePushParityTests.swift in Sources */,
 				D6D9021F8F2C22915DB77D4C /* FizzySyncEngineTests.swift in Sources */,
 				321C0D7DB3CF3DD8D9ECD6B4 /* FizzySyncMappingTests.swift in Sources */,
+				A0F4C07E6C5409ECE951ABD3 /* FizzySyncProviderMultiBoardTests.swift in Sources */,
 				E9E42C62557AFB457356C145 /* FizzySyncProviderTests.swift in Sources */,
 				A51CF1F91BC6B087980919DB /* FizzyctlCommand.swift in Sources */,
 				9757173FC77516438ED7458D /* FizzyctlCommandTests.swift in Sources */,
