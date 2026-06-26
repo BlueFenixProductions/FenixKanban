@@ -10,6 +10,9 @@ import Foundation
 /// Wired from the same in-memory-context + `MockURLProtocol` + `FizzyAuthState`
 /// conventions as `FizzySyncEngineBoardIsolationTests`. Inject a private temp
 /// `fileURL` for each store so tests never touch the real sidecars.
+///
+/// Task 5 extensions: `provider` and `syncedBoardOrder` are added here so
+/// `FizzyMultiBoardSchedulerTests` can share this harness without forking it.
 @MainActor
 struct MultiBoardHarness {
     let mock: MockHTTPState
@@ -19,9 +22,30 @@ struct MultiBoardHarness {
     let engine: FizzySyncEngine
     let authState: FizzyAuthState
 
+    /// A `FizzySyncProvider` wired to the same stores, auth, and persistence as
+    /// the engine — seeded pairings are therefore visible to `orderedBoardsToSync()`.
+    let provider: FizzySyncProvider
+
     /// Paths of every HTTP request issued through the engine in this harness.
     var requestedPaths: [String] {
         mock.requests.compactMap { $0.url?.path }
+    }
+
+    /// The order in which boards were synced, derived by mapping each recorded
+    /// request path's fizzy board ID back to the local board ID of its pairing.
+    /// Each board's FIRST request marks its turn; de-duplicated preserving order.
+    var syncedBoardOrder: [UUID] {
+        let pairings = pairingStore.all()
+        var seen = Set<UUID>()
+        var order: [UUID] = []
+        for path in requestedPaths {
+            guard let pairing = pairings.first(where: { path.contains($0.fizzyBoardID) }) else { continue }
+            let id = pairing.localBoardID
+            if seen.insert(id).inserted {
+                order.append(id)
+            }
+        }
+        return order
     }
 
     init() throws {
@@ -60,6 +84,23 @@ struct MultiBoardHarness {
             authState: authState,
             boardPairingStore: pairingStore,
             context: persistence.viewContext,
+            pairingStore: cardPairingStore
+        )
+
+        // Provider — shares the same board pairing store so seeded pairings are
+        // visible to orderedBoardsToSync(). Uses the same mock session so HTTP
+        // requests are recorded in `mock.requests`.
+        let mappingDefaults = UserDefaults(
+            suiteName: "test.fizzy.multiboard.mapping.\(UUID().uuidString)"
+        )!
+        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+        provider = FizzySyncProvider(
+            authState: authState,
+            mapping: mapping,
+            persistence: persistence,
+            urlSession: session,
+            clock: ImmediateClock(),
+            boardPairingStore: pairingStore,
             pairingStore: cardPairingStore
         )
     }

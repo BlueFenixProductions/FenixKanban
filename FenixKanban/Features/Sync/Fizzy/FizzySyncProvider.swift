@@ -136,41 +136,55 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         authState.isConfigured && !boardPairingStore.isEmpty
     }
 
-    /// Fires one sync cycle via the engine and routes results to the provided
-    /// `activityState` (called by the scheduler's `fireTick`).
+    /// Returns the ordered list of local board IDs to sync this round.
+    /// `currentBoardID` (frontmost board) is promoted to the front when it is
+    /// in the `syncEnabled` set; the rest follow in stored insertion order.
+    /// Boards with `syncEnabled == false` are excluded entirely.
+    private func orderedBoardsToSync() -> [UUID] {
+        let enabled = boardPairingStore.all().filter(\.syncEnabled).map(\.localBoardID)
+        guard let front = currentBoardID, enabled.contains(front) else { return enabled }
+        return [front] + enabled.filter { $0 != front }
+    }
+
+    /// Serial round-robin sync of every `syncEnabled` pairing. The frontmost
+    /// board (`currentBoardID`) syncs first, then the rest in stored order.
+    /// One engine at a time — preserves the engine's reentrancy guard.
     ///
     /// Errors (thrown or non-empty result.errors) mark `activityState` as
     /// `.error` rather than `.idle`; `lastSyncAt` advances on partial failures
-    /// because the cycle ran. Also re-posts pending comments.
+    /// because the cycle ran. Also re-posts pending comments and steps.
     func triggerSync(activityState: SyncActivityState) async {
-        guard let engine = makeEngine(), let localBoardID = mapping.localBoardID else { return }
-        do {
-            let result = try await engine.sync(localBoardID: localBoardID)
-            activityState.update(from: result, conflictStore: conflictStore)
-            if !result.errors.isEmpty {
-                let summary = result.errors.first ?? "Sync error"
-                activityState.markError(summary)
+        let order = orderedBoardsToSync()
+        guard !order.isEmpty else { return }
+        var aggregate = FizzySyncResult()
+        var firstError: String?
+        for boardID in order {
+            guard let engine = makeEngine(for: boardID) else { continue }
+            do {
+                let result = try await engine.sync(localBoardID: boardID)
+                aggregate.merge(result)
+                if firstError == nil, let e = result.errors.first { firstError = e }
+            } catch {
+                if firstError == nil { firstError = error.localizedDescription }
             }
-            // lastSyncAt advances even on partial-failure cycles (cycle ran)
-            activityState.lastSyncAt = .now
-        } catch {
-            activityState.markError(error.localizedDescription)
-            // Note: lastSyncAt is NOT advanced — the cycle did not complete.
         }
+        WidgetCenter.shared.reloadAllTimelines()
+        activityState.update(from: aggregate, conflictStore: conflictStore)
+        if let firstError { activityState.markError(firstError) }
+        activityState.lastSyncAt = .now
         await retryPendingComments()
         await retryPendingSteps()
     }
 
-    /// Fires one sync cycle via the engine. Silently absorbs errors so the
-    /// scheduler's loop doesn't crash on transient failures; errors are
-    /// surfaced through `activityState` on the scheduler.
-    ///
-    /// Also re-posts any pending (unsent) comments — issue #16 retry seam.
-    /// This hook lives here rather than in FizzySyncEngine or FizzyClient so
-    /// neither orchestrator is aware of the comment cache (single-responsibility).
+    /// Fires one background sync cycle over all `syncEnabled` pairings.
+    /// Silently absorbs errors so the scheduler's loop doesn't crash on
+    /// transient failures; errors are surfaced through `activityState` on the
+    /// scheduler. Also re-posts any pending comments and steps.
     func triggerSync() async {
-        guard let engine = makeEngine(), let localBoardID = mapping.localBoardID else { return }
-        _ = try? await engine.sync(localBoardID: localBoardID)
+        for boardID in orderedBoardsToSync() {
+            guard let engine = makeEngine(for: boardID) else { continue }
+            _ = try? await engine.sync(localBoardID: boardID)
+        }
         await retryPendingComments()
         await retryPendingSteps()
     }
