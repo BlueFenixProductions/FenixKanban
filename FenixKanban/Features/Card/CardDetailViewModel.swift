@@ -38,7 +38,12 @@ final class CardDetailViewModel: ObservableObject {
         selectedLabels.sortedByDisplayName()
     }
 
-    init(card: Card, context: NSManagedObjectContext, fizzyClient: FizzyClient? = nil) {
+    init(
+        card: Card,
+        context: NSManagedObjectContext,
+        fizzyClient: FizzyClient? = nil,
+        currentFizzyUserID: String? = nil
+    ) {
         self.card = card
         self.title = card.title ?? ""
         self.cardDescription = card.cardDescription ?? ""
@@ -57,7 +62,8 @@ final class CardDetailViewModel: ObservableObject {
             self.commentsViewModel = CardCommentsViewModel(
                 cardFizzyNumber: card.fizzyNumber,
                 client: client,
-                context: context
+                context: context,
+                currentFizzyUserID: currentFizzyUserID
             )
         } else {
             self.stepsViewModel = nil

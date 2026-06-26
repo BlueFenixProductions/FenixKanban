@@ -203,16 +203,20 @@ final class BoardViewModel: ObservableObject {
 
     // MARK: - Lifecycle filter (#34 default A)
 
-    /// Board-level toggle — persisted globally via AppStorage; @AppStorage
+    /// Per-board UserDefaults key — encodes the board's stable CoreData
+    /// object URI so each board remembers its own toggle independently (#13/#34).
+    private var showClosedKey: String {
+        "showClosedCards.\(board.objectID.uriRepresentation().absoluteString)"
+    }
+
+    /// Board-level toggle — persisted per-board via a board-scoped UserDefaults
+    /// key so navigating between boards does not bleed toggle state. @AppStorage
     /// cannot be a stored property on a non-View type, so we proxy through a
     /// computed property backed by UserDefaults directly.
-    ///
-    /// Per-board persistence would require a per-board settings mechanism that
-    /// does not yet exist; @AppStorage global was chosen (reported in PR body).
     var showClosedCards: Bool {
-        get { UserDefaults.standard.bool(forKey: "showClosedCards") }
+        get { UserDefaults.standard.bool(forKey: showClosedKey) }
         set {
-            UserDefaults.standard.set(newValue, forKey: "showClosedCards")
+            UserDefaults.standard.set(newValue, forKey: showClosedKey)
             objectWillChange.send()
         }
     }

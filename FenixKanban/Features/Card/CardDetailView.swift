@@ -10,7 +10,8 @@ struct CardDetailView: View {
         _viewModel = StateObject(wrappedValue: CardDetailViewModel(
             card: card,
             context: context,
-            fizzyClient: provider?.makeClient()
+            fizzyClient: provider?.makeClient(),
+            currentFizzyUserID: provider?.authStateRef.accountSlug
         ))
     }
 

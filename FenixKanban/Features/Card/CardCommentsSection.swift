@@ -55,6 +55,8 @@ struct CardCommentsSection: View {
     @ViewBuilder
     private func commentRow(_ comment: CachedComment) -> some View {
         let isPending = comment.pendingWrite
+        let commentID = comment.fizzyCommentID ?? ""
+        let rowReactions = viewModel.reactions[commentID] ?? []
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(comment.creatorName ?? "Unknown")
@@ -76,9 +78,81 @@ struct CardCommentsSection: View {
             Text(comment.body ?? "")
                 .font(.crossPlatformSubheadline)
                 .foregroundStyle(isPending ? Color.secondary : Color.primary)
+
+            if !isPending && !commentID.isEmpty {
+                reactionStrip(commentID: commentID, reactions: rowReactions)
+            }
         }
         .opacity(isPending ? 0.6 : 1.0)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(comment.creatorName ?? "Unknown"): \(comment.body ?? "")\(isPending ? " (pending)" : "")")
+        .task {
+            if !isPending && !commentID.isEmpty {
+                await viewModel.loadReactions(for: commentID)
+            }
+        }
+    }
+
+    /// Groups reactions by emoji, returning ordered (emoji, count, isMine) tuples.
+    /// If there are more than 5 distinct emoji, returns only the top 3 by count.
+    private func groupedReactions(_ reactions: [FizzyReaction]) -> [(emoji: String, count: Int, isMine: Bool)] {
+        var seen = Set<String>()
+        var result: [(emoji: String, count: Int, isMine: Bool)] = []
+        for reaction in reactions {
+            guard !seen.contains(reaction.content) else { continue }
+            seen.insert(reaction.content)
+            let emojiReactions = reactions.filter { $0.content == reaction.content }
+            let isMine = emojiReactions.contains { $0.reacter.id == viewModel.currentFizzyUserID }
+            result.append((emoji: reaction.content, count: emojiReactions.count, isMine: isMine))
+        }
+        if result.count > 5 {
+            return Array(result.sorted { $0.count > $1.count }.prefix(3))
+        }
+        return result
+    }
+
+    /// Horizontal reaction bar: existing bubbles grouped by emoji, plus an
+    /// add-reaction menu with 5 common emoji.
+    private func reactionStrip(commentID: String, reactions: [FizzyReaction]) -> some View {
+        let commonEmoji = ["👍", "❤️", "🎉", "👀", "🚀"]
+        let counts = groupedReactions(reactions)
+        return HStack(spacing: 4) {
+            ForEach(counts, id: \.emoji) { entry in
+                Button {
+                    Task { await viewModel.toggleReaction(emoji: entry.emoji, for: commentID) }
+                } label: {
+                    Text("\(entry.emoji) \(entry.count)")
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(entry.isMine
+                                      ? Color.accentColor.opacity(0.25)
+                                      : Color.secondary.opacity(0.12))
+                        )
+                        .foregroundStyle(entry.isMine ? Color.accentColor : Color.primary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(entry.emoji), \(entry.count) reaction\(entry.count == 1 ? "" : "s")\(entry.isMine ? ", reacted" : "")")
+            }
+
+            if viewModel.currentFizzyUserID != nil {
+                Menu {
+                    ForEach(commonEmoji, id: \.self) { emoji in
+                        Button(emoji) {
+                            Task { await viewModel.toggleReaction(emoji: emoji, for: commentID) }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "face.smiling")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+                .menuStyle(.borderlessButton)
+                .accessibilityLabel("Add reaction")
+            }
+        }
+        .padding(.top, 2)
     }
 }
