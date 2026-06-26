@@ -1,14 +1,15 @@
 // Widgets/PlaygroundBoardWidget.swift
 //
-// FenixKanban board widget — displays a column summary from the latest
-// BoardSnapshot written by the main app after each sync.
+// FenixKanban board widget — displays a column summary read live from the
+// shared App Group CoreData store (FenixKanban.sqlite) via WidgetBoardReader.
 //
-// TimelineProvider reads `BoardSnapshotWriter.readSnapshot()` which checks:
-//   1. App Group container  (group.com.bluefenixproductions.FenixKanban)
-//   2. Application Support  (fallback for dev/CI builds without entitlement)
+// TimelineProvider reads `WidgetBoardReader().read()`, which opens the App Group
+// store read-only (no CloudKit) and maps the first board (by sortOrder) into a
+// WidgetBoardData. Returns nil when the store is unavailable or empty, and the
+// view renders a "No board data" state.
 //
 // Refresh policy: every 30 minutes. The main app can request an immediate
-// reload via `WidgetCenter.shared.reloadAllTimelines()` after a sync.
+// reload via `WidgetCenter.shared.reloadAllTimelines()` after a sync/save.
 
 import WidgetKit
 import SwiftUI
@@ -17,7 +18,7 @@ import SwiftUI
 
 struct BoardWidgetEntry: TimelineEntry {
     let date: Date
-    let snapshot: BoardSnapshot?
+    let boardData: WidgetBoardData?
 }
 
 // MARK: - TimelineProvider
@@ -26,33 +27,32 @@ struct BoardWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> BoardWidgetEntry {
         BoardWidgetEntry(
             date: .now,
-            snapshot: BoardSnapshot(
+            boardData: WidgetBoardData(
                 boardName: "My Board",
                 columns: [
-                    BoardSnapshot.ColumnSummary(
+                    WidgetBoardData.ColumnSummary(
                         name: "To Do",
                         cardCount: 5,
                         topCardTitles: ["Write tests", "Fix bug", "Review PR"]
                     ),
-                    BoardSnapshot.ColumnSummary(
+                    WidgetBoardData.ColumnSummary(
                         name: "In Progress",
                         cardCount: 2,
                         topCardTitles: ["Design mockup", "Deploy fix"]
                     )
-                ],
-                generatedAt: .now
+                ]
             )
         )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BoardWidgetEntry) -> Void) {
-        let snapshot = WidgetSnapshotReader.readSnapshot()
-        completion(BoardWidgetEntry(date: .now, snapshot: snapshot))
+        let boardData = WidgetBoardReader().read()
+        completion(BoardWidgetEntry(date: .now, boardData: boardData))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<BoardWidgetEntry>) -> Void) {
-        let snapshot = WidgetSnapshotReader.readSnapshot()
-        let entry = BoardWidgetEntry(date: .now, snapshot: snapshot)
+        let boardData = WidgetBoardReader().read()
+        let entry = BoardWidgetEntry(date: .now, boardData: boardData)
         // Refresh every 30 minutes.
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: .now) ?? .now
         let timeline = Timeline(entries: [entry], policy: .after(nextRefresh))
@@ -67,13 +67,13 @@ struct BoardWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        if let snapshot = entry.snapshot, !snapshot.boardName.isEmpty {
+        if let boardData = entry.boardData, !boardData.boardName.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
-                Text(snapshot.boardName)
+                Text(boardData.boardName)
                     .font(.headline)
                     .lineLimit(1)
 
-                ForEach(snapshot.columns.prefix(3), id: \.name) { column in
+                ForEach(boardData.columns.prefix(3), id: \.name) { column in
                     ColumnSummaryRow(column: column)
                 }
             }
@@ -94,7 +94,7 @@ struct BoardWidgetEntryView: View {
 }
 
 struct ColumnSummaryRow: View {
-    let column: BoardSnapshot.ColumnSummary
+    let column: WidgetBoardData.ColumnSummary
 
     var body: some View {
         HStack(spacing: 4) {

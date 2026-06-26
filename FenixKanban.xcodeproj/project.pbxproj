@@ -7,6 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E26E98D4F4448FC80F85314 /* Board+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5909D4678DDACA354C6FDC36 /* Board+CoreDataClass.swift */; };
+		AED625536A60419280041956 /* CachedComment+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */; };
+		E30CB6A2C1234989A1A0B723 /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8866EFD2141D3C4A5D9723F1 /* Card+CoreDataClass.swift */; };
+		6B2F5919D5B3425EA3217F2A /* CardStep+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3FE88AE342550F49B55BF1 /* CardStep+CoreDataClass.swift */; };
+		E3E09CA8BD144556B54A10B1 /* CardTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00732E1A5C4D4B8020209330 /* CardTombstone+CoreDataClass.swift */; };
+		61C26ED684424A9D9CF5B3AC /* Column+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9274B04A24B8E36F0D9804A1 /* Column+CoreDataClass.swift */; };
+		F3022C80D71D46D39C621D65 /* ColumnTombstone+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F7D77B94002FF0AFD97874 /* ColumnTombstone+CoreDataClass.swift */; };
+		699EC703B6CA4BA0A55F396F /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
+		D5034C9F1CB44CED9B17E4FC /* NSManagedObject+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */; };
+		87AB3DCDC45A409B92F1166F /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
+		B7ADB79D1ED846F88EDB6B30 /* FenixKanban.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */; };
+		4A5CBC6B43864A6BA536F47F /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */; };
+		4A20851A5CF24888B64E087E /* WidgetBoardReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669023103186435ABE3C526F /* WidgetBoardReader.swift */; };
+		540F08C8562047F6835D5365 /* WidgetBoardDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208E5BBE8A345F1859234C1 /* WidgetBoardDataTests.swift */; };
+		99158A2D956E4D1F9BAB6850 /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */; };
 		0007737C6FCC57DA42BD02A3 /* Label+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */; };
 		0052898C57571A9752CFC9A0 /* CachedComment+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00AE87F56AE328025E43598 /* CachedComment+CoreDataClass.swift */; };
 		01E3AFEC069DF18B4E2A0C4E /* SyncResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCED96777A4573DFBA0FF0AA /* SyncResult.swift */; };
@@ -312,6 +327,9 @@
 		36E8B6A25376C60961725E8B /* BackupManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManifest.swift; sourceTree = "<group>"; };
 		38A57D39B2CCA5985144EF4A /* FizzyClientBoardsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyClientBoardsTests.swift; sourceTree = "<group>"; };
 		3AA428EDA0F6EC5E565F52D5 /* WidgetSnapshotReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotReader.swift; sourceTree = "<group>"; };
+		9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardData.swift; sourceTree = "<group>"; };
+		669023103186435ABE3C526F /* WidgetBoardReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardReader.swift; sourceTree = "<group>"; };
+		7208E5BBE8A345F1859234C1 /* WidgetBoardDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBoardDataTests.swift; sourceTree = "<group>"; };
 		3B3B18529BA56A0A6AB29ED9 /* FenixKanban.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FenixKanban.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BAF9D30411BBA68C9901CBC /* Color+CrossPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+CrossPlatform.swift"; sourceTree = "<group>"; };
 		3EBBBBF705E70A9B9C8F880B /* FizzySyncEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncEngineTests.swift; sourceTree = "<group>"; };
@@ -889,6 +907,8 @@
 				12879304376681EE625271BC /* Info.plist */,
 				9D72762CA29E0DCDDE54E5C0 /* PlaygroundBoardWidget.swift */,
 				3AA428EDA0F6EC5E565F52D5 /* WidgetSnapshotReader.swift */,
+				9937222FAE214FFEA30854C7 /* WidgetBoardData.swift */,
+				669023103186435ABE3C526F /* WidgetBoardReader.swift */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -1104,6 +1124,7 @@
 			children = (
 				DA05B3C28E71F324E32B74AC /* BoardSnapshotWriterTests.swift */,
 				6F594652C5DF288B90851870 /* WidgetSnapshotReaderTests.swift */,
+				7208E5BBE8A345F1859234C1 /* WidgetBoardDataTests.swift */,
 			);
 			path = Widget;
 			sourceTree = "<group>";
@@ -1523,6 +1544,8 @@
 				EC7C05CF82696BA1D92235FC /* ToggleGoldenIntentTests.swift in Sources */,
 				F3F29322F81DCB43E8A4B25A /* TombstoneEntitiesTests.swift in Sources */,
 				E051A47171FC580A6BF1AE22 /* WidgetSnapshotReaderTests.swift in Sources */,
+				540F08C8562047F6835D5365 /* WidgetBoardDataTests.swift in Sources */,
+				99158A2D956E4D1F9BAB6850 /* WidgetBoardData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1562,6 +1585,19 @@
 				E746092BB571C477737AB6B2 /* BoardSnapshot.swift in Sources */,
 				87DFC476A5616C05386D198F /* PlaygroundBoardWidget.swift in Sources */,
 				D43684A2EDC46213E1817D47 /* WidgetSnapshotReader.swift in Sources */,
+				9E26E98D4F4448FC80F85314 /* Board+CoreDataClass.swift in Sources */,
+				AED625536A60419280041956 /* CachedComment+CoreDataClass.swift in Sources */,
+				E30CB6A2C1234989A1A0B723 /* Card+CoreDataClass.swift in Sources */,
+				6B2F5919D5B3425EA3217F2A /* CardStep+CoreDataClass.swift in Sources */,
+				E3E09CA8BD144556B54A10B1 /* CardTombstone+CoreDataClass.swift in Sources */,
+				61C26ED684424A9D9CF5B3AC /* Column+CoreDataClass.swift in Sources */,
+				F3022C80D71D46D39C621D65 /* ColumnTombstone+CoreDataClass.swift in Sources */,
+				699EC703B6CA4BA0A55F396F /* Label+CoreDataClass.swift in Sources */,
+				D5034C9F1CB44CED9B17E4FC /* NSManagedObject+Extensions.swift in Sources */,
+				87AB3DCDC45A409B92F1166F /* PersistenceController.swift in Sources */,
+				B7ADB79D1ED846F88EDB6B30 /* FenixKanban.xcdatamodeld in Sources */,
+				4A5CBC6B43864A6BA536F47F /* WidgetBoardData.swift in Sources */,
+				4A20851A5CF24888B64E087E /* WidgetBoardReader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1764,6 +1800,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = WIDGET_EXTENSION;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1879,6 +1916,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG WIDGET_EXTENSION";
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
