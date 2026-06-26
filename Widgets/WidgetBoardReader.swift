@@ -33,7 +33,6 @@ struct WidgetBoardReader {
 
         let description = NSPersistentStoreDescription(url: storeURL)
         description.isReadOnly = true
-        description.setOption(true as NSNumber, forKey: NSReadOnlyPersistentStoreOption)
         // Local replica only — no CloudKit, no history tracking writes.
         container.persistentStoreDescriptions = [description]
 
@@ -44,6 +43,8 @@ struct WidgetBoardReader {
         if loadError != nil {
             return nil
         }
+
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
 
         return makeWidgetBoardData(from: container.viewContext)
     }

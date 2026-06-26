@@ -129,7 +129,7 @@ struct WidgetBoardDataTests {
     @Test("selects the first board by sortOrder ascending")
     func selectsFirstBoardBySortOrder() throws {
         let context = makeInMemoryContext()
-        // Insert the higher-sortOrder board first to prove ordering, not ins't order.
+        // Insert the higher-sortOrder board first to prove ordering, not insertion order.
         let second = makeBoard("Second Board", sortOrder: 1000, in: context)
         makeColumn("Z", sortOrder: 0, board: second, in: context)
         let first = makeBoard("First Board", sortOrder: 0, in: context)
