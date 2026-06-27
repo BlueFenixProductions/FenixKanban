@@ -77,6 +77,7 @@
 		47952C2FBEE5AFA7208296A7 /* FizzyClient+CardActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0799150A86FC83B5B880B0 /* FizzyClient+CardActions.swift */; };
 		47B7A2EF694C710937F3825E /* FizzyClientCardActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BA5DC73054F09A324E9B58 /* FizzyClientCardActionsTests.swift */; };
 		4820AE83C1D6CD888C65EF9F /* FizzyNotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228A46303577DCEB7E8D4D5A /* FizzyNotificationsViewModel.swift */; };
+		487ED64D937A41D2CB5EBA0B /* LinkBoardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB5EC449E158B68DC0B82A3 /* LinkBoardSheet.swift */; };
 		48B42F3CCACF3FBA3E7F8922 /* CardRepositoryGoldenSortTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58682DDB41C2C955C5ABD519 /* CardRepositoryGoldenSortTests.swift */; };
 		49A6CB72359D375FB13B2B7D /* FizzyDTOs+Boards.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDA0031C50989F69B37D43EE /* FizzyDTOs+Boards.swift */; };
 		49E731B3D3082D79E09013C6 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE77B96655930ABFC5A54DA /* Color+Hex.swift */; };
@@ -516,6 +517,7 @@
 		F90C5E7DFE341CFA9C38DACC /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		FABA181CFB55168EB577EAA1 /* FizzyError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyError.swift; sourceTree = "<group>"; };
 		FAE77B96655930ABFC5A54DA /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		FBB5EC449E158B68DC0B82A3 /* LinkBoardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkBoardSheet.swift; sourceTree = "<group>"; };
 		FBCC7A00A449AE22617DACC7 /* ManualClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualClock.swift; sourceTree = "<group>"; };
 		FDB884CA74E168A59873C4C8 /* BoardFizzySyncModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardFizzySyncModelTests.swift; sourceTree = "<group>"; };
 		FDC0555AA6318151E788C7B4 /* BackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsView.swift; sourceTree = "<group>"; };
@@ -1081,6 +1083,7 @@
 				5F800DED9FC892E7050A9CC1 /* FizzyBoardBrowserViewModel.swift */,
 				5C9EBD2C2AFF4EA1B088F1C8 /* FizzyBoardSyncActivity.swift */,
 				701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */,
+				FBB5EC449E158B68DC0B82A3 /* LinkBoardSheet.swift */,
 			);
 			path = Fizzy;
 			sourceTree = "<group>";
@@ -1436,6 +1439,7 @@
 				87F30DDEF6BA185E04CCE3A8 /* LabelManagementViewModel.swift in Sources */,
 				DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */,
 				81F6D537A1BE4A3C87ACE6F7 /* LabelRepository.swift in Sources */,
+				487ED64D937A41D2CB5EBA0B /* LinkBoardSheet.swift in Sources */,
 				D093A3AA8DA1AD6DB8EB60CD /* NSManagedObject+Extensions.swift in Sources */,
 				58F792A039D26E85E170C0A6 /* NavigationModel.swift in Sources */,
 				E63AADE0F3925286DD626477 /* NewCardSheet.swift in Sources */,

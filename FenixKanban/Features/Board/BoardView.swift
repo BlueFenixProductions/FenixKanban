@@ -18,6 +18,16 @@ struct BoardView: View {
     // Fizzy server notifications — present only when Fizzy is paired.
     @State private var notificationsViewModel: FizzyNotificationsViewModel?
 
+    // Per-board Fizzy Sync menu (issue #18 follow-on).
+    private let fizzyProvider: FizzySyncProvider?
+    @State private var fizzySync: BoardFizzySyncModel?
+    @State private var showFizzySetup = false
+    @State private var showLinkSheet = false
+    @State private var linkCandidates: [RemoteBoard] = []
+    @State private var pendingUnpair = false
+    // Pairing store isn't observable; bump to force the menu to re-derive state.
+    @State private var fizzyRefresh = UUID()
+
     init(board: Board, context: NSManagedObjectContext) {
         let provider = PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider
         let client = provider?.makeClient()
@@ -29,6 +39,11 @@ struct BoardView: View {
         _notificationsViewModel = State(
             initialValue: client.map { FizzyNotificationsViewModel(client: $0) }
         )
+        self.fizzyProvider = provider
+        if let provider, let boardID = board.id {
+            _fizzySync = State(initialValue: BoardFizzySyncModel(
+                provider: provider, boardID: boardID, boardName: board.name ?? "Board"))
+        }
     }
 
     /// `true` when Fizzy has an active board pairing — used to decide whether
@@ -113,6 +128,16 @@ struct BoardView: View {
                 let cardSuffix = cardCount == 1 ? "card" : "cards"
                 Text("\"\(column.name ?? "Untitled")\" and its \(cardCount) \(cardSuffix) will be permanently deleted. This cannot be undone.")
             }
+            .modifier(FizzySyncPresentations(
+                provider: fizzyProvider,
+                model: fizzySync,
+                showFizzySetup: $showFizzySetup,
+                showLinkSheet: $showLinkSheet,
+                linkCandidates: linkCandidates,
+                pendingUnpair: $pendingUnpair,
+                boardName: viewModel.board.name ?? "Board",
+                fizzyRefresh: $fizzyRefresh
+            ))
     }
 
     @ToolbarContentBuilder
@@ -146,8 +171,63 @@ struct BoardView: View {
                         systemImage: viewModel.showClosedCards ? "eye.slash" : "eye"
                     )
                 }
+
+                fizzySyncMenuSection
             } label: {
                 Image(systemName: "plus")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var fizzySyncMenuSection: some View {
+        if let fizzySync {
+            Divider()
+            // `fizzyRefresh` is read so the menu re-derives after each action
+            // (the pairing store is not observable).
+            let _ = fizzyRefresh
+            switch fizzySync.state {
+            case .notConfigured:
+                Button {
+                    showFizzySetup = true
+                } label: {
+                    SwiftUI.Label("Set up Fizzy Sync…", systemImage: "arrow.triangle.2.circlepath")
+                }
+            case .unpaired:
+                Button {
+                    Task { await fizzySync.createOnFizzy(); fizzyRefresh = UUID() }
+                } label: {
+                    SwiftUI.Label("Create on Fizzy", systemImage: "plus.circle")
+                }
+                Button {
+                    Task {
+                        do {
+                            linkCandidates = try await fizzySync.loadUnpairedRemoteBoards()
+                            showLinkSheet = true
+                        } catch {
+                            fizzySync.actionError = "Couldn't load Fizzy boards: \(error)"
+                        }
+                    }
+                } label: {
+                    SwiftUI.Label("Link to Fizzy Board…", systemImage: "link")
+                }
+            case .paired(let enabled, _):
+                Toggle(isOn: Binding(
+                    get: { enabled },
+                    set: { _ in fizzySync.toggleSync(); fizzyRefresh = UUID() }
+                )) {
+                    SwiftUI.Label("Fizzy Sync", systemImage: "arrow.triangle.2.circlepath")
+                }
+                Button {
+                    Task { await fizzySync.syncNow(); fizzyRefresh = UUID() }
+                } label: {
+                    SwiftUI.Label("Sync Now", systemImage: "arrow.clockwise")
+                }
+                Button(role: .destructive) {
+                    pendingUnpair = true
+                } label: {
+                    SwiftUI.Label("Unpair…", systemImage: "minus.circle")
+                }
             }
         }
     }
@@ -312,5 +392,74 @@ struct BoardView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             #endif
         }
+    }
+}
+
+/// Sheets, dialogs, and alerts for the per-board Fizzy Sync menu, kept in a
+/// modifier so `BoardView.body` stays readable. Mirrors the wording used by
+/// `FizzyBoardBrowserView`.
+private struct FizzySyncPresentations: ViewModifier {
+    let provider: FizzySyncProvider?
+    let model: BoardFizzySyncModel?
+    @Binding var showFizzySetup: Bool
+    @Binding var showLinkSheet: Bool
+    let linkCandidates: [RemoteBoard]
+    @Binding var pendingUnpair: Bool
+    let boardName: String
+    @Binding var fizzyRefresh: UUID
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showFizzySetup, onDismiss: { fizzyRefresh = UUID() }) {
+                if let provider {
+                    NavigationStack { FizzyAuthView(provider: provider) }
+                }
+            }
+            .sheet(isPresented: $showLinkSheet) {
+                if let model {
+                    LinkBoardSheet(
+                        localBoardName: boardName,
+                        candidates: linkCandidates,
+                        onLink: { remote in
+                            showLinkSheet = false
+                            Task {
+                                await model.linkExisting(
+                                    toFizzyBoardID: remote.id, fizzyBoardName: remote.name)
+                                fizzyRefresh = UUID()
+                            }
+                        },
+                        onCancel: { showLinkSheet = false }
+                    )
+                }
+            }
+            .confirmationDialog(
+                "Unpair this board?",
+                isPresented: $pendingUnpair
+            ) {
+                Button("Unpair", role: .destructive) {
+                    model?.unpair()
+                    pendingUnpair = false
+                    fizzyRefresh = UUID()
+                }
+                Button("Cancel", role: .cancel) { pendingUnpair = false }
+            } message: {
+                Text("Stops syncing this board. Your local cards are kept.")
+            }
+            .alert("Sync problem", isPresented: Binding(
+                get: { model?.actionError != nil },
+                set: { if !$0 { model?.actionError = nil } }
+            )) {
+                Button("OK", role: .cancel) { model?.actionError = nil }
+            } message: {
+                Text(model?.actionError ?? "")
+            }
+            .alert("Merged with collisions", isPresented: Binding(
+                get: { model?.lastLinkCollisions != nil },
+                set: { if !$0 { model?.lastLinkCollisions = nil } }
+            )) {
+                Button("OK", role: .cancel) { model?.lastLinkCollisions = nil }
+            } message: {
+                Text((model?.lastLinkCollisions ?? []).prefix(8).joined(separator: "\n"))
+            }
     }
 }
