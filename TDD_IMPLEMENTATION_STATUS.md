@@ -2986,3 +2986,36 @@ implementation but each shipped one trivial compile defect in its RED test (Hina
 without `throws`; Rikudo: untyped empty `[:]`/`[]` literals), fixed by hand. The coder model's
 *review* reasoning was shallow, consistent with keeping deep review on Claude. All 6 tests green on
 iOS and macOS, no warnings.
+
+### #22 — Issue #22: remove Fizzy pairing attributes from the Core Data model (2026-06-27)
+
+Dropped the CloudKit-synced hint channel (`Card.fizzyID`, `fizzyNumber`, `fizzyUpdatedAt`,
+`fizzyEtag`) entirely; `FizzyCardPairingStore` (device-local JSON sidecar, the pairing authority
+since #21 A′) is now the sole source of pairing truth. The self-healing seed/heal mechanism
+(`seedPairingStoreFromHints` + `healHints`) was deleted along with the attributes that fed it.
+
+**Phase 1 — production store-only resolution.** Replaced every UI/engine read of the `Card.fizzy*`
+hint attributes with `pairingStore.pairing(for: card.id!)` lookups, and removed the seed/heal calls
+from the engine lifecycle. The `FizzyCardPairing` value type (fizzyID/fizzyNumber/fizzyUpdatedAt)
+stays — it is the store's record shape, not a Card attribute.
+
+**Phase 2 — model v10 + wiring.** Added Core Data model version 10 with the four Card attributes
+removed, set it current, wired the new `.xcdatamodel` into the pbxproj, and re-pinned
+`CloudKitSchemaManifest.expected` to the v10 surface (Card token set shrinks by the four `a:fizzy*`
+tokens; `CardTombstone.fizzyNumber`, `Column.fizzyColumnID`, `ColumnTombstone.fizzyColumnID`,
+`CardStep.fizzyStepID`, `CachedComment.cardFizzyNumber` are unaffected and retained).
+
+**Phase 3 — test conversions (TDD lock-in).** Tests that validated the still-valid store-authority
+guarantee were converted from hint-attribute reads/writes to store API calls
+(`setPairing(_:for:)` in setup, `pairing(for:)?.fizzyID`/`.fizzyNumber` in filters and assertions)
+across FizzySyncEngineTests, FizzySyncEngineAdoptionResilienceTests, FizzySyncEngineConflictTests,
+FizzySyncEngineBoardIsolationTests, and TombstoneEntitiesTests. Four tests that existed *only* to
+exercise the deleted seed/heal mechanism (`cloudKitClobberCannotUnpair`, `coldStoreSeedsByNumberHint`,
+`partialStoreStillSeedsRemainingHints`, `coldStoreSeedsFromAttributeHints`) were removed; two
+clobber-simulation tests were retitled and stripped of their now-meaningless clobber lines
+(no attributes exist to clobber).
+
+**Phase 4 — verification.** iOS and macOS suites both green (exit 0, zero failures), no new warnings.
+This was a Claude multi-file refactor (not delegated to the local LLMs — it spans production + many
+test files and required cross-file reasoning about which tests encode the removed mechanism vs. the
+retained guarantee).

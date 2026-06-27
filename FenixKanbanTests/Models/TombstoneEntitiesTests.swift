@@ -11,11 +11,15 @@ struct TombstoneEntitiesTests {
     let cardRepo: CardRepository
     let board: Board
     let column: Column
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
-        boardRepo = BoardRepository(context: persistence.viewContext)
-        cardRepo = CardRepository(context: persistence.viewContext)
+        boardRepo = BoardRepository(context: persistence.viewContext, pairingStore: pairingStore)
+        cardRepo = CardRepository(context: persistence.viewContext, pairingStore: pairingStore)
         board = boardRepo.createBoard(name: "B")
         column = boardRepo.createColumn(in: board, name: "C")
     }
@@ -70,9 +74,11 @@ struct TombstoneEntitiesTests {
     @Test("deleteCard on a fizzy-paired card writes a CardTombstone")
     func deletePairedCardWritesTombstone() throws {
         let card = cardRepo.createCard(in: column, title: "Paired")
-        card.fizzyID = "fz1"
-        card.fizzyNumber = 7
         try persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz1", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         cardRepo.deleteCard(card)
 
@@ -110,10 +116,12 @@ struct TombstoneEntitiesTests {
     func deleteColumnTombstonesPairedCards() throws {
         column.fizzyColumnID = "FC1"
         let paired = cardRepo.createCard(in: column, title: "Paired")
-        paired.fizzyID = "fz9"
-        paired.fizzyNumber = 9
         _ = cardRepo.createCard(in: column, title: "Unpaired")
         try persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz9", fizzyNumber: 9, fizzyUpdatedAt: .now),
+            for: paired.id!
+        )
 
         boardRepo.deleteColumn(column)
 

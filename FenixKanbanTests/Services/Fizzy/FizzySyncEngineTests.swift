@@ -171,11 +171,11 @@ struct FizzySyncEnginePushLocalTests {
         #expect(result.itemsDeleted == 0)
         #expect(result.errors.isEmpty)
 
-        h.persistence.viewContext.refresh(card1, mergeChanges: false)
-        h.persistence.viewContext.refresh(card2, mergeChanges: false)
-        #expect(card1.fizzyID != nil)
-        #expect(card2.fizzyID != nil)
-        #expect(card1.fizzyID != card2.fizzyID)
+        let id1 = h.pairingStore.pairing(for: card1.id!)?.fizzyID
+        let id2 = h.pairingStore.pairing(for: card2.id!)?.fizzyID
+        #expect(id1 != nil)
+        #expect(id2 != nil)
+        #expect(id1 != id2)
     }
 
     @Test("push mode: only local cards with nil fizzyID get pushed")
@@ -185,8 +185,11 @@ struct FizzySyncEnginePushLocalTests {
 
         let unpushed = h.cardRepo.createCard(in: h.column, title: "Unpushed")
         let alreadyPushed = h.cardRepo.createCard(in: h.column, title: "Already paired")
-        alreadyPushed.fizzyID = "fz-existing"  // mark as already paired
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(  // mark as already paired
+            FizzyCardPairing(fizzyID: "fz-existing", fizzyNumber: 1, fizzyUpdatedAt: .now),
+            for: alreadyPushed.id!
+        )
 
         var postCount = 0
         h.mock.handler = { req in
@@ -217,10 +220,8 @@ struct FizzySyncEnginePushLocalTests {
         #expect(result.itemsCreated == 1)
         #expect(result.errors.isEmpty)
 
-        h.persistence.viewContext.refresh(unpushed, mergeChanges: false)
-        h.persistence.viewContext.refresh(alreadyPushed, mergeChanges: false)
-        #expect(unpushed.fizzyID == "fzid-77")
-        #expect(alreadyPushed.fizzyID == "fz-existing", "already-paired card's fizzyID is preserved")
+        #expect(h.pairingStore.pairing(for: unpushed.id!)?.fizzyID == "fzid-77")
+        #expect(h.pairingStore.pairing(for: alreadyPushed.id!)?.fizzyID == "fz-existing", "already-paired card's fizzyID is preserved")
     }
 }
 
@@ -552,9 +553,8 @@ struct FizzySyncEngineMergeTests {
         #expect(result.errors.count == 1)
         #expect(result.errors.first?.contains("Shared title") == true)
 
-        // The colliding local card keeps its nil fizzyID — unmerged.
-        h.persistence.viewContext.refresh(collidingLocal, mergeChanges: false)
-        #expect(collidingLocal.fizzyID == nil)
+        // The colliding local card stays unpaired — unmerged.
+        #expect(h.pairingStore.pairing(for: collidingLocal.id!) == nil)
     }
 }
 
@@ -698,8 +698,11 @@ struct FizzySyncEngineSteadyPullTests {
 
         // Local card already paired with fz1
         let paired = h.cardRepo.createCard(in: h.column, title: "Existing")
-        paired.fizzyID = "fz1"
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz1", fizzyNumber: 1, fizzyUpdatedAt: .now),
+            for: paired.id!
+        )
 
         h.mock.handler = { req in
             switch (req.httpMethod, req.url?.path) {
@@ -748,7 +751,7 @@ struct FizzySyncEngineSteadyPullTests {
 
         _ = try await h.engine.sync(localBoardID: h.board.id!)
 
-        let card = h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 11 }
+        let card = h.cardRepo.fetchAllCards(in: h.board).first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 11 }
         let names = card?.sortedLabels.compactMap(\.name)
         #expect(names == ["backend", "bug", "urgent"])
     }
@@ -783,7 +786,7 @@ struct FizzySyncEngineSteadyPullTests {
 
         _ = try await h.engine.sync(localBoardID: h.board.id!)
 
-        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 13 })
+        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 13 })
         #expect(card.sortedLabels.count == 1)
 
         let request: NSFetchRequest<Label> = Label.fetchRequest()
@@ -802,14 +805,15 @@ struct FizzySyncEngineSteadyPullTests {
         // than fizzyUpdatedAt; local untouched since last sync).
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = h.cardRepo.createCard(in: h.column, title: "Was tagged")
-        card.fizzyID = "fzT2"
-        card.fizzyNumber = 12
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = baseline
         let repo = LabelRepository(context: h.persistence.viewContext)
         card.addToLabels(repo.createLabel(name: "bug", colorHex: "#FF0000"))
         card.addToLabels(repo.createLabel(name: "urgent", colorHex: "#00FF00"))
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzT2", fizzyNumber: 12, fizzyUpdatedAt: baseline),
+            for: card.id!
+        )
 
         let columnsJSON = """
         [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
@@ -862,7 +866,7 @@ struct FizzySyncEngineSteadyPullTests {
 
         _ = try await h.engine.sync(localBoardID: h.board.id!)
 
-        let card = h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 21 }
+        let card = h.cardRepo.fetchAllCards(in: h.board).first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 21 }
         #expect(card?.assignees == [CardAssignee(id: "u1", name: "Ada Lovelace")])
     }
 
@@ -876,12 +880,13 @@ struct FizzySyncEngineSteadyPullTests {
         // newer than fizzyUpdatedAt; local untouched since last sync).
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = h.cardRepo.createCard(in: h.column, title: "Assigned once")
-        card.fizzyID = "fzA2"
-        card.fizzyNumber = 22
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = baseline
         card.assignees = [CardAssignee(id: "u9", name: "Stale Person")]
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzA2", fizzyNumber: 22, fizzyUpdatedAt: baseline),
+            for: card.id!
+        )
 
         let columnsJSON = """
         [{"id":"FC1","name":"Triage","color":{"name":"Slate","value":"x"},"created_at":"2026-05-25T00:00:00Z"}]
@@ -1043,8 +1048,7 @@ struct FizzySyncEngineSteadyPushTests {
 
         #expect(postCount == 1)
         #expect(result.itemsCreated == 1)
-        h.persistence.viewContext.refresh(card, mergeChanges: false)
-        #expect(card.fizzyID == "fz-55")
+        #expect(h.pairingStore.pairing(for: card.id!)?.fizzyID == "fz-55")
     }
 }
 
@@ -1116,10 +1120,12 @@ struct FizzySyncEngineLWWTests {
         let newerRemote = Date(timeIntervalSince1970: 1_001_000)
 
         let card = h.cardRepo.createCard(in: h.column, title: "Old title")
-        card.fizzyID = "fz1"
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = baseline  // local hasn't changed since last sync
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz1", fizzyNumber: 1, fizzyUpdatedAt: baseline),
+            for: card.id!
+        )
 
         let iso = ISO8601DateFormatter().string(from: newerRemote)
         h.mock.handler = { req in
@@ -1153,10 +1159,12 @@ struct FizzySyncEngineLWWTests {
         let newerLocal = Date(timeIntervalSince1970: 1_001_500)
 
         let card = h.cardRepo.createCard(in: h.column, title: "Local edit")
-        card.fizzyID = "fz1"
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = newerLocal
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz1", fizzyNumber: 1, fizzyUpdatedAt: baseline),
+            for: card.id!
+        )
 
         var putCount = 0
         let isoBaseline = ISO8601DateFormatter().string(from: baseline)
@@ -1224,9 +1232,11 @@ struct FizzySyncEngineSoftDeleteTests {
         // (per-column lists exclude closed cards, so absence alone no longer
         // deletes — task #48).
         let card = cardRepo.createCard(in: column, title: "Doomed")
-        card.fizzyID = "fz-doomed"
-        card.fizzyNumber = 9
         try persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz-doomed", fizzyNumber: 9, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
         let cardObjectID = card.objectID
 
         let session = mock.makeSession()
@@ -1337,8 +1347,7 @@ struct FizzySyncEngineCrashRecoveryTests {
         let result = try await engine.sync(localBoardID: board.id!)
 
         #expect(postCount == 0, "should NOT POST — orphan claimed")
-        persistence.viewContext.refresh(card, mergeChanges: false)
-        #expect(card.fizzyID == "fz-orphan", "local claimed the orphan")
+        #expect(pairingStore.pairing(for: card.id!)?.fizzyID == "fz-orphan", "local claimed the orphan")
         #expect(result.errors.isEmpty)
     }
 
@@ -1620,10 +1629,12 @@ struct FizzySyncEngineNumberReentrancyTests {
 
         let baseline = Date(timeIntervalSince1970: 1_000_000)
         let card = h.cardRepo.createCard(in: h.column, title: "Local edit")
-        card.fizzyID = "03f5vaeq985jlvwv3arl4srq2"   // ULID, not a number
-        card.fizzyUpdatedAt = baseline
         card.modifiedAt = Date(timeIntervalSince1970: 1_001_500)
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "03f5vaeq985jlvwv3arl4srq2", fizzyNumber: 0, fizzyUpdatedAt: baseline),
+            for: card.id!
+        )
 
         var putPaths: [String] = []
         let iso = ISO8601DateFormatter().string(from: baseline)
@@ -1647,7 +1658,7 @@ struct FizzySyncEngineNumberReentrancyTests {
 
         _ = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(putPaths == ["/ACCT/cards/7"])
-        #expect(card.fizzyNumber == 7)
+        #expect(h.pairingStore.pairing(for: card.id!)?.fizzyNumber == 7)
     }
 
     @Test("steady push stores created card's number for future PUTs")
@@ -1683,8 +1694,8 @@ struct FizzySyncEngineNumberReentrancyTests {
         }
 
         _ = try await h.engine.sync(localBoardID: h.board.id!)
-        #expect(card.fizzyID == "fzNEW")
-        #expect(card.fizzyNumber == 12)
+        #expect(h.pairingStore.pairing(for: card.id!)?.fizzyID == "fzNEW")
+        #expect(h.pairingStore.pairing(for: card.id!)?.fizzyNumber == 12)
     }
 
     @Test("double sync with a pushed card: second sync issues zero POSTs")
@@ -1804,7 +1815,7 @@ struct FizzySyncEngineNumberReentrancyTests {
 
         let fetch = Card.fetchRequest()
         let cards = try h.persistence.viewContext.fetch(fetch)
-        #expect(Set(cards.compactMap(\.fizzyID)) == ["fzPG1", "fzPG2"])
+        #expect(Set(cards.compactMap { h.pairingStore.pairing(for: $0.id!)?.fizzyID }) == ["fzPG1", "fzPG2"])
     }
 }
 
@@ -1878,9 +1889,11 @@ struct FizzySyncEngineDeletePropagationTests {
         defer { h.tearDown() }
 
         let card = h.cardRepo.createCard(in: h.column, title: "Doomed")
-        card.fizzyID = "fz7"
-        card.fizzyNumber = 7
         try h.persistence.viewContext.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         // Local delete via the repository writes the tombstone.
         h.cardRepo.deleteCard(card)
@@ -2414,8 +2427,8 @@ struct FizzySyncEnginePinReconciliationTests {
         _ = try await h.engine.sync(localBoardID: h.board.id!)
 
         let cards = h.cardRepo.fetchAllCards(in: h.board)
-        #expect(cards.first { $0.fizzyNumber == 31 }?.isPinned == true)
-        #expect(cards.first { $0.fizzyNumber == 32 }?.isPinned == false)
+        #expect(cards.first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 31 }?.isPinned == true)
+        #expect(cards.first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 32 }?.isPinned == false)
     }
 
     @Test("sync: card absent from GET /my/pins is unpinned (remote-authoritative)")
@@ -2448,7 +2461,7 @@ struct FizzySyncEnginePinReconciliationTests {
 
         // Round 1: card pulled and paired.
         _ = try await h.engine.sync(localBoardID: h.board.id!)
-        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 41 })
+        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 41 })
 
         // Pin locally, then sync again with an empty remote pin set.
         // Touching only isPinned keeps modifiedAt == fizzyUpdatedAt, so the
@@ -2488,7 +2501,7 @@ struct FizzySyncEnginePinReconciliationTests {
         }
 
         _ = try await h.engine.sync(localBoardID: h.board.id!)
-        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { $0.fizzyNumber == 42 })
+        let card = try #require(h.cardRepo.fetchAllCards(in: h.board).first { h.pairingStore.pairing(for: $0.id!)?.fizzyNumber == 42 })
         #expect(card.isPinned == true, "round 1 seeded the pin")
 
         // Round 2: the pins fetch fails (422). Best-effort — the sync must

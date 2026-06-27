@@ -12,10 +12,8 @@ import CoreData
 /// fixtures.
 ///
 /// `FizzyCardPairingStore` is the single authority on card pairing (issue #21
-/// A′). CloudKit-synced attributes `fizzyID`/`fizzyNumber` are demoted to a
-/// self-healing hint channel: written at pairing time and re-healed every sync
-/// for the UI's per-card routes and multi-device bootstrap, but never read for
-/// sync decisions (except to seed a cold store on upgrade/reinstall).
+/// A′). The legacy CloudKit-synced hint attributes on `Card` were removed in
+/// issue #22 (model v10) — pairing is now device-local only.
 @MainActor
 final class FizzySyncEngine {
 
@@ -24,8 +22,8 @@ final class FizzySyncEngine {
     // was: private let mapping: FizzyBoardPairingStore
     private let boardPairingStore: FizzyBoardPairingStore
     private let context: NSManagedObjectContext
-    /// Device-local pairing authority (issue #21 A′). CloudKit-synced
-    /// attributes on Card are demoted to a self-healing hint channel.
+    /// Device-local pairing authority and sole source of card pairing
+    /// (issue #21 A′; the CloudKit hint attributes were removed in #22).
     private let pairingStore: FizzyCardPairingStore
     /// Device-local conflict store. Receives one entry per card where both
     /// local and remote title/description diverged since the last watermark.
@@ -34,7 +32,7 @@ final class FizzySyncEngine {
     /// Reentrancy guard. `sync()`/`syncFirst(mode:)` suspend at every HTTP
     /// await, so a second call (double-tapped Sync Now, a pair-then-sync
     /// overlap, or Phase 6's polling timer) could interleave with the first,
-    /// snapshot the same nil-`fizzyID` cards, and POST them twice — the
+    /// snapshot the same unpaired cards, and POST them twice — the
     /// UAT "~40 duplicate cards" bug. While a run is in flight, subsequent
     /// calls return an empty `FizzySyncResult` immediately.
     private var isSyncing = false
@@ -152,9 +150,7 @@ final class FizzySyncEngine {
         let remoteCards = try await fetchRemoteCards(boardID: fizzyBoardID, remoteColumns: remoteColumns)
 
         // Local cards keyed by fizzyID — pairing comes from the device-local
-        // store (issue #21 A′), which CloudKit cannot clobber. Seed any
-        // missing store entries from legacy hint attributes (per-card, so a
-        // partially-warm store still adopts remaining hints).
+        // store (issue #21 A′), which CloudKit cannot clobber.
         let localColumns: [Column] = (localBoard.columns as? Set<Column>).map { Array($0) } ?? []
 
         // ID-keyed placement map (reconcileColumns has just paired/created
@@ -166,7 +162,6 @@ final class FizzySyncEngine {
         let localCards: [Card] = localColumns.flatMap { col -> [Card] in
             (col.cards as? Set<Card>).map { Array($0) } ?? []
         }
-        seedPairingStoreFromHints(localCards: localCards, remoteCards: remoteCards)
 
         // First-wins on the pathological duplicate-pairing case (two local
         // cards claiming one remote — e.g. a CloudKit duplicate import):
@@ -226,9 +221,6 @@ final class FizzySyncEngine {
                 p.fizzyNumber = Int64(remote.number)
                 if let id = card.id { pairingStore.setPairing(p, for: id) }
             }
-            // Heal the hint attributes every cycle — CloudKit imports may
-            // have clobbered them; the UI reads them for per-card routes.
-            healHints(on: card, fizzyID: p.fizzyID, number: p.fizzyNumber)
 
             let localFizzyTimestamp = p.fizzyUpdatedAt
             let localModified = card.modifiedAt ?? .distantPast
@@ -434,84 +426,26 @@ final class FizzySyncEngine {
         card.id.flatMap { pairingStore.pairing(for: $0) }
     }
 
-    /// Records (or refreshes) a card's pairing in the local store and heals
-    /// the CloudKit-synced hint attributes. The store is the authority; the
-    /// attributes survive only as a bootstrap hint channel (cold store on a
-    /// fresh install / second device) and for the UI's per-card routes.
+    /// Records (or refreshes) a card's pairing in the device-local store — the
+    /// sole pairing authority since #22 removed the CloudKit hint attributes.
     private func recordPairing(for card: Card, fizzyID: String, number: Int64, updatedAt: Date) {
         guard let id = card.id else { return }
         pairingStore.setPairing(
             FizzyCardPairing(fizzyID: fizzyID, fizzyNumber: number, fizzyUpdatedAt: updatedAt),
             for: id
         )
-        healHints(on: card, fizzyID: fizzyID, number: number)
-    }
-
-    /// Re-writes the hint attributes when they drift from the store —
-    /// CloudKit imports clobber them with stale record versions; nothing
-    /// reads them for sync decisions. Never bumps `modifiedAt`: hint writes
-    /// are not content edits and must not trigger LWW echo-pushes.
-    private func healHints(on card: Card, fizzyID: String, number: Int64) {
-        if card.fizzyID != fizzyID { card.fizzyID = fizzyID }
-        if card.fizzyNumber != number { card.fizzyNumber = number }
-    }
-
-    /// Seeds store entries from the CloudKit-carried hint attributes for any
-    /// card that doesn't have one yet: upgrade from a pre-A′ build, fresh
-    /// reinstall, a second device whose CloudKit import lands late, or a
-    /// partially-completed earlier seeding run. Per-card (not gated on an
-    /// empty store) so a partially-warm store still adopts remaining hints
-    /// instead of letting the push loop duplicate them. A hint with a number
-    /// but no fizzyID (pre-A′ clobber residue) resolves through the remote
-    /// list. Worst case for a stale hint pointing at an already-claimed
-    /// remote: a second store entry for the same fizzyID — the
-    /// `pairedByFizzyID` first-wins build keeps the duplicate inert (never
-    /// pushed, never deleted).
-    private func seedPairingStoreFromHints(localCards: [Card], remoteCards: [FizzyCard]) {
-        let remoteByID = Dictionary(uniqueKeysWithValues: remoteCards.map { ($0.id, $0) })
-        let remoteByNumber: [Int64: FizzyCard] = Dictionary(
-            remoteCards.map { (Int64($0.number), $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        for card in localCards {
-            guard let id = card.id else { continue }
-            guard pairing(for: card) == nil else { continue }
-            if let fizzyID = card.fizzyID {
-                let number = card.fizzyNumber != 0
-                    ? card.fizzyNumber
-                    : remoteByID[fizzyID].map { Int64($0.number) } ?? 0
-                pairingStore.setPairing(
-                    FizzyCardPairing(
-                        fizzyID: fizzyID, fizzyNumber: number,
-                        fizzyUpdatedAt: card.fizzyUpdatedAt ?? .distantPast
-                    ),
-                    for: id
-                )
-            } else if card.fizzyNumber != 0, let remote = remoteByNumber[card.fizzyNumber] {
-                pairingStore.setPairing(
-                    FizzyCardPairing(
-                        fizzyID: remote.id, fizzyNumber: card.fizzyNumber,
-                        fizzyUpdatedAt: card.fizzyUpdatedAt ?? .distantPast
-                    ),
-                    for: id
-                )
-            }
-        }
     }
 
     // MARK: - Mode implementations
 
     private func syncFirstPushLocal(localBoard: Board, fizzyBoardID: String) async throws -> FizzySyncResult {
         // Push mode: POST every local card on the paired board that isn't
-        // already paired in the store. Adopt legacy attribute hints before
-        // deciding what to POST (no remote list in push mode — number-only
-        // hints can't resolve here).
+        // already paired in the store.
         var result = FizzySyncResult()
         let columns = (localBoard.columns as? Set<Column>) ?? Set<Column>()
         let cards: [Card] = columns.flatMap { column in
             (column.cards as? Set<Card>) ?? Set<Card>()
         }
-        seedPairingStoreFromHints(localCards: cards, remoteCards: [])
 
         for card in cards where pairing(for: card) == nil {
             do {
@@ -596,10 +530,6 @@ final class FizzySyncEngine {
         let localCards: [Card] = localColumns.flatMap { column -> [Card] in
             (column.cards as? Set<Card>).map { Array($0) } ?? []
         }
-
-        // Adopt legacy attribute hints — after both sides are fetched so
-        // number-only hints can resolve against the remote list.
-        seedPairingStoreFromHints(localCards: localCards, remoteCards: remoteCards)
 
         // Lower-cased title sets for collision detection.
         let localTitleMap: [String: String] = Dictionary(

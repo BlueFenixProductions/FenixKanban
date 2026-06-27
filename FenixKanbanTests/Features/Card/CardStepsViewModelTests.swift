@@ -38,7 +38,6 @@ struct CardStepsViewModelTests {
         c.modifiedAt = Date()
         c.sortOrder = 0
         c.column = column
-        c.fizzyNumber = 1
 
         try? context.save()
         card = c
@@ -59,7 +58,7 @@ struct CardStepsViewModelTests {
     }
 
     private func makeVM() -> CardStepsViewModel {
-        CardStepsViewModel(card: card, cardNumber: Int(card.fizzyNumber), client: makeClient(), repository: makeRepo())
+        CardStepsViewModel(card: card, cardNumber: 1, client: makeClient(), repository: makeRepo())
     }
 
     private func loadFixture(_ name: String) throws -> Data {

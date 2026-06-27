@@ -40,10 +40,9 @@ struct FizzyAuthStatusView: View {
         return formatter.localizedString(for: lastSync, relativeTo: .now)
     }
 
-    // Cards on the paired board with a known Fizzy pairing. Store-first with
-    // the CoreData hint as fallback (#22): the device-local pairing store is
-    // authoritative; the `fizzyID` hint answers only during the cold-device
-    // pre-seed window. Cosmetic and eventually consistent (issue #21 A′).
+    // Cards on the paired board with a known Fizzy pairing, counted from the
+    // device-local pairing store — the sole authority since #22 removed the
+    // CloudKit hint attributes. Cosmetic and eventually consistent (#21 A′).
     private var cardsSyncedCount: Int {
         guard let id = provider.boardPairingStoreRef.all().first?.localBoardID else { return 0 }
         let request: NSFetchRequest<Card> = Card.fetchRequest()

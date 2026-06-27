@@ -73,6 +73,10 @@ struct BoardViewModelGoldenPushTests {
     let card: Card
     let unpairedCard: Card
     let viewModel: BoardViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -81,10 +85,12 @@ struct BoardViewModelGoldenPushTests {
         let board = boardRepo.createBoard(name: "B")
         let column = boardRepo.createColumn(in: board, name: "C")
         card = cardRepo.createCard(in: column, title: "Paired")
-        card.fizzyID = "fzG"
-        card.fizzyNumber = 9
         unpairedCard = cardRepo.createCard(in: column, title: "Unpaired")
         try! persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzG", fizzyNumber: 9, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -93,7 +99,7 @@ struct BoardViewModelGoldenPushTests {
             urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
-        viewModel = BoardViewModel(board: board, context: persistence.viewContext, fizzyClient: client)
+        viewModel = BoardViewModel(board: board, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
     }
 
     @Test("board golden toggle on a paired card pushes goldness")

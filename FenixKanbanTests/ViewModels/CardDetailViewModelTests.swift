@@ -12,6 +12,10 @@ struct CardDetailViewModelTests {
     let cardRepo: CardRepository
     let card: Card
     let viewModel: CardDetailViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -92,10 +96,13 @@ struct CardDetailViewModelTests {
 
     @Test("paired card without a client gets no steps view model")
     func pairedCardWithoutClientHasNoStepsVM() {
-        // fizzyNumber > 0 alone isn't enough — both pairing AND a live
+        // A store pairing alone isn't enough — both pairing AND a live
         // client are required (conjunction in CardDetailViewModel.init).
-        card.fizzyNumber = 7
-        let vm = CardDetailViewModel(card: card, context: persistence.viewContext)
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, pairingStore: pairingStore)
         #expect(vm.stepsViewModel == nil)
     }
 
@@ -150,6 +157,10 @@ struct CardDetailViewModelTagPushTests {
     let card: Card
     let label: Label
     let viewModel: CardDetailViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -158,10 +169,12 @@ struct CardDetailViewModelTagPushTests {
         let board = boardRepo.createBoard(name: "Board")
         let column = boardRepo.createColumn(in: board, name: "Col")
         card = cardRepo.createCard(in: column, title: "Paired Card")
-        card.fizzyID = "fz7"
-        card.fizzyNumber = 7
         label = LabelRepository(context: persistence.viewContext).createLabel(name: "bug", colorHex: "#FF0000")
         try! persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -170,7 +183,7 @@ struct CardDetailViewModelTagPushTests {
             urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
-        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
     }
 
     @Test("paired card with a client exposes a steps view model")
@@ -244,8 +257,7 @@ struct CardDetailViewModelTagPushTests {
 
     @Test("unpaired card toggles locally without any network call")
     func unpairedCardStaysLocal() async throws {
-        card.fizzyNumber = 0
-        card.fizzyID = nil
+        pairingStore.removePairing(for: card.id!)
         mock.handler = { _ in
             Issue.record("no network call expected for unpaired card")
             throw URLError(.unsupportedURL)
@@ -266,6 +278,10 @@ struct CardDetailViewModelAssignmentPushTests {
     let card: Card
     let client: FizzyClient
     let viewModel: CardDetailViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -274,9 +290,11 @@ struct CardDetailViewModelAssignmentPushTests {
         let board = boardRepo.createBoard(name: "Board")
         let column = boardRepo.createColumn(in: board, name: "Col")
         card = cardRepo.createCard(in: column, title: "Paired Card")
-        card.fizzyID = "fz7"
-        card.fizzyNumber = 7
         try! persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -285,7 +303,7 @@ struct CardDetailViewModelAssignmentPushTests {
             urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
-        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
     }
 
     @Test("paired card with client exposes assignment editing")
@@ -312,7 +330,7 @@ struct CardDetailViewModelAssignmentPushTests {
         mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         // Seed the blob, then build a fresh view model so init picks it up.
         card.assignees = [CardAssignee(id: "u9", name: "Grace Hopper")]
-        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
         let user = FizzyUser(id: "u9", name: "Grace Hopper", role: "member", active: true,
                              emailAddress: "g@example.com", createdAt: .now, url: nil, avatarURL: nil)
 
@@ -399,6 +417,10 @@ struct CardDetailViewModelWatchPinPushTests {
     let card: Card
     let client: FizzyClient
     let viewModel: CardDetailViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -407,9 +429,11 @@ struct CardDetailViewModelWatchPinPushTests {
         let board = boardRepo.createBoard(name: "Board")
         let column = boardRepo.createColumn(in: board, name: "Col")
         card = cardRepo.createCard(in: column, title: "Paired Card")
-        card.fizzyID = "fz7"
-        card.fizzyNumber = 7
         try! persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -418,7 +442,7 @@ struct CardDetailViewModelWatchPinPushTests {
             urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
-        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
     }
 
     @Test("paired card with client is fizzy-paired")
@@ -447,7 +471,7 @@ struct CardDetailViewModelWatchPinPushTests {
         mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         card.isWatched = true
         try persistence.viewContext.save()
-        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
         await vm.toggleWatched()
         #expect(vm.isWatched == false)
         #expect(card.isWatched == false)
@@ -475,7 +499,7 @@ struct CardDetailViewModelWatchPinPushTests {
         mock.handler = { request in (Data(), .response(for: request, status: 204)) }
         card.isPinned = true
         try persistence.viewContext.save()
-        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
         await vm.togglePinned()
         #expect(vm.isPinned == false)
         #expect(card.isPinned == false)
@@ -577,7 +601,7 @@ struct CardDetailFizzyResolutionTests {
     @Test("store pairing makes an attribute-unpaired card read as fizzy-paired")
     func storePairingDrivesFizzyState() throws {
         let card = CardRepository(context: persistence.viewContext).createCard(in: column, title: "C")
-        // Attribute-unpaired: card.fizzyNumber defaults to 0.
+        // No store pairing yet — the card resolves as unpaired until one is set.
         let store = makeStore()
         store.setPairing(
             FizzyCardPairing(fizzyID: "fz-7", fizzyNumber: 7, fizzyUpdatedAt: .now),
@@ -588,15 +612,14 @@ struct CardDetailFizzyResolutionTests {
         #expect(vm.stepsViewModel != nil)
     }
 
-    @Test("attribute hint still reads as paired when the store is empty (cold-device fallback)")
-    func attributeFallbackKeepsPaired() throws {
+    @Test("an empty store reads the card as unpaired")
+    func emptyStoreReadsUnpaired() throws {
         let card = CardRepository(context: persistence.viewContext).createCard(in: column, title: "C")
-        card.fizzyNumber = 7
         try persistence.viewContext.save()
         let store = makeStore()   // empty
         let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: store)
-        #expect(vm.isFizzyPaired)
-        #expect(vm.stepsViewModel != nil)
+        #expect(!vm.isFizzyPaired)
+        #expect(vm.stepsViewModel == nil)
     }
 }
 
@@ -688,6 +711,10 @@ struct CardDetailViewModelDeletedCardGuardTests {
     let card: Card
     let label: Label
     let viewModel: CardDetailViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -696,10 +723,12 @@ struct CardDetailViewModelDeletedCardGuardTests {
         let board = boardRepo.createBoard(name: "Board")
         let column = boardRepo.createColumn(in: board, name: "Col")
         card = cardRepo.createCard(in: column, title: "Doomed Card")
-        card.fizzyID = "fz7"
-        card.fizzyNumber = 7
         label = LabelRepository(context: persistence.viewContext).createLabel(name: "bug", colorHex: "#FF0000")
         try! persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -708,7 +737,7 @@ struct CardDetailViewModelDeletedCardGuardTests {
             urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
-        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
 
         // Sync soft-deletes the card while the push is in flight, then the
         // push fails: the catch revert must not touch the dead card. The

@@ -19,8 +19,9 @@ struct FizzyCardPairing: Codable, Equatable {
 ///
 /// Backed by a JSON sidecar in Application Support, written atomically on
 /// every mutation. Loaded once at init; a missing or unreadable file is an
-/// empty store — `FizzySyncEngine.seedPairingStoreFromHints` re-seeds from the
-/// CloudKit hint attributes and the orphan-claim heuristic heals the rest.
+/// empty store — the orphan-claim heuristic in `FizzySyncEngine` re-pairs
+/// cards against the remote list when the store is cold (the legacy CloudKit
+/// hint attributes were removed in #22).
 final class FizzyCardPairingStore: @unchecked Sendable {
 
     /// Process-wide instance backed by the production sidecar file.

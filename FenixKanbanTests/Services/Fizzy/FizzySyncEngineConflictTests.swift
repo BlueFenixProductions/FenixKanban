@@ -569,7 +569,6 @@ struct ProviderStepsRetryTests {
         defer { h.tearDown() }
 
         let card = h.seedConflictCard(localTitle: "Steppy")
-        card.fizzyNumber = 9
 
         let step = CardStep(context: h.persistence.viewContext)
         step.content = "updated content"
@@ -610,7 +609,6 @@ struct ProviderStepsRetryTests {
         defer { h.tearDown() }
 
         let card = h.seedConflictCard(localTitle: "Steppy")
-        card.fizzyNumber = 9
 
         let step = CardStep(context: h.persistence.viewContext)
         step.content = "won't land"

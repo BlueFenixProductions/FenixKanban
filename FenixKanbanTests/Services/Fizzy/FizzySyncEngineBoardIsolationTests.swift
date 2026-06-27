@@ -106,13 +106,13 @@ struct FizzySyncEngineBoardIsolationTests {
         #expect(h.cardCount(on: h.boards[1]) == 15)
         #expect(h.cardCount(on: h.boards[2]) == 15)
 
-        // No fizzyID stamped on non-paired boards' cards.
+        // No store pairing recorded for non-paired boards' cards.
         let board1FizzyIDs = ((h.boards[1].columns as? Set<Column>) ?? [])
             .flatMap { ($0.cards as? Set<Card>) ?? [] }
-            .compactMap(\.fizzyID)
+            .compactMap { $0.id.flatMap { h.pairingStore.pairing(for: $0)?.fizzyID } }
         let board2FizzyIDs = ((h.boards[2].columns as? Set<Column>) ?? [])
             .flatMap { ($0.cards as? Set<Card>) ?? [] }
-            .compactMap(\.fizzyID)
+            .compactMap { $0.id.flatMap { h.pairingStore.pairing(for: $0)?.fizzyID } }
         #expect(board1FizzyIDs.isEmpty)
         #expect(board2FizzyIDs.isEmpty)
     }
@@ -222,7 +222,7 @@ struct FizzySyncEngineBoardIsolationTests {
         let nonPairedFizzyIDs = (h.boards[1...2]).flatMap { board -> [String] in
             ((board.columns as? Set<Column>) ?? [])
                 .flatMap { ($0.cards as? Set<Card>) ?? [] }
-                .compactMap(\.fizzyID)
+                .compactMap { $0.id.flatMap { h.pairingStore.pairing(for: $0)?.fizzyID } }
         }
         #expect(nonPairedFizzyIDs.isEmpty)
     }

@@ -99,9 +99,9 @@ final class BoardRepository: BoardRepositoryProtocol {
         // removes the column's cards, so paired cards get tombstones too.
         ColumnTombstone.record(for: column, in: context)
         for card in (column.cards as? Set<Card>) ?? [] {
-            // The number comes from the pairing store (the authority — issue #21 A′),
-            // falling back to the hint attribute for pre-A′ data whose store was never seeded.
-            let number = card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber
+            // The number comes from the device-local pairing store — the sole
+            // authority since #22 removed the CloudKit hint attributes.
+            let number = card.resolvedFizzyNumber(pairingStore)
             CardTombstone.record(number: number, in: context)
             if let id = card.id { pairingStore.removePairing(for: id) }
         }

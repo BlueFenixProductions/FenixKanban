@@ -24,20 +24,9 @@ struct CardPairingTests {
         )
     }
 
-    @Test("falls back to the CoreData attribute when the store has no entry")
-    func fallbackToAttribute() {
+    @Test("resolves from the pairing store entry")
+    func resolvesFromStore() {
         let store = makeStore()
-        card.fizzyNumber = 42
-        card.fizzyID = "fz-42"
-        #expect(card.resolvedFizzyNumber(store) == 42)
-        #expect(card.resolvedFizzyID(store) == "fz-42")
-    }
-
-    @Test("store value wins over the CoreData attribute")
-    func storeWins() {
-        let store = makeStore()
-        card.fizzyNumber = 42
-        card.fizzyID = "fz-42"
         store.setPairing(
             FizzyCardPairing(fizzyID: "fz-99", fizzyNumber: 99, fizzyUpdatedAt: .now),
             for: card.id!
@@ -46,7 +35,7 @@ struct CardPairingTests {
         #expect(card.resolvedFizzyID(store) == "fz-99")
     }
 
-    @Test("unpaired in both store and attribute yields 0 / nil")
+    @Test("unpaired in the store yields 0 / nil")
     func unpairedDefaults() {
         let store = makeStore()
         #expect(card.resolvedFizzyNumber(store) == 0)

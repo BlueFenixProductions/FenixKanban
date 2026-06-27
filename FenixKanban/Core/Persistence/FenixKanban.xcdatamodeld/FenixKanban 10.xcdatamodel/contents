@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23231" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
+    <entity name="Board" representedClassName="Board" syncable="YES" codeGenerationType="category">
+        <attribute name="colorHex" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String" defaultValueString="Untitled Board"/>
+        <attribute name="sortOrder" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="columns" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Column" inverseName="board" inverseEntity="Column"/>
+    </entity>
+    <entity name="CachedComment" representedClassName="CachedComment" syncable="YES" codeGenerationType="category">
+        <attribute name="body" attributeType="String" defaultValueString=""/>
+        <attribute name="cardFizzyNumber" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="creatorName" optional="YES" attributeType="String"/>
+        <attribute name="fizzyCommentID" optional="YES" attributeType="String"/>
+        <attribute name="pendingWrite" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="Card" representedClassName="Card" syncable="YES" codeGenerationType="category">
+        <attribute name="assigneesData" optional="YES" attributeType="Binary"/>
+        <attribute name="cardDescription" optional="YES" attributeType="String"/>
+        <attribute name="closedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dueDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isCompleted" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isGolden" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isPinned" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isWatched" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="lifecycleStatusRaw" attributeType="String" defaultValueString="active"/>
+        <attribute name="modifiedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="sortOrder" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="title" attributeType="String" defaultValueString="Untitled Card"/>
+        <relationship name="column" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Column" inverseName="cards" inverseEntity="Column"/>
+        <relationship name="labels" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Label" inverseName="cards" inverseEntity="Label"/>
+        <relationship name="steps" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CardStep" inverseName="card" inverseEntity="CardStep"/>
+    </entity>
+    <entity name="CardStep" representedClassName="CardStep" syncable="YES" codeGenerationType="category">
+        <attribute name="completed" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="content" attributeType="String" defaultValueString=""/>
+        <attribute name="fizzyStepID" optional="YES" attributeType="String"/>
+        <attribute name="pendingWrite" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="sortOrder" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="card" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Card" inverseName="steps" inverseEntity="Card"/>
+    </entity>
+    <entity name="CardTombstone" representedClassName="CardTombstone" syncable="YES" codeGenerationType="category">
+        <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fizzyNumber" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="Column" representedClassName="Column" syncable="YES" codeGenerationType="category">
+        <attribute name="colorHex" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fizzyColumnID" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String" defaultValueString="Untitled Column"/>
+        <attribute name="sortOrder" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="board" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Board" inverseName="columns" inverseEntity="Board"/>
+        <relationship name="cards" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Card" inverseName="column" inverseEntity="Card"/>
+    </entity>
+    <entity name="ColumnTombstone" representedClassName="ColumnTombstone" syncable="YES" codeGenerationType="category">
+        <attribute name="boardID" optional="YES" attributeType="String"/>
+        <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fizzyColumnID" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="Label" representedClassName="Label" syncable="YES" codeGenerationType="category">
+        <attribute name="colorHex" optional="YES" attributeType="String" defaultValueString="#808080"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String" defaultValueString="Untitled Label"/>
+        <relationship name="cards" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Card" inverseName="labels" inverseEntity="Card"/>
+    </entity>
+</model>

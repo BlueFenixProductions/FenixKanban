@@ -62,6 +62,10 @@ struct CardLifecyclePairedTests {
     let persistence: PersistenceController
     let card: Card
     let viewModel: CardDetailViewModel
+    let pairingStore = FizzyCardPairingStore(
+        fileURL: FileManager.default.temporaryDirectory
+            .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+    )
 
     init() {
         persistence = PersistenceController(inMemory: true, useCloudKit: false)
@@ -70,9 +74,11 @@ struct CardLifecyclePairedTests {
         let board = boardRepo.createBoard(name: "Board")
         let column = boardRepo.createColumn(in: board, name: "Col")
         card = cardRepo.createCard(in: column, title: "Paired Card")
-        card.fizzyID = "fz42"
-        card.fizzyNumber = 42
         try! persistence.viewContext.save()
+        pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fz42", fizzyNumber: 42, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
 
         let client = FizzyClient(
             baseURL: URL(string: "https://fizzy.bluefenix.net")!,
@@ -81,7 +87,7 @@ struct CardLifecyclePairedTests {
             urlSession: mock.makeSession(),
             clock: ImmediateClock()
         )
-        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client)
+        viewModel = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: pairingStore)
     }
 
     // MARK: closeCard
