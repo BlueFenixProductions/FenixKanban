@@ -130,4 +130,40 @@ struct BoardViewModelGoldenPushTests {
         for _ in 0..<50 { await Task.yield() }
         #expect(mock.requests.isEmpty)
     }
+
+    @Test("store pairing drives the board golden push for an attribute-unpaired card")
+    func storePairingDrivesBoardPush() async throws {
+        let store = FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+        defer { try? FileManager.default.removeItem(at: store.fileURL) }
+
+        // Fresh board + an attribute-unpaired card (fizzyNumber defaults to 0).
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let cardRepo = CardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "B2")
+        let col = boardRepo.createColumn(in: board, name: "C2")
+        let storeCard = cardRepo.createCard(in: col, title: "StorePaired")
+        try persistence.viewContext.save()
+        store.setPairing(
+            FizzyCardPairing(fizzyID: "fzS", fizzyNumber: 5, fizzyUpdatedAt: .now),
+            for: storeCard.id!
+        )
+
+        let client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t", accountSlug: "ACCT",
+            urlSession: mock.makeSession(), clock: ImmediateClock()
+        )
+        let vm = BoardViewModel(board: board, context: persistence.viewContext, fizzyClient: client, pairingStore: store)
+
+        mock.handler = { request in (Data(), .response(for: request, status: 204)) }
+        vm.toggleGolden(for: storeCard)
+        var spins = 0
+        while mock.requests.isEmpty && spins < 1000 { await Task.yield(); spins += 1 }
+        let req = mock.requests.first
+        #expect(req?.httpMethod == "POST")
+        #expect(req?.url?.path.hasSuffix("/cards/5/goldness") == true)   // store number, not attribute 0
+    }
 }
