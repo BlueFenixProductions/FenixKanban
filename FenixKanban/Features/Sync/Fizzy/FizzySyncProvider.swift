@@ -191,7 +191,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
             let body = comment.body ?? ""
             guard !body.isEmpty else { continue }
             do {
-                let created = try await client.createComment(cardNumber: cardNumber, body: body)
+                let created = try await client.createComment(cardNumber: cardNumber, body: body, createdAt: comment.createdAt)
                 comment.fizzyCommentID = created.id
                 comment.pendingWrite = false
                 if context.hasChanges { try? context.save() }

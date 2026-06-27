@@ -2923,3 +2923,18 @@ failures on unsigned runs are errSecMissingEntitlement — CI signs sim builds.
 After the token refresh, UAT items 4 (golden pull), 6 (401 recovery), and 7 (re-pair merge,
 zero remote creates) all passed live; no-creds runs skip cleanly; [itest] hygiene verified —
 Playground holds exactly 32 cards post-run. Phase 5 UAT ledger items 4–7: closed.
+
+### #74 — Issue #59: offline comment timestamp fidelity (2026-06-27)
+
+Offline-queued comments lost their original authoring time on flush: both flush paths called
+`createComment(cardNumber:body:)` without the optional `createdAt`, so the server stamped the
+flush-time `created_at`; the subsequent reconcile (`CommentRepository.upsert`, which sets
+`cached.createdAt = remote.createdAt`) then overwrote the local time and re-sorted the comment in the
+thread. RED: `CardCommentsViewModelCacheTests.retryPendingPreservesCreatedAt` seeds a pending comment
+authored at a known time, flushes via `retryPending()`, and asserts the POST body carries
+`created_at == "1970-01-12T13:46:40Z"` (failed for the right reason — key absent). GREEN: pass
+`comment.createdAt` through both flush paths — `CardCommentsViewModel.retryPending()` and
+`FizzySyncProvider.retryPendingComments()`. iOS + macOS suites green, no warnings. Workflow was
+red-green-**review**: the GREEN implementer step and the diff review were both dispatched to the local
+LLM on Rikudo (gemma4:31b-it-qat, native Ollama `/api/chat`, `think:false`), each payload gated
+through the elf-dispatch repo policy first; review returned no correctness findings.
