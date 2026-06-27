@@ -188,7 +188,8 @@ final class CardCommentsViewModel {
             do {
                 let created = try await client.createComment(
                     cardNumber: Int(cardFizzyNumber),
-                    body: body
+                    body: body,
+                    createdAt: comment.createdAt
                 )
                 repository.markSent(comment, serverID: created.id)
             } catch {

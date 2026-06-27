@@ -54,6 +54,28 @@ struct CardCommentsViewModelCacheTests {
         return try Data(contentsOf: fixturePath)
     }
 
+    /// Decodes a request's wrapped JSON body (URLProtocol exposes the body as
+    /// a stream). Comment payloads are wrapped — `{ "comment": { … } }`.
+    private func jsonObject(of request: URLRequest) -> [String: Any]? {
+        var data = request.httpBody
+        if data == nil, let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var collected = Data()
+            let bufferSize = 4096
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+            defer { buffer.deallocate() }
+            while stream.hasBytesAvailable {
+                let read = stream.read(buffer, maxLength: bufferSize)
+                if read <= 0 { break }
+                collected.append(buffer, count: read)
+            }
+            data = collected
+        }
+        guard let data else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
+
     // MARK: (a) Cache served instantly without network
 
     @Test("cache-first: existing cached comments exposed immediately without a network call")
@@ -280,6 +302,37 @@ struct CardCommentsViewModelCacheTests {
         _ = p1; _ = p2
     }
 
+    @Test("retryPending: flush preserves the original authoring timestamp")
+    func retryPendingPreservesCreatedAt() async throws {
+        let commentData = try loadFixture("comment_doc")
+        let repo = CommentRepository(context: context)
+        // Seed one pending comment authored offline at a known time.
+        let authored = Date(timeIntervalSince1970: 1_000_000) // 1970-01-12T13:46:40Z
+        let pending = repo.insertOptimistic(body: "Offline note", cardFizzyNumber: 3, creatorName: "Me")
+        pending.createdAt = authored
+        try context.save()
+
+        let body = LockedBox<[String: Any]?>(nil)
+        mock.handler = { req in
+            if req.httpMethod == "POST" {
+                body.value = self.jsonObject(of: req)
+                let headers = ["Location": "https://fizzy.bluefenix.net/ACCT/cards/3/comments/03f5v9zo9qlcwwpyc0ascnikz"]
+                return (Data(), .response(for: req, status: 201, headers: headers))
+            }
+            return (commentData, .ok(for: req))
+        }
+
+        let vm = CardCommentsViewModel(
+            cardFizzyNumber: 3,
+            client: makeClient(),
+            context: context
+        )
+        await vm.retryPending()
+
+        let wrapped = try #require(body.value?["comment"] as? [String: String])
+        #expect(wrapped["created_at"] == "1970-01-12T13:46:40Z")
+    }
+
     @Test("retryPending: failed retry leaves entry still pending")
     func retryPendingKeepsOnFailure() async throws {
         let repo = CommentRepository(context: context)
@@ -393,5 +446,17 @@ private final class PostCallCounter: @unchecked Sendable {
     var value: Int {
         lock.lock(); defer { lock.unlock() }
         return _value
+    }
+}
+
+private final class LockedBox<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: T
+
+    init(_ value: T) { _value = value }
+
+    var value: T {
+        get { lock.lock(); defer { lock.unlock() }; return _value }
+        set { lock.lock(); defer { lock.unlock() }; _value = newValue }
     }
 }
