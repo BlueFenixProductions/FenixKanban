@@ -545,6 +545,61 @@ struct CardDetailViewModelWatchPinPushTests {
     }
 }
 
+@Suite("CardDetail Fizzy resolution (#22)", .serialized)
+@MainActor
+struct CardDetailFizzyResolutionTests {
+    let mock = MockHTTPState()
+    let persistence: PersistenceController
+    let column: Column
+    let client: FizzyClient
+
+    init() {
+        persistence = PersistenceController(inMemory: true, useCloudKit: false)
+        let boardRepo = BoardRepository(context: persistence.viewContext)
+        let board = boardRepo.createBoard(name: "B")
+        column = boardRepo.createColumn(in: board, name: "C")
+        client = FizzyClient(
+            baseURL: URL(string: "https://fizzy.bluefenix.net")!,
+            accessToken: "t",
+            accountSlug: "ACCT",
+            urlSession: mock.makeSession(),
+            clock: ImmediateClock()
+        )
+    }
+
+    private func makeStore() -> FizzyCardPairingStore {
+        FizzyCardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-pairings-\(UUID().uuidString).json")
+        )
+    }
+
+    @Test("store pairing makes an attribute-unpaired card read as fizzy-paired")
+    func storePairingDrivesFizzyState() throws {
+        let card = CardRepository(context: persistence.viewContext).createCard(in: column, title: "C")
+        // Attribute-unpaired: card.fizzyNumber defaults to 0.
+        let store = makeStore()
+        store.setPairing(
+            FizzyCardPairing(fizzyID: "fz-7", fizzyNumber: 7, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: store)
+        #expect(vm.isFizzyPaired)
+        #expect(vm.stepsViewModel != nil)
+    }
+
+    @Test("attribute hint still reads as paired when the store is empty (cold-device fallback)")
+    func attributeFallbackKeepsPaired() throws {
+        let card = CardRepository(context: persistence.viewContext).createCard(in: column, title: "C")
+        card.fizzyNumber = 7
+        try persistence.viewContext.save()
+        let store = makeStore()   // empty
+        let vm = CardDetailViewModel(card: card, context: persistence.viewContext, fizzyClient: client, pairingStore: store)
+        #expect(vm.isFizzyPaired)
+        #expect(vm.stepsViewModel != nil)
+    }
+}
+
 /// Thread-safe call counter for `mock.delayedHandler`, which is
 /// invoked off the main actor (URL loading threads).
 private final class TagPushCallCounter: @unchecked Sendable {
