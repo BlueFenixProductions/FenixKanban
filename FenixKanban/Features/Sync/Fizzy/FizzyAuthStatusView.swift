@@ -40,13 +40,17 @@ struct FizzyAuthStatusView: View {
         return formatter.localizedString(for: lastSync, relativeTo: .now)
     }
 
-    // fizzyID hint attributes are healed every sync by FizzySyncEngine;
-    // this count is cosmetic and eventually consistent (issue #21 A′).
+    // Cards on the paired board with a known Fizzy pairing. Store-first with
+    // the CoreData hint as fallback (#22): the device-local pairing store is
+    // authoritative; the `fizzyID` hint answers only during the cold-device
+    // pre-seed window. Cosmetic and eventually consistent (issue #21 A′).
     private var cardsSyncedCount: Int {
         guard let id = provider.mappingRef.localBoardID else { return 0 }
         let request: NSFetchRequest<Card> = Card.fetchRequest()
-        request.predicate = NSPredicate(format: "fizzyID != nil AND column.board.id == %@", id as CVarArg)
-        return (try? provider.persistenceRef.viewContext.count(for: request)) ?? 0
+        request.predicate = NSPredicate(format: "column.board.id == %@", id as CVarArg)
+        let store = provider.pairingStoreRef
+        let cards = (try? provider.persistenceRef.viewContext.fetch(request)) ?? []
+        return cards.filter { $0.resolvedFizzyID(store) != nil }.count
     }
 
     var body: some View {
