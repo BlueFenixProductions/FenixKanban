@@ -240,8 +240,10 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
         let pending = (try? context.fetch(request)) ?? []
         for step in pending {
             guard !step.isDeleted, step.managedObjectContext != nil,
-                  let card = step.card, card.fizzyNumber > 0 else { continue }
-            let cardNumber = Int(card.fizzyNumber)
+                  let card = step.card else { continue }
+            let resolved = card.resolvedFizzyNumber(pairingStore)
+            guard resolved > 0 else { continue }
+            let cardNumber = Int(resolved)
             do {
                 if let stepID = step.fizzyStepID {
                     _ = try await client.updateStep(
@@ -289,6 +291,7 @@ final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
     /// flows without each constructing their own auth handles.
     var authStateRef: FizzyAuthState { authState }
     var persistenceRef: PersistenceController { persistence }
+    var pairingStoreRef: FizzyCardPairingStore { pairingStore }
 
     /// Builds a `FizzyClient` using a caller-supplied token + slug.
     /// Used by the verify view when the slug isn't known yet (the verify

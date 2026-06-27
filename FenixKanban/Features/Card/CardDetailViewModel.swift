@@ -19,6 +19,7 @@ final class CardDetailViewModel: ObservableObject {
 
     private let cardRepository: CardRepository
     private let labelRepository: LabelRepository
+    private let pairingStore: FizzyCardPairingStore
     private var observerToken: (any NSObjectProtocol)?
     let fizzyClient: FizzyClient?
 
@@ -42,7 +43,8 @@ final class CardDetailViewModel: ObservableObject {
         card: Card,
         context: NSManagedObjectContext,
         fizzyClient: FizzyClient? = nil,
-        currentFizzyUserID: String? = nil
+        currentFizzyUserID: String? = nil,
+        pairingStore: FizzyCardPairingStore = .shared
     ) {
         self.card = card
         self.title = card.title ?? ""
@@ -56,11 +58,13 @@ final class CardDetailViewModel: ObservableObject {
         self.cardRepository = CardRepository(context: context)
         self.labelRepository = LabelRepository(context: context)
         self.fizzyClient = fizzyClient
-        if card.fizzyNumber > 0, let client = fizzyClient {
+        self.pairingStore = pairingStore
+        let resolvedNumber = card.resolvedFizzyNumber(pairingStore)
+        if resolvedNumber > 0, let client = fizzyClient {
             let stepRepo = StepRepository(context: context)
-            self.stepsViewModel = CardStepsViewModel(card: card, client: client, repository: stepRepo)
+            self.stepsViewModel = CardStepsViewModel(card: card, cardNumber: Int(resolvedNumber), client: client, repository: stepRepo)
             self.commentsViewModel = CardCommentsViewModel(
-                cardFizzyNumber: card.fizzyNumber,
+                cardFizzyNumber: resolvedNumber,
                 client: client,
                 context: context,
                 currentFizzyUserID: currentFizzyUserID
@@ -146,9 +150,9 @@ final class CardDetailViewModel: ObservableObject {
         if wasSelected { selectedLabels.remove(label) } else { selectedLabels.insert(label) }
         save()
 
-        guard card.fizzyNumber > 0, let client = fizzyClient, let tagTitle = label.name else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient, let tagTitle = label.name else { return }
         do {
-            try await client.toggleCardTag(number: Int(card.fizzyNumber), tagTitle: tagTitle)
+            try await client.toggleCardTag(number: Int(resolvedFizzyNumber), tagTitle: tagTitle)
         } catch {
             // A sync can soft-delete the card while the push is in flight
             // (#20 guard family, BoardViewModel precedent): reverting a dead
@@ -165,10 +169,13 @@ final class CardDetailViewModel: ObservableObject {
         }
     }
 
+    /// Fizzy card number resolved store-first with CoreData-hint fallback (#22).
+    private var resolvedFizzyNumber: Int64 { card.resolvedFizzyNumber(pairingStore) }
+
     /// Fizzy-only affordances (assignments, watch, pin) share this gate:
     /// paired card + live client (issue #19).
     var isFizzyPaired: Bool {
-        card.fizzyNumber > 0 && fizzyClient != nil
+        resolvedFizzyNumber > 0 && fizzyClient != nil
     }
 
     /// Assignments are fizzy-only: the row renders (and toggles run) only
@@ -179,7 +186,7 @@ final class CardDetailViewModel: ObservableObject {
     /// state-recheck revert on failure (same pattern as `toggleLabel` —
     /// last writer wins locally; the next pull reconciles the server).
     func toggleAssignment(_ user: FizzyUser) async {
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         let wasAssigned = assignees.contains { $0.id == user.id }
         if wasAssigned {
             assignees.removeAll { $0.id == user.id }
@@ -189,7 +196,7 @@ final class CardDetailViewModel: ObservableObject {
         cardRepository.updateAssignees(for: card, to: assignees)
 
         do {
-            try await client.toggleCardAssignment(number: Int(card.fizzyNumber), assigneeID: user.id)
+            try await client.toggleCardAssignment(number: Int(resolvedFizzyNumber), assigneeID: user.id)
         } catch {
             // #20 guard family: stand down if a sync deleted the card mid-flight.
             guard !card.isDeleted, card.managedObjectContext != nil else { return }
@@ -212,15 +219,15 @@ final class CardDetailViewModel: ObservableObject {
     /// ruling, #19 wave 3. Optimistic flip + state-recheck revert; can drift
     /// if toggled from another client (documented MVP limitation).
     func toggleWatched() async {
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         let wasWatched = isWatched
         isWatched = !wasWatched
         cardRepository.setWatched(isWatched, for: card)
         do {
             if wasWatched {
-                try await client.unwatchCard(number: Int(card.fizzyNumber))
+                try await client.unwatchCard(number: Int(resolvedFizzyNumber))
             } else {
-                try await client.watchCard(number: Int(card.fizzyNumber))
+                try await client.watchCard(number: Int(resolvedFizzyNumber))
             }
         } catch {
             // #20 guard family: stand down if a sync deleted the card mid-flight.
@@ -237,15 +244,15 @@ final class CardDetailViewModel: ObservableObject {
     /// Pin state is remote-authoritative via GET /my/pins on sync; the toggle
     /// is optimistic with state-recheck revert (issue #19 wave 3).
     func togglePinned() async {
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         let wasPinned = isPinned
         isPinned = !wasPinned
         cardRepository.setPinned(isPinned, for: card)
         do {
             if wasPinned {
-                try await client.unpinCard(number: Int(card.fizzyNumber))
+                try await client.unpinCard(number: Int(resolvedFizzyNumber))
             } else {
-                try await client.pinCard(number: Int(card.fizzyNumber))
+                try await client.pinCard(number: Int(resolvedFizzyNumber))
             }
         } catch {
             // #20 guard family: stand down if a sync deleted the card mid-flight.
@@ -266,12 +273,12 @@ final class CardDetailViewModel: ObservableObject {
         let wasGolden = card.isGolden
         applyGoldenLocally(!wasGolden)
 
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         do {
             if wasGolden {
-                try await client.unmarkCardGolden(number: Int(card.fizzyNumber))
+                try await client.unmarkCardGolden(number: Int(resolvedFizzyNumber))
             } else {
-                try await client.markCardGolden(number: Int(card.fizzyNumber))
+                try await client.markCardGolden(number: Int(resolvedFizzyNumber))
             }
         } catch {
             // #20 guard family: stand down if a sync deleted the card
@@ -293,9 +300,9 @@ final class CardDetailViewModel: ObservableObject {
         let previous = card.lifecycleStatus
         applyLifecycleLocally(.closed)
 
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         do {
-            try await client.closeCard(number: Int(card.fizzyNumber))
+            try await client.closeCard(number: Int(resolvedFizzyNumber))
         } catch {
             guard !card.isDeleted, card.managedObjectContext != nil else { return }
             if card.lifecycleStatus == .closed {
@@ -311,9 +318,9 @@ final class CardDetailViewModel: ObservableObject {
         let previous = card.lifecycleStatus
         applyLifecycleLocally(.active)
 
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         do {
-            try await client.reopenCard(number: Int(card.fizzyNumber))
+            try await client.reopenCard(number: Int(resolvedFizzyNumber))
         } catch {
             guard !card.isDeleted, card.managedObjectContext != nil else { return }
             if card.lifecycleStatus == .active {
@@ -329,9 +336,9 @@ final class CardDetailViewModel: ObservableObject {
         let previous = card.lifecycleStatus
         applyLifecycleLocally(.notNow)
 
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        guard resolvedFizzyNumber > 0, let client = fizzyClient else { return }
         do {
-            try await client.postponeCard(number: Int(card.fizzyNumber))
+            try await client.postponeCard(number: Int(resolvedFizzyNumber))
         } catch {
             guard !card.isDeleted, card.managedObjectContext != nil else { return }
             if card.lifecycleStatus == .notNow {

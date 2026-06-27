@@ -12,15 +12,17 @@ final class BoardViewModel: ObservableObject {
     private let cardRepository: CardRepository
     private let context: NSManagedObjectContext
     private let fizzyClient: FizzyClient?
+    private let pairingStore: FizzyCardPairingStore
     private var debounceTask: Task<Void, Never>?
     private var observerToken: NSObjectProtocol?
 
-    init(board: Board, context: NSManagedObjectContext, fizzyClient: FizzyClient? = nil) {
+    init(board: Board, context: NSManagedObjectContext, fizzyClient: FizzyClient? = nil, pairingStore: FizzyCardPairingStore = .shared) {
         self.board = board
         self.context = context
         self.boardRepository = BoardRepository(context: context)
         self.cardRepository = CardRepository(context: context)
         self.fizzyClient = fizzyClient
+        self.pairingStore = pairingStore
         refreshColumns()
         observeChanges()
     }
@@ -124,9 +126,10 @@ final class BoardViewModel: ObservableObject {
     /// silently — without the push, the next pull reverted it anyway
     /// (#19 wave 3).
     private func pushGolden(for card: Card) {
-        guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+        let resolved = card.resolvedFizzyNumber(pairingStore)
+        guard resolved > 0, let client = fizzyClient else { return }
         let isGolden = card.isGolden
-        let number = Int(card.fizzyNumber)
+        let number = Int(resolved)
         Task { @MainActor in
             do {
                 if isGolden {
@@ -178,15 +181,17 @@ final class BoardViewModel: ObservableObject {
             try? context.save()
             refreshColumns()
 
-            guard card.fizzyNumber > 0, let client = fizzyClient else { return }
+            let resolved = card.resolvedFizzyNumber(pairingStore)
+            guard resolved > 0, let client = fizzyClient else { return }
+            let number = Int(resolved)
             do {
                 switch action {
                 case .close:
-                    try await client.closeCard(number: Int(card.fizzyNumber))
+                    try await client.closeCard(number: number)
                 case .reopen:
-                    try await client.reopenCard(number: Int(card.fizzyNumber))
+                    try await client.reopenCard(number: number)
                 case .postpone:
-                    try await client.postponeCard(number: Int(card.fizzyNumber))
+                    try await client.postponeCard(number: number)
                 }
             } catch {
                 // State-recheck revert (fire-and-forget, no alert surface on board)
