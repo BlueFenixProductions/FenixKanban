@@ -30,7 +30,7 @@ DEVICE_DEST   = 'platform=iOS,id=$(DEVICE_ID)'
 GENERIC_DEST  = 'generic/platform=iOS'
 
 .DEFAULT_GOAL := help
-.PHONY: help generate build build-device test integration-test install launch run \
+.PHONY: help generate build build-device test symbols integration-test install launch run \
         run-device-1 run-device-2 run-all _deploy-one clean devices icon
 
 help:
@@ -40,6 +40,7 @@ help:
 	@echo "  make build         Build for iOS Simulator ($(SIMULATOR))"
 	@echo "  make build-device  Build for physical device (generic iOS)"
 	@echo "  make test          Run unit tests on simulator"
+	@echo "  make symbols       Fast SF Symbol validity sweep (run before push)"
 	@echo "  make integration-test  Run live-API tests (loads .env if present)"
 	@echo "  make install       Install built app on DEVICE_ID (runs build-device)"
 	@echo "  make launch        Launch installed app on DEVICE_ID"
@@ -81,6 +82,17 @@ build-device:
 test:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 	  -destination $(SIM_DEST) test
+
+# Fast SF Symbol validity sweep. Extracts every systemImage:/systemName:
+# literal from the app source and asserts each resolves to a real SF Symbol,
+# turning phantom names (e.g. "link.badge.minus") into a failure instead of a
+# blank icon at runtime. `make test` already includes this, but the sweep
+# alone is seconds — run it after any UI change that touches symbol names so
+# regressions are caught before push rather than in CI.
+symbols:
+	xcodebuild test -project $(PROJECT) -scheme $(SCHEME) \
+	  -destination $(SIM_DEST) \
+	  -only-testing:FenixKanbanTests/SFSymbolValidityTests
 
 # Pinned by UDID per the two-iPhone-17 flake rule (never use name=).
 INTEGRATION_SIM_DEST = 'platform=iOS Simulator,id=1CCA4B1C-2345-4642-A29C-237D8BE5B9EB'
