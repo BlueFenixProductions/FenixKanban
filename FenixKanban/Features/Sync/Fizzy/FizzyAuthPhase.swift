@@ -1,7 +1,7 @@
 import Foundation
 
 /// The four states `FizzyAuthView` can be in, computed from
-/// `FizzyAuthState.isConfigured` + `FizzyBoardMapping.isPaired`.
+/// `FizzyAuthState.isConfigured` + `FizzyBoardPairingStore.isEmpty`.
 ///
 /// - `.unconfigured`: no token in Keychain → show verify view.
 /// - `.unpaired`: token + slug set but no board pairing → show pair view.

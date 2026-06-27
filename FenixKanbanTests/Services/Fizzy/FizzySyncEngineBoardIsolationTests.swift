@@ -16,8 +16,7 @@ struct FizzySyncEngineBoardIsolationTests {
         let boards: [Board]
         let engine: FizzySyncEngine
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
-        let suiteName: String
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -48,10 +47,11 @@ struct FizzySyncEngineBoardIsolationTests {
             authState = FizzyAuthState(keyPrefix: prefix)
             authState.setAccessToken("t"); authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.isolate.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: built[0].id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: built[0].id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -61,14 +61,14 @@ struct FizzySyncEngineBoardIsolationTests {
             )
 
             engine = FizzySyncEngine(
-                client: client, authState: authState, mapping: mapping,
+                client: client, authState: authState, boardPairingStore: boardPairingStore,
                 context: persistence.viewContext, pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
 
@@ -101,7 +101,7 @@ struct FizzySyncEngineBoardIsolationTests {
             }
         }
 
-        _ = try await h.engine.syncFirst(mode: .pushLocalToFizzy)
+        _ = try await h.engine.syncFirst(localBoardID: h.boards[0].id!, mode: .pushLocalToFizzy)
 
         #expect(h.cardCount(on: h.boards[1]) == 15)
         #expect(h.cardCount(on: h.boards[2]) == 15)
@@ -141,7 +141,7 @@ struct FizzySyncEngineBoardIsolationTests {
             }
         }
 
-        _ = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+        _ = try await h.engine.syncFirst(localBoardID: h.boards[0].id!, mode: .replaceLocalWithFizzy)
 
         #expect(h.cardCount(on: h.boards[0]) == 2, "paired board replaced")
         #expect(h.cardCount(on: h.boards[1]) == 15, "non-paired board untouched")
@@ -180,7 +180,7 @@ struct FizzySyncEngineBoardIsolationTests {
             }
         }
 
-        _ = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+        _ = try await h.engine.syncFirst(localBoardID: h.boards[0].id!, mode: .mergeIfNoConflicts)
 
         #expect(h.cardCount(on: h.boards[1]) == 15, "non-paired board untouched")
         #expect(h.cardCount(on: h.boards[2]) == 15, "non-paired board untouched")
@@ -214,7 +214,7 @@ struct FizzySyncEngineBoardIsolationTests {
             }
         }
 
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.boards[0].id!)
 
         #expect(h.cardCount(on: h.boards[1]) == 15)
         #expect(h.cardCount(on: h.boards[2]) == 15)

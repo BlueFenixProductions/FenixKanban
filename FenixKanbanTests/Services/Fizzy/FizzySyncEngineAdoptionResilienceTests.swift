@@ -16,9 +16,8 @@ private struct AdoptionHarness {
     let board: Board
     let column: Column
     let engine: FizzySyncEngine
-    let suiteName: String
     let authState: FizzyAuthState
-    let mappingDefaults: UserDefaults
+    let boardPairingStore: FizzyBoardPairingStore
     let pairingStore: FizzyCardPairingStore
 
     init() {
@@ -38,10 +37,11 @@ private struct AdoptionHarness {
         authState.setAccessToken("t")
         authState.setAccountSlug("ACCT")
 
-        suiteName = "test.fizzy.marker.mapping.\(UUID().uuidString)"
-        mappingDefaults = UserDefaults(suiteName: suiteName)!
-        let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        boardPairingStore = FizzyBoardPairingStore(
+            fileURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+        )
+        boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         let session = mock.makeSession()
         let client = FizzyClient(
@@ -51,14 +51,14 @@ private struct AdoptionHarness {
         )
 
         engine = FizzySyncEngine(
-            client: client, authState: authState, mapping: mapping,
+            client: client, authState: authState, boardPairingStore: boardPairingStore,
             context: persistence.viewContext, pairingStore: pairingStore
         )
     }
 
     func tearDown() {
         authState.clear()
-        mappingDefaults.removePersistentDomain(forName: suiteName)
+        try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
         try? FileManager.default.removeItem(at: pairingStore.fileURL)
     }
 }
@@ -183,7 +183,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty)
         #expect(postedStringDescriptions["WithDesc"] == "Hello", "verbatim — no marker suffix")
@@ -230,7 +230,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
         }
 
         for _ in 0..<2 {
-            let result = try await h.engine.sync()
+            let result = try await h.engine.sync(localBoardID: h.board.id!)
             #expect(result.errors.isEmpty)
             #expect(result.itemsUpdated == 0)
             #expect(result.itemsCreated == 0)
@@ -266,7 +266,7 @@ struct FizzySyncEngineMarkerAdoptionTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty)
         #expect(result.itemsCreated == 1)
@@ -309,7 +309,7 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.count == 1)
         #expect(result.errors.first?.localizedCaseInsensitiveContains("save") == true)
@@ -374,7 +374,7 @@ struct FizzySyncEngineResilienceTests {
         poison.id = UUID()
         poison.title = nil
 
-        let first = try await h.engine.sync()
+        let first = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(postCount == 1)
         #expect(first.errors.contains { $0.localizedCaseInsensitiveContains("save") })
 
@@ -387,7 +387,7 @@ struct FizzySyncEngineResilienceTests {
         // Sync 2: no duplicate POST. (The LWW push may PUT — rollback
         // restored a modifiedAt newer than the stored fizzyUpdatedAt; that
         // is correct push-my-edit behavior, not duplication.)
-        let second = try await h.engine.sync()
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(postCount == 1, "no second POST — the store prevented the duplicate")
         #expect(second.errors.isEmpty)
         #expect(card.fizzyID == "fzH", "hint healed from the store")
@@ -468,14 +468,14 @@ struct FizzySyncEngineResilienceTests {
         }
 
         // Sync 1: the local card pairs via POST — into the pairing store.
-        let first = try await h.engine.sync()
+        let first = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(first.errors.isEmpty)
         #expect(postCount == 1)
         #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyID == "fz-21")
         #expect(card.fizzyID == "fz-21", "hint attributes written at pairing time")
 
         // Sync 2: steady-state cycle while everything is intact.
-        let second = try await h.engine.sync()
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(second.errors.isEmpty)
 
         // Between syncs: a CloudKit import clobbers ALL hint attributes.
@@ -485,7 +485,7 @@ struct FizzySyncEngineResilienceTests {
         try h.persistence.viewContext.save()
 
         // Sync 3: the store still owns the pairing — never POST.
-        let third = try await h.engine.sync()
+        let third = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(postCount == 1, "no duplicate POST — the pairing store is CloudKit-proof")
         #expect(third.errors.isEmpty)
         #expect(card.fizzyID == "fz-21", "fizzyID hint healed from the store")
@@ -497,7 +497,7 @@ struct FizzySyncEngineResilienceTests {
         // Sync 4: hint healing must not have bumped modifiedAt — the next
         // cycle stays completely quiet (no PUT/POST echo).
         let putsBefore = putCount
-        let fourth = try await h.engine.sync()
+        let fourth = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(fourth.errors.isEmpty)
         #expect(postCount == 1)
         #expect(putCount == putsBefore, "hint healing causes no echo-PUT")
@@ -547,7 +547,7 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty)
         #expect(putDescriptions == ["Edited body"], "exactly one LWW push PUT, description verbatim")
@@ -598,7 +598,7 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(postCount == 0, "seeded pairing — never re-POST")
         #expect(h.pairingStore.pairing(for: cardUUID)?.fizzyID == "fz7", "store seeded from the number hint")
@@ -662,7 +662,7 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty)
         #expect(h.pairingStore.pairing(for: bUUID)?.fizzyID == "fzB", "B's hints seeded despite warm store")
@@ -710,7 +710,7 @@ struct FizzySyncEngineResilienceTests {
             }
         }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
 
         #expect(result.errors.isEmpty)
         let seeded = h.pairingStore.pairing(for: cardUUID)
@@ -813,7 +813,7 @@ struct FizzySyncEngineFirstSyncStoreTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .pushLocalToFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .pushLocalToFizzy)
 
         #expect(result.errors.isEmpty)
         #expect(postedTitles == ["Fresh"], "store-paired card is not re-POSTed")
@@ -850,7 +850,7 @@ struct FizzySyncEngineFirstSyncStoreTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .replaceLocalWithFizzy)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .replaceLocalWithFizzy)
 
         #expect(result.errors.isEmpty)
         #expect(h.pairingStore.pairing(for: oldUUID) == nil, "wiped card's pairing removed")
@@ -892,7 +892,7 @@ struct FizzySyncEngineFirstSyncStoreTests {
             }
         }
 
-        let result = try await h.engine.syncFirst(mode: .mergeIfNoConflicts)
+        let result = try await h.engine.syncFirst(localBoardID: h.board.id!, mode: .mergeIfNoConflicts)
 
         #expect(result.errors.isEmpty)
         #expect(h.pairingStore.pairing(for: localUUID)?.fizzyID == "fzMerge")

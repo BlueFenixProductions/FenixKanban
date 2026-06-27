@@ -60,13 +60,15 @@ struct FenixKanbanApp: App {
 
         // Register Fizzy as a BoardSyncProvider. The provider is constructed
         // with the production singletons (Keychain-backed FizzyAuthState,
-        // standard UserDefaults-backed FizzyBoardMapping, the shared
-        // PersistenceController). It is registered before the first scene
-        // renders so SyncSettingsView's list is populated on cold launch.
+        // device-local FizzyBoardPairingStore, the shared PersistenceController).
+        // It is registered before the first scene renders so SyncSettingsView's
+        // list is populated on cold launch.
+        let fizzyBoardPairingStore = FizzyBoardPairingStore()
+        fizzyBoardPairingStore.migrateLegacyMappingIfNeeded()   // silent, one-time
         let fizzyProvider = FizzySyncProvider(
             authState: FizzyAuthState(),
-            mapping: FizzyBoardMapping(),
-            persistence: PersistenceController.shared
+            persistence: PersistenceController.shared,
+            boardPairingStore: fizzyBoardPairingStore
         )
         PluginRegistry.shared.register(fizzyProvider)
 

@@ -83,9 +83,8 @@ struct FizzySyncEngineETagTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -106,10 +105,11 @@ struct FizzySyncEngineETagTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.etag.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -123,7 +123,7 @@ struct FizzySyncEngineETagTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -131,7 +131,7 @@ struct FizzySyncEngineETagTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -145,13 +145,13 @@ struct FizzySyncEngineETagTests {
         h.mock.handler = { try board.handler($0) }
 
         // Cycle 1: full fetch, pulls the remote card, caches list + etag.
-        let first = try await h.engine.sync()
+        let first = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(first.errors.isEmpty)
         #expect(first.itemsCreated == 1)
         #expect(board.fullFetches == 1)
 
         // Cycle 2: nothing changed anywhere.
-        let second = try await h.engine.sync()
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(second.errors.isEmpty)
         #expect(board.conditionalHits == 1, "second cycle must send If-None-Match")
         #expect(board.fullFetches == 1, "no second full fetch on 304")
@@ -172,14 +172,14 @@ struct FizzySyncEngineETagTests {
         let board = ETagBoard(cardsJSON: "[\(etagCardJSON(id: "fz1", number: 1, title: "One"))]")
         h.mock.handler = { try board.handler($0) }
 
-        _ = try await h.engine.sync() // cycle 1: pull + cache
+        _ = try await h.engine.sync(localBoardID: h.board.id!) // cycle 1: pull + cache
 
         // Local edit after the pull.
         let card = try #require(((h.column.cards as? Set<Card>) ?? []).first)
         card.title = "Edited"
         card.modifiedAt = Date(timeIntervalSinceNow: 60)
 
-        let second = try await h.engine.sync()
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(second.errors.isEmpty)
         #expect(board.conditionalHits == 1, "pull side still conditional")
         let didPut = h.mock.requests.contains { $0.httpMethod == "PUT" && ($0.url?.path.contains("/cards/1") ?? false) }
@@ -194,13 +194,13 @@ struct FizzySyncEngineETagTests {
         let board = ETagBoard(cardsJSON: "[\(etagCardJSON(id: "fz1", number: 1, title: "One"))]")
         h.mock.handler = { try board.handler($0) }
 
-        _ = try await h.engine.sync() // cycle 1
+        _ = try await h.engine.sync(localBoardID: h.board.id!) // cycle 1
 
         // Remote edit: new content, new etag — conditional request misses.
         board.cardsJSON = "[\(etagCardJSON(id: "fz1", number: 1, title: "Renamed", lastActiveAt: "2026-06-12T02:00:00Z"))]"
         board.etag = "\"v2\""
 
-        let second = try await h.engine.sync()
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(second.errors.isEmpty)
         #expect(board.fullFetches == 2, "etag miss must re-fetch")
         #expect(second.itemsUpdated == 1)
@@ -208,7 +208,7 @@ struct FizzySyncEngineETagTests {
         #expect(cards.compactMap(\.title) == ["Renamed"])
 
         // And the NEW etag is cached: a third unchanged cycle 304s.
-        let third = try await h.engine.sync()
+        let third = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(third.errors.isEmpty)
         #expect(board.conditionalHits >= 1)
         #expect(board.fullFetches == 2)
@@ -240,8 +240,8 @@ struct FizzySyncEngineETagTests {
             return try state.handler(req)
         }
 
-        _ = try await h.engine.sync()
-        _ = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
+        _ = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(state.fullFetches == 2, "both cycles fetch fully for multi-page lists")
         let cards = (h.column.cards as? Set<Card>) ?? []
         #expect(Set(cards.compactMap(\.title)) == ["One", "Two"])

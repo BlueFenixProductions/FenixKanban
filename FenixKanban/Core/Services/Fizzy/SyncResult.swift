@@ -56,4 +56,15 @@ struct FizzySyncResult: Equatable {
             conflicts: conflicts + other.conflicts
         )
     }
+
+    /// Folds `other` into this result in-place. Used by the multi-board
+    /// scheduler (Task 5) to accumulate per-board results into a single
+    /// aggregate before updating `SyncActivityState`.
+    mutating func merge(_ other: FizzySyncResult) {
+        itemsCreated += other.itemsCreated
+        itemsUpdated += other.itemsUpdated
+        itemsDeleted += other.itemsDeleted
+        errors += other.errors
+        conflicts += other.conflicts
+    }
 }

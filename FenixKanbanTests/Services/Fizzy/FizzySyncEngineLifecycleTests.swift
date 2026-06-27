@@ -78,9 +78,8 @@ struct FizzySyncEngineLifecycleTests {
         let board: Board
         let column: Column
         let engine: FizzySyncEngine
-        let suiteName: String
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
 
         @MainActor
@@ -101,10 +100,11 @@ struct FizzySyncEngineLifecycleTests {
             authState.setAccessToken("t")
             authState.setAccountSlug("ACCT")
 
-            suiteName = "test.fizzy.lifecycle.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
-            mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
+            boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
             let session = mock.makeSession()
             let client = FizzyClient(
@@ -118,7 +118,7 @@ struct FizzySyncEngineLifecycleTests {
             engine = FizzySyncEngine(
                 client: client,
                 authState: authState,
-                mapping: mapping,
+                boardPairingStore: boardPairingStore,
                 context: persistence.viewContext,
                 pairingStore: pairingStore
             )
@@ -126,7 +126,7 @@ struct FizzySyncEngineLifecycleTests {
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
 
@@ -159,7 +159,7 @@ struct FizzySyncEngineLifecycleTests {
         )
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
         #expect(result.itemsDeleted == 0)
         #expect(result.itemsUpdated >= 1)
@@ -182,7 +182,7 @@ struct FizzySyncEngineLifecycleTests {
         )
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
         #expect(card.lifecycleStatus == .notNow)
         #expect(card.closedAt == nil)
@@ -201,7 +201,7 @@ struct FizzySyncEngineLifecycleTests {
         )
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
         #expect(card.lifecycleStatus == .active)
         #expect(card.closedAt == nil)
@@ -221,8 +221,8 @@ struct FizzySyncEngineLifecycleTests {
         )
         h.mock.handler = { try board.handler($0) }
 
-        _ = try await h.engine.sync() // transition cycle
-        let second = try await h.engine.sync()
+        _ = try await h.engine.sync(localBoardID: h.board.id!) // transition cycle
+        let second = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(second.errors.isEmpty)
         let didPush = h.mock.requests.contains {
             ($0.httpMethod == "PUT" || $0.httpMethod == "POST") && ($0.url?.path.contains("/cards") ?? false)
@@ -247,7 +247,7 @@ struct FizzySyncEngineLifecycleTests {
         )
         h.mock.handler = { try board.handler($0) }
 
-        let result = try await h.engine.sync()
+        let result = try await h.engine.sync(localBoardID: h.board.id!)
         #expect(result.errors.isEmpty)
         #expect(card.lifecycleStatus == .closed, "lifecycle still transitions")
         #expect(card.title == "Locally edited", "local content edit must not be clobbered")

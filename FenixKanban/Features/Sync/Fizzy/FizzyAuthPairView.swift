@@ -308,14 +308,14 @@ struct FizzyAuthPairView: View {
             pairError = "Provider isn't authenticated — sign in first."
             return
         }
-        provider.mappingRef.setPairing(localBoardID: localID, fizzyBoardID: fizzyID)
+        provider.pair(localBoardID: localID, fizzyBoardID: fizzyID, fizzyBoardName: nil)
         let mode = pickedMode
         pairError = nil
         isSyncing = true
         pairTask = Task { @MainActor in
             defer { isSyncing = false }
             do {
-                _ = try await engine.syncFirst(mode: mode)
+                _ = try await engine.syncFirst(localBoardID: localID, mode: mode)
                 onPaired()
             } catch FizzyError.unauthorized {
                 // Engine cleared authState. Parent will recompute phase to

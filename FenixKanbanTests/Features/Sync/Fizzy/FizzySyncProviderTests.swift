@@ -7,15 +7,14 @@ import Foundation
 @MainActor
 struct FizzySyncProviderTests {
 
-    /// Builds an in-memory persistence + isolated auth/mapping suite
+    /// Builds an in-memory persistence + isolated auth/board-pairing store
     /// + MockURLProtocol-backed FizzyClient. Returns a configured provider
     /// for the test to exercise.
     private struct Harness {
         let mock = MockHTTPState()
         let persistence: PersistenceController
         let authState: FizzyAuthState
-        let mappingDefaults: UserDefaults
-        let suiteName: String
+        let boardPairingStore: FizzyBoardPairingStore
         let pairingStore: FizzyCardPairingStore
         let provider: FizzySyncProvider
 
@@ -26,13 +25,15 @@ struct FizzySyncProviderTests {
             let prefix = "test.fizzy.provider.\(UUID().uuidString)"
             authState = FizzyAuthState(keyPrefix: prefix)
 
-            suiteName = "test.fizzy.provider.mapping.\(UUID().uuidString)"
-            mappingDefaults = UserDefaults(suiteName: suiteName)!
-            let mapping = FizzyBoardMapping(defaults: mappingDefaults)
+            // Temp-file board pairing store — never touches the real sidecar.
+            boardPairingStore = FizzyBoardPairingStore(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("fk-board-pairings-\(UUID().uuidString).json")
+            )
 
             let session = mock.makeSession()
 
-            // Temp-file pairing store — the provider's engines must never
+            // Temp-file card pairing store — the provider's engines must never
             // write the developer's real Application Support sidecar.
             pairingStore = FizzyCardPairingStore(
                 fileURL: FileManager.default.temporaryDirectory
@@ -41,17 +42,17 @@ struct FizzySyncProviderTests {
 
             provider = FizzySyncProvider(
                 authState: authState,
-                mapping: mapping,
                 persistence: persistence,
                 urlSession: session,
                 clock: ImmediateClock(),
+                boardPairingStore: boardPairingStore,
                 pairingStore: pairingStore
             )
         }
 
         func tearDown() {
             authState.clear()
-            mappingDefaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: boardPairingStore.fileURL)
             try? FileManager.default.removeItem(at: pairingStore.fileURL)
         }
     }
@@ -88,7 +89,7 @@ struct FizzySyncProviderTests {
         }
     }
 
-    @Test("signOut clears authState and mapping but keeps local Cards")
+    @Test("signOut clears authState and board pairing store but keeps local Cards")
     func signOutClearsAuthAndMappingNoCards() async throws {
         let h = Harness(); defer { h.tearDown() }
 
@@ -108,17 +109,17 @@ struct FizzySyncProviderTests {
 
         h.authState.setAccessToken("tok")
         h.authState.setAccountSlug("ACCT")
-        let mapping = FizzyBoardMapping(defaults: h.mappingDefaults)
-        mapping.setPairing(localBoardID: paired.id!, fizzyBoardID: "FB1")
-        mapping.setLastSync(.now)
+        h.boardPairingStore.upsert(FizzyBoardPairing(
+            localBoardID: paired.id!,
+            fizzyBoardID: "FB1",
+            lastSyncAt: .now
+        ))
 
         try await h.provider.signOut()
 
         #expect(h.authState.accessToken == nil)
         #expect(h.authState.accountSlug == nil)
-        #expect(mapping.localBoardID == nil)
-        #expect(mapping.fizzyBoardID == nil)
-        #expect(mapping.lastSyncAt == nil)
+        #expect(h.provider.boardPairingStoreRef.isEmpty)
 
         // Cards on both boards still present.
         let cardRequest: NSFetchRequest<Card> = Card.fetchRequest()
@@ -169,8 +170,7 @@ struct FizzySyncProviderTests {
         let board = boardRepo.createBoard(name: "B")
         _ = boardRepo.createColumn(in: board, name: "C")
         try h.persistence.viewContext.save()
-        let mapping = FizzyBoardMapping(defaults: h.mappingDefaults)
-        mapping.setPairing(localBoardID: board.id!, fizzyBoardID: "FB1")
+        h.boardPairingStore.upsert(FizzyBoardPairing(localBoardID: board.id!, fizzyBoardID: "FB1"))
 
         // Seed the remote with one card on one column so the steady-state pull
         // loop creates exactly one local card. itemsCreated must therefore
@@ -205,34 +205,38 @@ struct FizzySyncProviderTests {
         #expect(result.errors.isEmpty)
     }
 
-    @Test("lastSyncDate returns mapping.lastSyncAt regardless of boardId")
+    @Test("lastSyncDate returns the board pairing store's lastSyncAt for the given boardId")
     func lastSyncDateDelegatesToMapping() {
         let h = Harness(); defer { h.tearDown() }
-        // Initially nil — mapping has no recorded sync.
-        #expect(h.provider.lastSyncDate(for: UUID()) == nil)
-        // After recording on the mapping, the provider exposes it through
-        // lastSyncDate(for:) regardless of the boardId argument (singleton
-        // pairing — boardId is documented as ignored).
-        h.provider.mappingRef.setLastSync(.now)
-        #expect(h.provider.lastSyncDate(for: UUID()) != nil)
+        let localID = UUID()
+        // Initially nil — no pairing exists for this board.
+        #expect(h.provider.lastSyncDate(for: localID) == nil)
+        // After upserting a pairing with a lastSyncAt, the provider exposes it
+        // through lastSyncDate(for:) keyed on the board's localBoardID.
+        h.provider.boardPairingStoreRef.upsert(FizzyBoardPairing(
+            localBoardID: localID,
+            fizzyBoardID: "FB1",
+            lastSyncAt: .now
+        ))
+        #expect(h.provider.lastSyncDate(for: localID) != nil)
     }
 
-    @Test("changePairing clears the board mapping but keeps the token (issue #18)")
+    @Test("changePairing clears the board pairing store but keeps the token (issue #18)")
     func changePairingKeepsToken() {
         let h = Harness(); defer { h.tearDown() }
 
         h.authState.setAccessToken("tok")
         h.authState.setAccountSlug("ACCT")
-        h.provider.mappingRef.setPairing(localBoardID: UUID(), fizzyBoardID: "FB1")
-        h.provider.mappingRef.setLastSync(.now)
-        #expect(h.provider.mappingRef.isPaired)
+        h.boardPairingStore.upsert(FizzyBoardPairing(
+            localBoardID: UUID(),
+            fizzyBoardID: "FB1",
+            lastSyncAt: .now
+        ))
+        #expect(!h.provider.boardPairingStoreRef.isEmpty)
 
         h.provider.changePairing()
 
-        #expect(!h.provider.mappingRef.isPaired)
-        #expect(h.provider.mappingRef.localBoardID == nil)
-        #expect(h.provider.mappingRef.fizzyBoardID == nil)
-        #expect(h.provider.mappingRef.lastSyncAt == nil)
+        #expect(h.provider.boardPairingStoreRef.isEmpty)
         #expect(h.provider.isAuthenticated, "re-pairing must never cost the token — minting a new one needs email, which may be unavailable")
     }
 }
