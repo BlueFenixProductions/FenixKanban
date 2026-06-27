@@ -2953,3 +2953,36 @@ authored at a known time, flushes via `retryPending()`, and asserts the POST bod
 red-green-**review**: the GREEN implementer step and the diff review were both dispatched to the local
 LLM on Rikudo (gemma4:31b-it-qat, native Ollama `/api/chat`, `think:false`), each payload gated
 through the elf-dispatch repo policy first; review returned no correctness findings.
+
+### #75 — Issue #20: CloudKit schema regression guard + dev-only schema-init gate (2026-06-27)
+
+Two codeable slices of the captain-gated CloudKit deploy checklist, both built red-green-**review**
+with the actual code generation delegated to the local LLMs (one slice each) to prove they can carry
+real coding tasks. Every payload was gated through the elf-dispatch repo policy before dispatch.
+
+**Slice 1 — schema-surface regression guard (delegated to Hinata, qwen2.5-coder-14b-instruct, LM
+Studio OpenAI-compat).** New `CloudKitSchemaManifest` (enum): `surface(of:)` walks
+`model.entities` and emits a deterministic, sorted token set per entity —
+`a:<attr>:<attributeType.rawValue>` and `r:<rel>:<destEntity>` — plus a hand-pinned `expected`
+snapshot of the v9 surface (8 entities: Board, CachedComment, Card, CardStep, CardTombstone, Column,
+ColumnTombstone, Label). RED: `CloudKitSchemaSurfaceTests` (3 tests) — live-surface-matches-pinned,
+plus known-attribute / known-relationship extraction. The pinned snapshot is hand-authored (can't be
+generated blind); the model wrote the extraction logic.
+
+**Slice 2 — dev-only, flag-gated schema initialization (delegated to Rikudo, qwen3-coder:30b, native
+Ollama `/api/chat`, `think:false`).** New `PersistenceController.shouldInitializeCloudKitSchema(arguments:environment:)`
+— a pure decision function returning true ONLY when `-dev-init-cloudkit-schema` is present AND
+`XCTestConfigurationFilePath` is absent. RED: `CloudKitSchemaInitGateTests` (3 tests) —
+flag-present-not-under-test (true), flag-absent (false), under-XCTest-even-with-flag (false).
+GREEN integration glue (kept on Claude, not delegated — untestable side-effect wiring): in
+`PersistenceController.init`, after `loadPersistentStores`, gate a `cloudKitContainer.initializeCloudKitSchema(options: [])`
+call behind the helper.
+
+**Review:** dispatched the combined diff to Rikudo (qwen3-coder:30b); its findings (ProcessInfo
+"thread-safety", a "fatalError bypasses the guard" claim) were false positives from misreading the
+control flow — the `fatalError` sits inside the gated block and only fires if the dev schema-init
+throws — and were rejected after verification. Scorecard: both models produced a correct
+implementation but each shipped one trivial compile defect in its RED test (Hinata: `try #require`
+without `throws`; Rikudo: untyped empty `[:]`/`[]` literals), fixed by hand. The coder model's
+*review* reasoning was shallow, consistent with keeping deep review on Claude. All 6 tests green on
+iOS and macOS, no warnings.

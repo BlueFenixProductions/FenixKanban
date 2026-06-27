@@ -201,6 +201,18 @@ final class PersistenceController: ObservableObject {
             }
         }
 
+        if let cloudKitContainer = container as? NSPersistentCloudKitContainer,
+           Self.shouldInitializeCloudKitSchema(
+               arguments: ProcessInfo.processInfo.arguments,
+               environment: ProcessInfo.processInfo.environment
+           ) {
+            do {
+                try cloudKitContainer.initializeCloudKitSchema(options: [])
+            } catch {
+                fatalError("CloudKit schema initialization failed: \(error)")
+            }
+        }
+
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }

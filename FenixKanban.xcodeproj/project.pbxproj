@@ -59,6 +59,8 @@
 		37D4092F6735945F67D6AD4E /* FizzyAuthState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDB1F0B68F0499ABCF92B6D /* FizzyAuthState.swift */; };
 		38B76F596C9ADE228B1DBFAE /* BackupExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E681D4F4ECB3F364C0C422F0 /* BackupExporterTests.swift */; };
 		3AF5A464B64E6EDE0313E19C /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
+		C52071E520000000000000B1 /* CloudKitSchemaManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52071E520000000000000B0 /* CloudKitSchemaManifest.swift */; };
+		C52071E520000000000000D1 /* PersistenceController+CloudKitSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52071E520000000000000D0 /* PersistenceController+CloudKitSchema.swift */; };
 		3BBB8D471936902911BA36E0 /* WidgetBoardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7469688E57EC3AC92CD33E /* WidgetBoardData.swift */; };
 		3D4C3E2E8F8F59CBAFC56B8C /* AddCardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8201DB6CCE759773490DEC3D /* AddCardIntentTests.swift */; };
 		3D5303B80E2BFC55CBE3D81F /* OpenBoardIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA1CAC7BDDA773E2C3A583 /* OpenBoardIntentTests.swift */; };
@@ -90,6 +92,8 @@
 		51C2F4413C2676D03CACE9DF /* FizzyClient+Comments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DAD2ED2D2F5D199581543B6 /* FizzyClient+Comments.swift */; };
 		52518B243D944207DE9AE664 /* MockURLProtocolIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D083862CEB4C83C96107CE6 /* MockURLProtocolIsolationTests.swift */; };
 		56CB19696EF0BC0F01263399 /* CardPairingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6E7E52291E84E0EEF20E24 /* CardPairingTests.swift */; };
+		C52071E520000000000000A1 /* CloudKitSchemaManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52071E520000000000000A2 /* CloudKitSchemaManifestTests.swift */; };
+		C52071E520000000000000C1 /* CloudKitSchemaInitGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52071E520000000000000C2 /* CloudKitSchemaInitGateTests.swift */; };
 		577A21A946600DF0FCF63140 /* LabelEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9408D41208AD8931538011B8 /* LabelEditorSheet.swift */; };
 		5784E51B2890575C8CD43F0C /* CardFizzyAttributesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4320EF6E55D4289D8090AF3A /* CardFizzyAttributesTests.swift */; };
 		5795522A430FAB8B0D9E3425 /* FizzyAuthPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24019D9090EA00DA9C7D193 /* FizzyAuthPhase.swift */; };
@@ -209,6 +213,8 @@
 		DC765919BB731CC54C2A813D /* SyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7572B48C962A3EB824956E /* SyncMonitor.swift */; };
 		DCA918D48BE6C991C0F9B1A1 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBFF9106BD25ACE189F9C34 /* AppearanceMode.swift */; };
 		DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */; };
+		C52071E520000000000000B2 /* CloudKitSchemaManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52071E520000000000000B0 /* CloudKitSchemaManifest.swift */; };
+		C52071E520000000000000D2 /* PersistenceController+CloudKitSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52071E520000000000000D0 /* PersistenceController+CloudKitSchema.swift */; };
 		DDAD4306A7EC34303A1EA66A /* LabelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705401ADCC82CB1481075EA4 /* LabelPickerView.swift */; };
 		DDE866194E7710B03B926840 /* PersistenceControllerStoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CABD228ACE4B5CFEB5D5D53E /* PersistenceControllerStoreLocationTests.swift */; };
 		DEFA903A08A0D1F9DC624551 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696D2AF5C3863296D4DB139 /* MockURLProtocol.swift */; };
@@ -372,6 +378,8 @@
 		65A10C9AB0526EB2849BCCEF /* CoreDataMigrationV9Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV9Tests.swift; sourceTree = "<group>"; };
 		65E6825B6DA45FD22A2CC68C /* CoreDataMigrationV7Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataMigrationV7Tests.swift; sourceTree = "<group>"; };
 		6D6E7E52291E84E0EEF20E24 /* CardPairingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPairingTests.swift; sourceTree = "<group>"; };
+		C52071E520000000000000A2 /* CloudKitSchemaManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSchemaManifestTests.swift; sourceTree = "<group>"; };
+		C52071E520000000000000C2 /* CloudKitSchemaInitGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSchemaInitGateTests.swift; sourceTree = "<group>"; };
 		6E00D90944DED67CF753E517 /* FizzySyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncMapping.swift; sourceTree = "<group>"; };
 		6F1EA2F5FA16B1A5E2A0BDF1 /* NewCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardSheet.swift; sourceTree = "<group>"; };
 		701FB76BF91002475A8F7180 /* FizzySyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzySyncProvider.swift; sourceTree = "<group>"; };
@@ -495,6 +503,8 @@
 		DF5619875D16CD1B3B74E215 /* BoardQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardQuery.swift; sourceTree = "<group>"; };
 		E0435462C469D8222A55798D /* CardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEntity.swift; sourceTree = "<group>"; };
 		E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		C52071E520000000000000B0 /* CloudKitSchemaManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSchemaManifest.swift; sourceTree = "<group>"; };
+		C52071E520000000000000D0 /* PersistenceController+CloudKitSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceController+CloudKitSchema.swift"; sourceTree = "<group>"; };
 		E22CB144486430B2801DB56B /* FizzyDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FizzyDTOTests.swift; sourceTree = "<group>"; };
 		E3A3D83F2F0820F87091E0A2 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
 		E468616D12A084C045616D44 /* FenixKanbanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FenixKanbanTests.swift; sourceTree = "<group>"; };
@@ -603,6 +613,8 @@
 			isa = PBXGroup;
 			children = (
 				6D6E7E52291E84E0EEF20E24 /* CardPairingTests.swift */,
+				C52071E520000000000000A2 /* CloudKitSchemaManifestTests.swift */,
+				C52071E520000000000000C2 /* CloudKitSchemaInitGateTests.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -830,6 +842,8 @@
 				B562A4DF02514E22BF2BDC35 /* Label+CoreDataClass.swift */,
 				E903B064D9CCA412BBA50256 /* NSManagedObject+Extensions.swift */,
 				E08CDD4A3A0F0F42D4CB63A1 /* PersistenceController.swift */,
+				C52071E520000000000000B0 /* CloudKitSchemaManifest.swift */,
+				C52071E520000000000000D0 /* PersistenceController+CloudKitSchema.swift */,
 				EEBD451172E851A085C36F49 /* FenixKanban.xcdatamodeld */,
 			);
 			path = Persistence;
@@ -1451,6 +1465,8 @@
 				83ADC5960C67897BC9D98929 /* OpenBoardIntent.swift in Sources */,
 				2BE7A2F079F329C4788390D0 /* OpenCardIntent.swift in Sources */,
 				DCC089C049939BC2BAF04E49 /* PersistenceController.swift in Sources */,
+				C52071E520000000000000B2 /* CloudKitSchemaManifest.swift in Sources */,
+				C52071E520000000000000D2 /* PersistenceController+CloudKitSchema.swift in Sources */,
 				A00251C828BF492E7FA02027 /* PluginRegistry.swift in Sources */,
 				703038A826EEB17114395035 /* PreviewPersistence.swift in Sources */,
 				27FBE181E269E549EEF69233 /* SettingsView.swift in Sources */,
@@ -1498,6 +1514,8 @@
 				F22ED794A04139F65B21CE89 /* CardLifecycleActionsTests.swift in Sources */,
 				FE02DAB0229879D619CBFD25 /* CardLifecycleTests.swift in Sources */,
 				56CB19696EF0BC0F01263399 /* CardPairingTests.swift in Sources */,
+				C52071E520000000000000A1 /* CloudKitSchemaManifestTests.swift in Sources */,
+				C52071E520000000000000C1 /* CloudKitSchemaInitGateTests.swift in Sources */,
 				48B42F3CCACF3FBA3E7F8922 /* CardRepositoryGoldenSortTests.swift in Sources */,
 				865DDC3563DDB81E598CBC5B /* CardRepositoryTests.swift in Sources */,
 				1C06BE028DED35124CDC51B7 /* CardStepsViewModelTests.swift in Sources */,
@@ -1604,6 +1622,8 @@
 				8E7517588DB9C45B0E69DCB5 /* Label+CoreDataClass.swift in Sources */,
 				BC95D2BC75A39C34A29A1532 /* NSManagedObject+Extensions.swift in Sources */,
 				3AF5A464B64E6EDE0313E19C /* PersistenceController.swift in Sources */,
+				C52071E520000000000000B1 /* CloudKitSchemaManifest.swift in Sources */,
+				C52071E520000000000000D1 /* PersistenceController+CloudKitSchema.swift in Sources */,
 				87DFC476A5616C05386D198F /* PlaygroundBoardWidget.swift in Sources */,
 				DF03B7887AC5CEA0C341FD60 /* WidgetBoardData.swift in Sources */,
 				D9FCE397DF4492C30495C745 /* WidgetBoardReader.swift in Sources */,
