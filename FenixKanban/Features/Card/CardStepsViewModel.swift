@@ -32,9 +32,9 @@ final class CardStepsViewModel: ObservableObject {
         repository.fetchSteps(for: card).contains(where: \.pendingWrite)
     }
 
-    init(card: Card, client: FizzyClient, repository: StepRepository) {
+    init(card: Card, cardNumber: Int, client: FizzyClient, repository: StepRepository) {
         self.card = card
-        self.cardNumber = Int(card.fizzyNumber)
+        self.cardNumber = cardNumber
         self.client = client
         self.repository = repository
     }
@@ -54,12 +54,11 @@ final class CardStepsViewModel: ObservableObject {
         let stubCard = Card(context: context)
         stubCard.id = UUID()
         stubCard.title = "stub"
-        stubCard.fizzyNumber = Int64(cardNumber)
         stubCard.createdAt = Date()
         stubCard.modifiedAt = Date()
         stubCard.sortOrder = 0
         try? context.save()
-        self.init(card: stubCard, client: client, repository: StepRepository(context: context))
+        self.init(card: stubCard, cardNumber: cardNumber, client: client, repository: StepRepository(context: context))
     }
 
     var progressText: String {

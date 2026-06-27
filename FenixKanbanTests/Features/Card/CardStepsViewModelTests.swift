@@ -59,7 +59,7 @@ struct CardStepsViewModelTests {
     }
 
     private func makeVM() -> CardStepsViewModel {
-        CardStepsViewModel(card: card, client: makeClient(), repository: makeRepo())
+        CardStepsViewModel(card: card, cardNumber: Int(card.fizzyNumber), client: makeClient(), repository: makeRepo())
     }
 
     private func loadFixture(_ name: String) throws -> Data {
