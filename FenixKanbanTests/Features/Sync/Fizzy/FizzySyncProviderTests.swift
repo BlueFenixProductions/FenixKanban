@@ -235,4 +235,36 @@ struct FizzySyncProviderTests {
         #expect(h.provider.mappingRef.lastSyncAt == nil)
         #expect(h.provider.isAuthenticated, "re-pairing must never cost the token — minting a new one needs email, which may be unavailable")
     }
+
+    @Test("retryPendingSteps uses the store-resolved card number (not the attribute)")
+    func retryPendingStepsResolvesStoreFirst() async throws {
+        let h = Harness(); defer { h.tearDown() }
+        h.authState.setAccessToken("tok")
+        h.authState.setAccountSlug("ACCT")
+
+        let ctx = h.persistence.viewContext
+        let boardRepo = BoardRepository(context: ctx)
+        let board = boardRepo.createBoard(name: "B")
+        let column = boardRepo.createColumn(in: board, name: "C")
+        let card = CardRepository(context: ctx).createCard(in: column, title: "C")
+        // Attribute-unpaired (fizzyNumber 0); store says 5.
+        let step = CardStep(context: ctx)
+        step.fizzyStepID = "s1"
+        step.content = "x"
+        step.completed = false
+        step.sortOrder = 0
+        step.pendingWrite = true
+        step.card = card
+        try ctx.save()
+        h.pairingStore.setPairing(
+            FizzyCardPairing(fizzyID: "fzS", fizzyNumber: 5, fizzyUpdatedAt: .now),
+            for: card.id!
+        )
+
+        h.mock.handler = { request in (Data("{}".utf8), .response(for: request, status: 200)) }
+        await h.provider.retryPendingSteps()
+
+        let req = try #require(h.mock.requests.first)
+        #expect(req.url?.path.contains("/cards/5/") == true)   // store number, not attribute 0
+    }
 }
