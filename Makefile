@@ -30,13 +30,14 @@ DEVICE_DEST   = 'platform=iOS,id=$(DEVICE_ID)'
 GENERIC_DEST  = 'generic/platform=iOS'
 
 .DEFAULT_GOAL := help
-.PHONY: help generate build build-device test symbols integration-test install launch run \
+.PHONY: help generate version build build-device test symbols integration-test install launch run \
         run-device-1 run-device-2 run-all _deploy-one clean devices icon
 
 help:
 	@echo "FenixKanban development targets:"
 	@echo ""
 	@echo "  make generate      Regenerate Xcode project from project.yml"
+	@echo "  make version       Stamp MARKETING_VERSION with today's date (2.<month>.<MMDD>)"
 	@echo "  make build         Build for iOS Simulator ($(SIMULATOR))"
 	@echo "  make build-device  Build for physical device (generic iOS)"
 	@echo "  make test          Run unit tests on simulator"
@@ -66,6 +67,12 @@ generate:
 	xcodegen generate
 	ruby scripts/patch-widget-platform-filter.rb
 
+# Stamp MARKETING_VERSION with today's date (2.<month>.<MMDD>). Idempotent;
+# a prerequisite of build-device so every physical-device deploy ships with
+# the build date on the Settings > About screen. See scripts/sync-version.sh.
+version:
+	@./scripts/sync-version.sh
+
 build:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 	  -destination $(SIM_DEST) build | xcbeautify 2>/dev/null || \
@@ -74,7 +81,9 @@ build:
 
 # Use generic iOS destination so the build artifact is reusable across
 # multiple connected devices without rebuilding per-device.
-build-device:
+# Depends on `version generate` (in that order): stamp today's date into
+# project.yml, then regenerate the pbxproj so the build picks it up.
+build-device: version generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 	  -destination $(GENERIC_DEST) \
 	  -allowProvisioningUpdates build
