@@ -6,7 +6,12 @@ struct CardDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(card: Card, context: NSManagedObjectContext) {
-        _viewModel = StateObject(wrappedValue: CardDetailViewModel(card: card, context: context))
+        let provider = PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider
+        _viewModel = StateObject(wrappedValue: CardDetailViewModel(
+            card: card,
+            context: context,
+            fizzyClient: provider?.makeClient()
+        ))
     }
 
     var body: some View {
@@ -51,26 +56,73 @@ struct CardDetailView: View {
                         }
                     }
 
-                    // Label
-                    HStack {
-                        Text("Label")
+                    // Labels (multi)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Labels")
                         Spacer()
-                        if let label = viewModel.selectedLabel,
-                           let name = label.name,
-                           let hex = label.colorHex {
-                            LabelBadge(name: name, colorHex: hex)
-                                .onTapGesture { viewModel.showLabelPicker = true }
+                        if viewModel.selectedLabels.isEmpty {
+                            Button("Select") { viewModel.showLabelPicker = true }
+                                .foregroundStyle(.secondary)
+                        } else {
+                            HStack(spacing: 4) {
+                                ForEach(viewModel.sortedSelectedLabels, id: \.objectID) { label in
+                                    if let name = label.name, let hex = label.colorHex {
+                                        LabelBadge(name: name, colorHex: hex)
+                                    }
+                                }
+                            }
+                            .onTapGesture { viewModel.showLabelPicker = true }
                             Button {
-                                viewModel.clearLabel()
+                                viewModel.clearLabels()
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                                     .font(.crossPlatformCaption)
                             }
-                        } else {
-                            Button("Select") { viewModel.showLabelPicker = true }
-                                .foregroundStyle(.secondary)
+                            .accessibilityLabel("Remove all labels")
                         }
+                    }
+
+                    // Assignees (fizzy-paired cards only — issue #19 wave 2)
+                    if viewModel.canEditAssignments {
+                        HStack {
+                            Text("Assignees")
+                            Spacer()
+                            if viewModel.assignees.isEmpty {
+                                Button("Assign") { viewModel.showAssigneePicker = true }
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                HStack(spacing: -6) {
+                                    ForEach(viewModel.assignees) { assignee in
+                                        InitialsAvatar(name: assignee.name)
+                                    }
+                                }
+                                .onTapGesture { viewModel.showAssigneePicker = true }
+                                .accessibilityLabel("Assignees: \(viewModel.assignees.map(\.name).joined(separator: ", "))")
+                                .accessibilityHint("Opens the assignee picker.")
+                            }
+                        }
+                    }
+
+                    // Watch / Pin (fizzy-paired cards only — issue #19 wave 3).
+                    // Watch is local write-only state (server never reports it);
+                    // pin reconciles from GET /my/pins on sync.
+                    if viewModel.isFizzyPaired {
+                        Toggle(isOn: Binding(
+                            get: { viewModel.isWatched },
+                            set: { _ in Task { await viewModel.toggleWatched() } }
+                        )) {
+                            SwiftUI.Label("Watch", systemImage: "eye")
+                        }
+                        .accessibilityHint("Subscribes to activity on this card on Fizzy.")
+
+                        Toggle(isOn: Binding(
+                            get: { viewModel.isPinned },
+                            set: { _ in Task { await viewModel.togglePinned() } }
+                        )) {
+                            SwiftUI.Label("Pin", systemImage: "pin")
+                        }
+                        .accessibilityHint("Pins this card to your Fizzy pins.")
                     }
 
                     // Due date
@@ -96,6 +148,71 @@ struct CardDetailView: View {
                     // Completed toggle
                     Toggle("Completed", isOn: $viewModel.isCompleted)
                 }
+
+                // MARK: Lifecycle section (issue #34)
+                // Show context-appropriate controls: only the valid transitions
+                // from the card's current state. Reopen only for closed cards;
+                // Close and Not Now only for active/notNow cards.
+                Section("Status") {
+                    switch viewModel.card.lifecycleStatus {
+                    case .active:
+                        Button {
+                            Task { await viewModel.closeCard() }
+                        } label: {
+                            SwiftUI.Label("Close Card", systemImage: "checkmark.circle")
+                        }
+                        .foregroundStyle(.secondary)
+                        .accessibilityHint("Marks this card as resolved.")
+
+                        Button {
+                            Task { await viewModel.postponeCard() }
+                        } label: {
+                            SwiftUI.Label("Not Now", systemImage: "clock.badge.xmark")
+                        }
+                        .foregroundStyle(.secondary)
+                        .accessibilityHint("Defers this card without closing it.")
+
+                    case .closed:
+                        HStack {
+                            SwiftUI.Label("Closed", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        Button {
+                            Task { await viewModel.reopenCard() }
+                        } label: {
+                            SwiftUI.Label("Reopen Card", systemImage: "arrow.counterclockwise")
+                        }
+                        .accessibilityHint("Moves this card back to active.")
+
+                    case .notNow:
+                        HStack {
+                            SwiftUI.Label("Not Now", systemImage: "clock.badge.xmark")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        Button {
+                            Task { await viewModel.closeCard() }
+                        } label: {
+                            SwiftUI.Label("Close Card", systemImage: "checkmark.circle")
+                        }
+                        .foregroundStyle(.secondary)
+                        Button {
+                            Task { await viewModel.reopenCard() }
+                        } label: {
+                            SwiftUI.Label("Reopen Card", systemImage: "arrow.counterclockwise")
+                        }
+                        .accessibilityHint("Moves this card back to active.")
+                    }
+                }
+
+                if let stepsVM = viewModel.stepsViewModel {
+                    CardStepsSection(viewModel: stepsVM)
+                }
+
+                if let commentsVM = viewModel.commentsViewModel {
+                    CardCommentsSection(viewModel: commentsVM)
+                }
             }
             .navigationTitle("Card Detail")
             #if os(iOS)
@@ -105,7 +222,7 @@ struct CardDetailView: View {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        viewModel.toggleGolden()
+                        Task { await viewModel.toggleGolden() }
                     } label: {
                         Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
                     }
@@ -116,7 +233,7 @@ struct CardDetailView: View {
                 #else
                 ToolbarItem(placement: .navigation) {
                     Button {
-                        viewModel.toggleGolden()
+                        Task { await viewModel.toggleGolden() }
                     } label: {
                         Image(systemName: viewModel.card.isGolden ? "ticket.fill" : "ticket")
                     }
@@ -134,15 +251,35 @@ struct CardDetailView: View {
             }
             .sheet(isPresented: $viewModel.showLabelPicker) {
                 LabelPickerView(
-                    selectedLabel: $viewModel.selectedLabel,
+                    selectedLabels: viewModel.selectedLabels,
                     context: viewModel.card.managedObjectContext!
-                )
+                ) { label in
+                    Task { await viewModel.toggleLabel(label) }
+                }
+            }
+            .sheet(isPresented: $viewModel.showAssigneePicker) {
+                if let client = viewModel.fizzyClient {
+                    AssigneePickerView(
+                        client: client,
+                        assignedIDs: Set(viewModel.assignees.map(\.id))
+                    ) { user in
+                        Task { await viewModel.toggleAssignment(user) }
+                    }
+                }
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
                 dueDatePicker
             }
             .onChange(of: viewModel.isCompleted) {
                 viewModel.save()
+            }
+            .alert("Sync Error", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
             }
         }
     }

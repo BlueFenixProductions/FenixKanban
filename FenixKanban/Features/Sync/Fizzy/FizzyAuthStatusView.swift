@@ -1,9 +1,9 @@
 import SwiftUI
 import CoreData
 
-/// Paired state UI: status hero, Sync Now, Sign Out. Shows the inline
-/// yellow 401 banner above the hero when showsReauthBanner is true
-/// (computed by parent from phase == .pairedNoToken). Sub-view of
+/// Paired state UI: status hero, Sync Now, Change Board Pairing, Sign Out.
+/// Shows the inline yellow 401 banner above the hero when showsReauthBanner
+/// is true (computed by parent from phase == .pairedNoToken). Sub-view of
 /// FizzyAuthView at phase .paired and .pairedNoToken.
 struct FizzyAuthStatusView: View {
 
@@ -12,12 +12,14 @@ struct FizzyAuthStatusView: View {
     let onReauthRequested: () -> Void
     let onSignOutRequested: () -> Void
     let onSyncFinished: () -> Void
+    let onRepairRequested: () -> Void
 
     @State private var isSyncing: Bool = false
     @State private var syncError: String?
     @State private var syncTask: Task<Void, Never>?
     @State private var lastSyncedRefresh: UUID = UUID()
     @State private var showSignOutConfirm = false
+    @State private var showRepairConfirm = false
 
     private var fizzyBoardName: String {
         provider.mappingRef.fizzyBoardID ?? "—"
@@ -38,11 +40,17 @@ struct FizzyAuthStatusView: View {
         return formatter.localizedString(for: lastSync, relativeTo: .now)
     }
 
+    // Cards on the paired board with a known Fizzy pairing. Store-first with
+    // the CoreData hint as fallback (#22): the device-local pairing store is
+    // authoritative; the `fizzyID` hint answers only during the cold-device
+    // pre-seed window. Cosmetic and eventually consistent (issue #21 A′).
     private var cardsSyncedCount: Int {
         guard let id = provider.mappingRef.localBoardID else { return 0 }
         let request: NSFetchRequest<Card> = Card.fetchRequest()
-        request.predicate = NSPredicate(format: "fizzyID != nil AND column.board.id == %@", id as CVarArg)
-        return (try? provider.persistenceRef.viewContext.count(for: request)) ?? 0
+        request.predicate = NSPredicate(format: "column.board.id == %@", id as CVarArg)
+        let store = provider.pairingStoreRef
+        let cards = (try? provider.persistenceRef.viewContext.fetch(request)) ?? []
+        return cards.filter { $0.resolvedFizzyID(store) != nil }.count
     }
 
     var body: some View {
@@ -84,6 +92,16 @@ struct FizzyAuthStatusView: View {
             }
 
             Section {
+                Button("Change Board Pairing…") {
+                    showRepairConfirm = true
+                }
+                .frame(maxWidth: .infinity)
+                .disabled(isSyncing)
+            } footer: {
+                Text("Keeps your Fizzy token. Pick a new local ↔ Fizzy board pair.")
+            }
+
+            Section {
                 Button("Sign Out", role: .destructive) {
                     showSignOutConfirm = true
                 }
@@ -99,6 +117,12 @@ struct FizzyAuthStatusView: View {
             Button("Sign Out", role: .destructive, action: onSignOutRequested)
         } message: {
             Text("Local cards are kept.")
+        }
+        .alert("Change board pairing?", isPresented: $showRepairConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Change Pairing", action: onRepairRequested)
+        } message: {
+            Text("Your Fizzy token and local cards are kept. You'll pick a new board pair next.")
         }
     }
 

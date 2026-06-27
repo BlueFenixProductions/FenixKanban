@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SyncSettingsView: View {
     let registry = PluginRegistry.shared
+    var syncScheduler: SyncScheduler
 
     var body: some View {
         List {
@@ -22,9 +23,105 @@ struct SyncSettingsView: View {
             } footer: {
                 Text("Sync your boards with cards on remote services.")
             }
+
+            // Conflict review row (task #70)
+            conflictSection
+
+            // Phase 6: Sync activity status section
+            syncStatusSection
         }
         .navigationTitle("Board Sync")
     }
+
+    // MARK: - Conflict section (task #70)
+
+    @ViewBuilder
+    private var conflictSection: some View {
+        let count = syncScheduler.activityState.conflictCount
+        if count > 0 {
+            if let fizzy = registry.providers.first(where: { $0 is FizzySyncProvider }) as? FizzySyncProvider {
+                Section {
+                    NavigationLink {
+                        ConflictListView(provider: fizzy)
+                    } label: {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text("\(count) conflict\(count == 1 ? "" : "s") need review")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Sync status section
+
+    @ViewBuilder
+    private var syncStatusSection: some View {
+        let state = syncScheduler.activityState
+        Section {
+            // Current phase row
+            HStack {
+                Text("Status")
+                Spacer()
+                syncPhaseLabel(state.phase)
+            }
+
+            // Last sync timestamp
+            HStack {
+                Text("Last Synced")
+                Spacer()
+                if let last = state.lastSyncAt {
+                    Text(last, style: .relative)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Last synced \(RelativeDateTimeFormatter().localizedString(for: last, relativeTo: .now))")
+                } else {
+                    Text("Never")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Last error (only shown when an error exists)
+            if let error = state.lastError {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .imageScale(.small)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Auto-Sync")
+        } footer: {
+            Text("FenixKanban syncs automatically every 5 minutes while in the foreground.")
+        }
+    }
+
+    @ViewBuilder
+    private func syncPhaseLabel(_ phase: SyncActivityState.Phase) -> some View {
+        switch phase {
+        case .idle:
+            Text("Idle")
+                .foregroundStyle(.secondary)
+        case .syncing:
+            HStack(spacing: 4) {
+                ProgressView()
+                    .controlSize(.mini)
+                Text("Syncing…")
+                    .foregroundStyle(.secondary)
+            }
+        case .error(let msg):
+            Text(msg)
+                .foregroundStyle(.orange)
+                .lineLimit(1)
+        }
+    }
+
+    // MARK: - Provider rows
 
     @ViewBuilder
     private func providerRow(_ provider: any BoardSyncProvider) -> some View {

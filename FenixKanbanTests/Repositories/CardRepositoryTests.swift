@@ -48,13 +48,13 @@ struct CardRepositoryTests {
         label.createdAt = Date()
         try? persistence.viewContext.save()
 
-        cardRepo.updateCard(card, title: "Updated", description: "A description", dueDate: Date(), isCompleted: true, label: label)
+        cardRepo.updateCard(card, title: "Updated", description: "A description", dueDate: Date(), isCompleted: true, labels: [label])
 
         #expect(card.title == "Updated")
         #expect(card.cardDescription == "A description")
         #expect(card.dueDate != nil)
         #expect(card.isCompleted == true)
-        #expect(card.label == label)
+        #expect((card.labels as? Set<Label>) == [label])
     }
 
     @Test func deleteCard() {

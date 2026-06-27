@@ -290,6 +290,28 @@ All completed work has followed the Red → Green → Refactor workflow:
 
 ---
 
+## ✅ FizzyCardPairingStore — device-local pairing sidecar (issue #21 A′)
+**Date:** 2026-06-11  
+**Status:** Complete (Red → Green)
+
+**🔴 Red Phase:**
+- Created `FenixKanbanTests/Services/Fizzy/FizzyCardPairingStoreTests.swift`
+- 4 tests covering: round-trip set/get/remove, persistence across instances, corrupt-file recovery, allPairings/removeAll
+- Verified build failure: `cannot find 'FizzyCardPairingStore' in scope`
+
+**🟢 Green Phase:**
+- Created `FenixKanban/Core/Services/Fizzy/FizzyCardPairingStore.swift`
+- `FizzyCardPairing` struct: `Codable & Equatable`, fields `fizzyID: String`, `fizzyNumber: Int64`, `fizzyUpdatedAt: Date`
+- `FizzyCardPairingStore` final class: file-backed JSON sidecar, `NSLock`-protected, atomic writes
+- Public API: `init(fileURL:)`, `static let shared`, `isEmpty`, `count`, `pairing(for:)`, `setPairing(_:for:)`, `removePairing(for:)`, `removeAll()`, `allPairings()`
+- All 4 tests pass; sub-second `Date` fidelity verified through JSON round-trip
+
+**Notes:**
+- Rationale: CloudKit imports clobber freshly-written pairing attributes (issue #21); this store lives in Application Support, outside CloudKit/Fizzy server reach
+- Default Codable `Date` encoding (Double `timeIntervalSinceReferenceDate`) preserves sub-second precision — critical for LWW comparisons
+
+---
+
 ## 📞 QUESTIONS FOR TEAM
 
 1. Should we prioritize remaining force unwraps or move to service refactoring?
@@ -1139,3 +1161,1765 @@ Rather than resize the PNG or rework the handoff, the user pivoted to "no animat
 - `test fixtures must match wire shape` applies here too: the original plan trusted `INFOPLIST_KEY_UILaunchScreen_*` would just work. Verifying on the compiled `Info.plist` (not just successful build) caught the no-op.
 - Visual verification is non-optional for launch-screen work. Build success only proves the assets compiled, not that they render the way the design assumed.
 - Plans that hinge on a "pixel-aligned invisible handoff" between system chrome and app code are fragile. A static launch screen with no app-side counterpart removes the whole class of timing/sizing/handoff failures.
+
+---
+
+### 14. Fizzy Phase 5 UAT Blocker Fix — Card-Number Addressing + Sync Reentrancy ✅
+**Status:** Complete — UAT push-duplicates blocker root-caused and fixed via TDD.
+**Date:** 2026-06-09
+**Commits:** `b30b2a3` (RED), `fb0dffe` (GREEN)
+
+**Root cause (two independent real defects):**
+1. **ULID-vs-number addressing.** FK PUT `/cards/<ULID>` while fizzy's
+   `set_card` resolves `find_by!(number: params[:id])` — per-card routes
+   take the integer card *number*, not the ULID `id`. Under MySQL
+   string→int coercion this is a silent wrong-card write.
+2. **No reentrancy guard.** `FizzySyncEngine` is `@MainActor` but every
+   HTTP `await` is an interleave point; overlapping `sync()`/`syncFirst()`
+   calls both snapshotted the same nil-`fizzyID` cards and double-POSTed
+   them — the UAT "~40 duplicate cards" from repeated Sync Now taps.
+
+**Fix:**
+- CoreData **v4 model**: `Card.fizzyNumber` (Integer 64, default 0 = unset,
+  scalar), lightweight migration from v3. `.xccurrentversion` → v4;
+  note: re-run `make generate` after pointing the version file, since
+  xcodegen bakes `currentVersion` into the pbxproj at generation time.
+- Engine: backfills `fizzyNumber` from every list pull (covers cards
+  paired before v4), stores it at all 3 POST sites + orphan claim +
+  `applyRemote`, and `putCard(_:number:)` now hits `/cards/<number>`.
+- Reentrancy: `isSyncing` guard in `sync()` and `syncFirst(mode:)`;
+  while a run is in flight, subsequent calls return an empty
+  `FizzySyncResult` immediately (matches the view-level guard in
+  `FizzyAuthStatusView`, now enforced at the engine).
+
+**Tests (5 new, 224 total / 58 suites, 0 warnings, macOS build clean):**
+- `CardFizzyAttributesTests.fizzyNumberPersists` — v4 attribute round-trip.
+- `FizzySyncEngineNumberReentrancyTests` (4): PUT path uses backfilled
+  number (never ULID); POST stores created number; sequential double
+  sync issues exactly 1 POST (stateful mock: POSTed card joins the next
+  list pull); overlapping `async let` syncs issue exactly 1 POST.
+
+**Wire-shape lesson (again):** first Green run failed because the new
+suite's POST mocks returned `200 + body`; real fizzy returns
+`201 + Location` with **no body** and the client follows the Location
+with a GET. Fixing the mocks to the real wire shape made the engine
+pass unchanged — the engine was right, the synthetic mock was wrong.
+
+**Residual hypotheses** (not reproduced, filed as GH issues): CloudKit
+fizzy-attribute clobber; save-failure → re-POST; orphan-claim ±60s
+window weakness.
+
+### 15. Fizzy Pagination + Same-Origin Link Guard ✅
+
+**Date:** 2026-06-09 · **Commits:** `085e7d1` (RED), `36ad68f` (GREEN), `3854aa3` (security)
+
+All fizzy list endpoints paginate via `Link: <url>; rel="next"` headers
+with dynamic page size. `FizzyClient.getAllPages(_:as:)` follows the
+chain, accumulating decoded pages; `FizzySyncEngine` column/card pulls
+switched to it.
+
+**Security:** the `Link` header is server-controlled input. A
+cross-origin `rel="next"` URL would have exfiltrated the Bearer token.
+`nextPageURL(from:)` now enforces same scheme + host (case-insensitive)
++ port against `baseURL`; the verbatim doc fixture (host
+`app.fizzy.localhost`) doubles as the rejection test — flagged by
+automated security review, fixed TDD-first.
+
+**Tests:** +6 (`FizzyClientPaginationTests` ×5 incl. cross-origin
+rejection, engine `cardPullFollowsPagination`). 230 total green.
+
+### 16. Fizzy API Parity — Batches B1–B4 (Client Surface Complete) ✅
+
+**Date:** 2026-06-09/10 · Mission: near-complete FKUI↔fizzy API parity.
+Implemented by background agents (B1–B4) under strict TDD, each batch
+independently verified (full sim test run) then committed RED→GREEN.
+
+| Batch | Scope | Endpoints | Tests | Commits |
+|---|---|---|---|---|
+| B1 | Card actions: detail/delete, closure, not_now, triage, board move, watch, goldness, pins (+ account-scoped `/my/pins`), taggings, assignments, image delete | 15 | 249/249 | `55db283` + `278dc05` |
+| B2 | Boards CRUD, accesses (envelope pagination), publication, columns CRUD + column cards | 13 | 264/264 | `10ca6db` + `64f00e1` |
+| B3 | Comments CRUD, card reactions (boosts), comment reactions, steps CRUD | 15 | 282/282 | `b65323f` + `20d9f0f` |
+| B4 | Tags, users (read-only), identity, timezone PATCH, notifications (read/unread/bulk/settings), activities (filtered, polymorphic eventable) | 12 | 300/300 | `2595ed8` + `7b338ae` |
+
+**New client files:** `FizzyClient+CardActions/Boards/Comments/Directory.swift`
++ matching `FizzyDTOs+*.swift`. **New transport helpers** (driven by real
+wire deviations, each doc-cited): `postNoContent` (204 actions),
+`postExpectingBody` (publication 201+body), `postCreated` (reactions bare
+201), `putNoContent` (settings PUT 204), `patchNoContent` (timezone
+PATCH 204 on the *second* account-scoped `/my/` path),
+`getAccountScoped` (my/pins), `getAllEnvelopePages` (accesses object
+envelope).
+
+**Wire-shape findings:** request bodies are wrapped for
+comments/steps/reactions/settings (`{"comment":{…}}`) but flat for card
+actions/timezone; columns.md sends `color` as a bare CSS-variable string
+while cards.md uses `{name,value}` — `FizzyColor` now decodes both;
+activity `board` omits `creator` (separate `FizzyActivityBoard` DTO);
+polymorphic `eventable` keyed on `eventable_type`, unknown → nil.
+
+**Fixtures:** 18 byte-for-byte doc fixtures, each consumed verbatim in a
+cited test (project rule from the slug-`/` bug).
+
+**Deliberately skipped** (destructive/admin, little client value —
+documented judgment call): user deactivation/deletion, avatar
+upload/delete, email-change flow, role management, join-code rotation,
+danger-zone ops, multipart uploads. Exports + webhooks docs not in
+scope this mission.
+
+**Verification:** 300 tests / 63 suites green on iOS sim, macOS build
+clean, 0 warnings in all touched files (2 pre-existing elsewhere).
+Sim-flake note: two "iPhone 17" simulators exist; name-based
+destinations can pick the shutdown one ("Busy / preflight checks") —
+boot UDID `1CCA4B1C…` and wait for `bootstatus` first.
+
+**Not yet wired:** these are client-surface methods; engine/UI adoption
+tracked in GH issues #11–#19 (incl. needs-captain UI questions).
+
+### 17. Fizzy Engine Wave — Delete Propagation, Column Push, Marker Adoption, Resilience ✅
+
+**Date:** 2026-06-10 · Issues #11 #12 #14 #15 · Commits: `38da296`+`816b5bb` (E1), `33b2483`+`75c065f` (E2)
+
+**CoreData v5** (lightweight from v4): `CardTombstone` {fizzyNumber,
+deletedAt}, `ColumnTombstone` {fizzyColumnID, boardID, deletedAt},
+`Column.fizzyColumnID` (optional String). Same version-bump pitfall as
+v4: `.xccurrentversion` → v5 *then* `make generate`.
+
+**#11 — card delete propagation:** `CardRepository.deleteCard` writes a
+tombstone for fizzy-paired cards; sync pushes `DELETE /cards/:number`
+*before* pulls; purge on 204/404/410, retain+report other errors,
+30-day cap; surviving tombstones block pull resurrection (delete wins).
+
+**#12 — column push:** identity = `Column.fizzyColumnID` with one-time
+name-based backfill (reuses `normalizedColumnName`); `reconcileColumns`
+creates remote-only columns pre-paired, POSTs unpaired local columns and
+claims the Location-followed ID, PUTs renames (local wins — no
+per-column LWW timestamp), pushes deletions with cascaded card
+tombstones. Reordering deliberately out of scope.
+
+**#14 — deterministic adoption:** outgoing card POSTs embed
+`<!--fk:Card.id-->` in the description; pulls adopt by marker *before*
+the legacy exact-title ±60s heuristic (now fallback only), strip the
+marker in every pull path, and PUT the strip remotely with natural
+per-sync retry (mock lesson: use 422 not 500 for PUT-failure tests —
+the client retries 5xx 3×, making request counts nondeterministic).
+No fuzzy matching, no manual-review surface, no schema change.
+
+**#15 — resilience:** steady-state `context.save()` errors now surface
+in `FizzySyncResult.errors` (engine had no other silent catches); new
+re-pair pass restores a clobbered `fizzyID` from an unclaimed remote by
+number; marker adoption covers POST-success/save-failure (proven
+end-to-end: 0 re-POSTs after simulated crash) and number-also-lost
+clobber. `NSMergePolicy` was already `objectTrump` on both contexts
+(PersistenceController:127/168) — no change. "Pending upload" state
+skipped: marker makes it redundant.
+
+**Verification:** 300 → **326 tests / 68 suites green**; macOS build
+clean; 0 new warnings. Each batch RED-confirmed before GREEN
+(13 + 8 behavior tests failed for the right reasons first).
+
+**Known gray areas (left on the issues):** remote-only column rename
+reverts (no per-column timestamp); legacy fizzyID-paired cards with
+fizzyNumber==0 can't be remote-deleted until a pull backfills;
+`deleteBoard` cascade writes no tombstones; `syncFirst*` saves throw
+rather than error-collect; first-sync-POSTed markers strip on the next
+steady sync.
+
+### 18. Captain's Joint Review — needs-captain UI Issues (#13, #16–#19) 📋
+
+**Date:** 2026-06-10 · No code — design rulings only. Each ruling
+mirrored as a comment on its issue.
+
+**#13 lifecycle states:** filter toggle + state badges (no synthetic
+columns — keeps #12 column push clean). Closed/not_now hidden by
+default; close/postpone/triage actions in card context menu + detail.
+
+**#16 comments:** thread in card detail, composer pinned at bottom,
+online-only, **interactive tap-to-react reactions included in v1**.
+Offline comment queueing deferred to its own follow-up issue.
+
+**#17 notifications:** toolbar bell + unread badge → sheet; mark-read
+on view + bulk mark-read; read-mostly (no settings editor). Activity
+feed = second segment in the same sheet.
+
+**#18 multi-board:** board browser in Settings **and** onboarding via
+one shared component; existing pairing auto-migrates silently; sync
+prioritizes the visible board, others round-robin.
+
+**#19 extras tiers approved:** steps + tags full UI first → assignments
+second wave → watch/pin/golden as detail-view toggles + small card
+indicators (golden = subtle gold content tint, Liquid-Glass-safe).
+
+**Build order:** #19 (steps+tags) → #13 → #16 → #17 → #18.
+
+### 19. Issue #19 Task 1 — CoreData v6: `Card.label` → `Card.labels` (many-to-many) ✅
+
+**Date:** 2026-06-10 · RED `eb2aefa` → GREEN (this commit)
+
+**Schema:** new `FenixKanban 6.xcdatamodel` — `Card.label` (to-one)
+becomes `Card.labels` (to-many, `elementID="label"` renaming
+identifier), inverse `Label.cards` repointed. Lightweight migration
+proven by `CoreDataMigrationV6Tests`: seeds a real v5 SQLite store via
+KVC, reopens with the current model, asserts the old to-one label
+survives as a one-element set.
+
+**Gotcha captured:** writing `renamingIdentifier="label"` in the
+xcdatamodel XML compiles but is silently ignored by momc (the compiled
+relationship's renamingIdentifier defaults to its own name and the
+migration drops the data). The correct XML serialization is
+`elementID="label"` — verified by inspecting the compiled `.momd`.
+
+**Plumbing (mechanical, behavior preserved):** `CardRepository.updateCard`
+takes `labels: Set<Label>?` (nil = unchanged; `clearLabels` replaces
+`clearLabel`; new `toggleLabel`); `CardDetailViewModel` →
+`selectedLabels` + toggle semantics; `LabelPickerView` multi-select
+(checkmarks, Done, no dismiss-on-tap); `CardDetailView` chips row +
+clear-all; `CardView` up-to-3 chips + "+n" overflow; `Card.sortedLabels`
+helper; FizzySyncEngine still maps first tag only (Task 2 widens);
+preview seeds use `addToLabels`.
+
+**Verification:** 326 → **329 tests / 69 suites green** (2 migration +
+1 net-new viewmodel test); iOS + macOS builds clean, 0 warnings.
+
+### 20. Issue #19 Task 2 — Sync engine maps ALL tags ⇄ labels (pull) ✅
+
+**Date:** 2026-06-10 · RED `8023f92` → GREEN (this commit)
+
+**Change:** `FizzySyncEngine.applyRemote` now maps every remote tag to a
+local `Label` via `findOrCreateLabel` (case-insensitive find-or-create),
+replacing the Phase 4a first-tag-only block. Remote is authoritative on
+pull (LWW): `card.labels = NSSet(array: remote.tags.map { … })`.
+
+**Tests (steady-state pull suite):**
+- `pullMapsAllTags` — card with `tags:["bug","urgent","backend"]` pulls
+  to three labels (asserted via `sortedLabels`, name-sorted). RED
+  failure was `["bug"]` as expected.
+- `pullClearsRemovedTags` — paired card with two local labels +
+  remote `tags:[]` and newer `last_active_at` (remote-newer LWW branch,
+  baseline `fizzyUpdatedAt == modifiedAt` seeding) clears all labels.
+  Already passed pre-impl (`card.labels = NSSet()` empty branch); kept
+  as a regression guard.
+
+**Verification:** 329 → **331 tests / 69 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); 0 warnings.
+
+### 21. Issue #19 Task 3 — Tag toggles push to Fizzy (online-only) ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error:
+new `fizzyClient:` init param + `toggleLabel` became `async` — accepted
+repo bend, noted in the commit body).
+
+**Change:** `CardDetailViewModel` is now `@MainActor`, takes an optional
+`FizzyClient` (default nil — existing call sites unaffected), and
+`toggleLabel(_:)` is `async`: it toggles locally + saves, then for
+fizzy-paired cards (`fizzyNumber > 0`) POSTs
+`toggleCardTag(number:tagTitle:)`. On failure the local toggle is
+reverted (both `selectedLabels` and persisted `card.labels` via
+`save()`) and `errorMessage` is set; `CardDetailView` shows a
+"Sync Error" alert. The client is resolved in `CardDetailView.init`
+via `PluginRegistry.shared` → `FizzySyncProvider.makeClient()` (nil
+when unauthenticated → local-only behavior). Also deleted dead
+`CardRepository.toggleLabel(_:on:)` per Task 1 review.
+
+**Tests (`CardDetailViewModelTagPushTests`, MockURLProtocol + ImmediateClock):**
+- `toggleOnPairedCardPosts` — 204 handler; asserts POST to
+  `/cards/7/taggings` and label selected.
+- `failedPushReverts` — 422 handler (never 5xx: client retries 3×);
+  asserts `selectedLabels` empty, `card.labels` empty, `errorMessage`
+  set.
+- `unpairedCardStaysLocal` — `fizzyNumber = 0`; asserts zero requests
+  recorded and the toggle sticks locally.
+
+**Verification:** 331 → **334 tests / 70 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+**Review follow-up (2026-06-10):** Reentrancy fix — the catch-revert used
+the pre-await `wasSelected` snapshot unconditionally, so a failed push
+re-saved over state set by a toggle issued while it was in flight. Now
+state-rechecked: revert (and save) only if membership still matches what
+this call set; otherwise last writer wins locally and the next pull
+reconciles the server. Test `failedPushRespectsNewerState` gates the
+first 422 behind an `AsyncStream` signal via a new minimal
+`MockURLProtocol.delayedHandler` (async, checked before `handler`),
+interleaves a successful second toggle, and asserts the failure neither
+flips membership nor redundantly re-saves (`card.modifiedAt`
+unchanged — the RED-phase failure point). 334 → **335 tests / 70 suites
+green**; iOS + macOS builds clean, 0 warnings.
+
+### 22. Issue #19 Task 4 — CardStepsViewModel (online-only steps CRUD) ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error:
+new `CardStepsViewModel` type — accepted repo bend).
+
+**Change:** New `FenixKanban/Features/Card/CardStepsViewModel.swift` —
+online-only steps (checklist) state for fizzy-paired cards per the
+Captain's ruling on #19: steps are NOT persisted in CoreData. `load()`
+fetches via the single-card endpoint (`client.card(number:).steps`),
+and every mutation goes straight to the API with optimistic UI +
+revert-on-failure: `addStep` (trims, skips whitespace-only without a
+network call), `toggleStep` (optimistic flip, PUT, revert on error),
+`deleteStep` (optimistic remove, DELETE, restore at original index on
+error), plus `deleteSteps(at:)` for SwiftUI `onDelete`. Exposes
+`progressText` ("Steps (done/total)") and `errorMessage`.
+
+**Tests (`CardStepsViewModelTests`, "CardSteps ViewModel" suite,
+`.serialized`, MockURLProtocol + ImmediateClock):**
+- `loadExposesSteps` — consumes `card_detail_doc.json` fixture
+  **verbatim**; asserts both steps surface + `progressText == "Steps (0/2)"`.
+- `addStepAppends` — 201 + Location follow to `step_doc.json`.
+- `addStepIgnoresEmpty` — whitespace-only content, zero requests.
+- `toggleStepPuts` — optimistic flip + PUT path assertion.
+- `toggleStepReverts` — 422 (never 5xx: client retries 3×) reverts
+  `completed` and sets `errorMessage`.
+- `deleteStepReverts` — two-phase: 422 restores at index 0 with error;
+  then 204 removes for good.
+
+**Verification:** 335 → **341 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+### 23. Issue #19 Task 5 — Steps checklist UI in card detail ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error:
+new `stepsViewModel` property — accepted repo bend).
+
+**Change:** `CardDetailViewModel` now exposes
+`let stepsViewModel: CardStepsViewModel?` — built in `init` only when
+the card is fizzy-paired (`fizzyNumber > 0`) AND a live `FizzyClient`
+was injected; `nil` otherwise (online-only per the Captain's ruling on
+#19). New `FenixKanban/Features/Card/CardStepsSection.swift` renders
+the checklist as a Form `Section`: tap-to-toggle rows (circle /
+checkmark.circle.fill with strikethrough on completed, full a11y
+label/value/hint), swipe-to-delete via `onDelete` →
+`deleteSteps(at:)`, an "Add a step" `TextField` that submits via
+`addStep(content:)`, and a header showing `progressText` plus a small
+`ProgressView` while loading. Steps load lazily via `.task { await
+viewModel.load() }`. `CardDetailView` renders the section after the
+metadata/Completed section, only when `stepsViewModel` is non-nil. No
+custom `.background` anywhere — Form rows keep their system Liquid
+Glass surfaces.
+
+**Tests (in `CardDetailViewModelTests.swift`):**
+- `pairedCardExposesStepsVM` (tag-push suite: fizzyNumber=7 + mock
+  client) — `stepsViewModel != nil`.
+- `unpairedCardHasNoStepsVM` (original suite: no client) —
+  `stepsViewModel == nil`.
+
+**Verification:** 341 → **343 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+**Addendum (review fixes, same day):** "Steps Error" alert now surfaces
+`errorMessage` (mirrors CardDetailView's Sync Error pattern); per-row
+`.contextMenu` "Delete Step" adds a macOS delete affordance alongside
+iOS swipe; `.task` moved off the `Section` onto the header `HStack`.
+View-layer wiring only — no new tests; 343/71 still green, macOS build
+clean. Follow-up: the alert was likewise relocated onto the header
+`HStack` — `Section` is a variadic container, not a modifier host.
+
+### 24. Issue #19 cleanup batch — review minors (Tasks 1–5) ✅
+
+**Date:** 2026-06-10 · Accumulated Minor findings from per-task code
+reviews (commits eb2aefa..df9d031), landed as three commits.
+
+**Test hygiene + coverage (commit 1):**
+- `CoreDataMigrationV6Tests`: v6 container's store now detached from
+  its coordinator via a LIFO `defer` before the sqlite files are
+  deleted (the v5 container already did this).
+- `pullDedupesCaseCollidingTags` (FizzySyncEngineTests): remote tags
+  `["Bug","bug","BUG"]` map to exactly ONE local Label —
+  `findOrCreateLabel` fetches `name ==[c]` on the same context, so
+  pending inserts dedupe by construction.
+- `pairedCardWithoutClientHasNoStepsVM` (CardDetailViewModelTests):
+  `fizzyNumber > 0` alone isn't enough — the init conjunction also
+  requires a live `FizzyClient`.
+- `CardStepsViewModelTests`: bare `vm.steps[0]` post-load replaced
+  with `try #require(vm.steps.first)` (clean fail, not crash); new
+  `deleteStepsSnapshotsBeforeAwait` locks in that `deleteSteps(at:)`
+  captures step VALUES via `compactMap` before its first await
+  (IndexSet([0,1]) → both rows removed, index-shift safe).
+
+**CardStepsViewModel hardening (commit 2):**
+- Stale `errorMessage` cleared at the start of `load`/`addStep`/
+  `toggleStep`/`deleteStep` (AuthViewModel pattern).
+- `toggleStep` re-checks local `completed` against the optimistic flip
+  before applying the server response AND before reverting in catch —
+  a concurrent newer toggle wins (mirrors `toggleLabel`'s guard).
+  Locked in by `staleToggleRespectsNewerState` using
+  `MockURLProtocol.delayedHandler` + an AsyncStream gate.
+
+**View polish (commit 3):**
+- `CardView`: `card.sortedLabels` hoisted into one `let` per body
+  evaluation (was recomputed up to 4× for the chips row).
+- New `Sequence<Label>.sortedByDisplayName()` (localizedStandardCompare)
+  shared by `Card.sortedLabels` and
+  `CardDetailViewModel.sortedSelectedLabels`; ASCII orderings in
+  existing tests unchanged.
+- `FizzyStep` adopts `Identifiable`; `CardStepsSection`'s ForEach
+  drops the explicit `id: \.id`.
+- `addStep(content:)` is now `@discardableResult ... -> Bool`;
+  `CardStepsSection.onSubmit` restores the typed text on a failed add
+  (only if the field is still empty — newer typing is never
+  clobbered). `addStepFailureReturnsFalse` locks the contract.
+
+**Deferred (deliberate):** shared loadFixture test helper across 7
+test files.
+
+**Verification:** 343 → **348 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); iOS + macOS builds clean, 0 warnings.
+
+---
+
+### 25. Issue #19 Slice 1 — CLOSE-OUT SUMMARY: Steps Checklist + Tags-as-Labels ✅
+
+**Date:** 2026-06-10 · Plan: `docs/superpowers/plans/2026-06-10-19-card-extras-steps-tags.md`
+· Commits `9495f8a..69000cf` (14) · Entries 19–24 above cover the per-task detail.
+
+**What shipped:**
+- **CoreData v6**: `Card.label` (to-one) → `Card.labels` (many-to-many),
+  lightweight migration proven by a real on-disk v5→v6 test. Key finding:
+  `renamingIdentifier=` in xcdatamodel XML is IGNORED by momc — the working
+  serialization is `elementID="label"`.
+- **Sync pull** maps ALL Fizzy tags ⇄ labels (remote-authoritative;
+  case-colliding tags dedupe to one label; removed tags clear).
+- **Tag toggles push** `POST /cards/:n/taggings` from the detail view for
+  paired cards — optimistic, revert-on-422, state-recheck guard so a newer
+  concurrent toggle is never clobbered.
+- **Steps checklist** (Captain's ruling: online-only, never persisted):
+  `CardStepsViewModel` (load/add/toggle/delete, optimistic w/ revert +
+  state-recheck) + `CardStepsSection` in the card detail Form (toggle rows,
+  swipe + context-menu delete for macOS, add field w/ failure text restore,
+  progress header, error alert). Rendered only for paired cards with a client.
+
+**Known gray areas (documented, by design):**
+- Label colors for server-created tags are FNV-derived from the tag name
+  (deterministic across reinstalls, not user-chosen).
+- `clearLabels` on a paired card is local-only — no per-tag toggle calls;
+  the next pull reconciles (remote-authoritative on tags).
+- Steps are invisible for unpaired cards — they don't exist locally.
+- A stale `selectedLabels` snapshot in an open detail sheet can write over a
+  remotely-added label on the next save (same family as the `clearLabels`
+  gray area — candidate for the same follow-up issue).
+- Migrated pre-v6 card→label links won't re-export to CloudKit (lightweight
+  migration writes no persistent-history transactions) — follow-up issue
+  needed before any CloudKit-enabled release.
+
+**Verification:** 326/68 (baseline) → **348 tests / 71 suites**, all green on
+pinned iPhone 17 sim; iOS + macOS builds clean, 0 warnings. Final holistic
+review verdict: READY TO CLOSE OUT.
+
+---
+
+### 26. Issue #19 Wave 2 Task 1 — Wire decode: card `assignees` + user `avatar_url` ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a compile error —
+new DTO fields don't exist yet; repo TDD bend noted in commit body).
+
+**Wire layer only** (`FizzyDTOs.swift`):
+- `FizzyUser` gains `avatarURL: URL?` (`avatar_url`; absent on
+  `/my/identity` payloads — optional).
+- `FizzyCard` gains `assignees: [FizzyUser]?` (1:1 key; present only on
+  the column-cards list endpoint — the single-card doc has NO
+  `assignees` key, hence optional).
+- CodingKeys stay explicit per file convention — no
+  `.convertFromSnakeCase` introduced.
+
+**Test:** `cardsDecodeAssignees` in `FizzyClientBoardsTests` consumes
+`column_cards_doc.json` VERBATIM (fixture untouched — it already carried
+the `assignees` array + `avatar_url` from the fizzy docs) and asserts
+one assignee with DHH's id/name and a non-nil `avatarURL`.
+
+**Call-site sweep:** repo-wide grep for `FizzyUser(`/`FizzyCard(`
+memberwise inits found zero call sites — no fix-ups needed.
+
+**Verification:** 348 → **349 tests / 71 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+### 27. Issue #19 Wave 2 Task 2 — CoreData v7: `assigneesData` blob + `CardAssignee` ✅
+
+**Date:** 2026-06-10 · Test+impl in one commit (RED was a missing model
+version — "FenixKanban 7.mom" not in the compiled .momd; verified the
+failure reason before creating the model).
+
+**Persistence layer:**
+- New model version `FenixKanban 7.xcdatamodel` — exact copy of v6 plus
+  ONE additive optional Binary attribute `assigneesData` on Card
+  (`usedWithCloudKit="YES"` kept; optional attribute is
+  CloudKit-schema-additive). `.xccurrentversion` now points at v7.
+- `CardAssignee` struct (`Core/Persistence/CardAssignee.swift`):
+  `Codable, Equatable, Identifiable` with `id`/`name` — Captain's
+  ruling: JSON blob on Card, NO dedicated Assignee entity (assignees
+  are remote-authoritative like tags; id + name is all the
+  initials-avatar row needs).
+- `Card.assignees: [CardAssignee]` computed accessor over the blob —
+  empty array when unset or undecodable (never throws into the UI).
+
+**Tests:** `CoreDataMigrationV7Tests` (mirrors V6Tests' class-stripped
+model-loading helper): v7 Card has optional binary `assigneesData` with
+`labels` untouched, and `NSMappingModel.inferredMappingModel(v6 → v7)`
+succeeds — additive-only lightweight migration, so no on-disk
+data-survival test needed.
+
+**Drive-by:** silenced pre-existing unused-variable warning in
+`FizzySyncEngineTests.swift:1247` (`let column` → `_`).
+
+**Verification:** 349 → **351 tests / 72 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fix (M1, 2026-06-10):** added
+`currentModelHasAssigneesData` to `CoreDataMigrationV7Tests` — loads
+the CURRENT compiled model (`model(named: nil)`, V6Tests precedent)
+and asserts `Card.assigneesData` exists, so a pbxproj
+`currentVersion` regression to v6 fails tests instead of crashing at
+runtime. 351 → **352 tests / 72 suites green** on the pinned sim.
+
+### 28. Issue #19 Wave 2 Task 3 — sync pull persists card assignees ✅
+
+**Date:** 2026-06-10 · Red → Green (RED commit `a9786fe`; failure was an
+assertion failure — DTO + blob accessor already existed from Tasks 1–2).
+
+**Sync engine** (`FizzySyncEngine.applyRemote`):
+- After the tags→labels block, `remote.assignees` (when non-nil) maps to
+  `[CardAssignee(id:name:)]` and writes `card.assignees`.
+- CRITICAL semantic: `nil` means the payload didn't carry the key (e.g.
+  single-card doc) — the local blob is left ALONE. Empty array means
+  "no assignees" — the blob is cleared. Remote-authoritative, like tags.
+- Equality guard (`card.assignees != mapped`) avoids dirtying the
+  managed object / re-encoding the blob on every no-change pull cycle
+  (Task 2 quality-review advisory).
+
+**Tests** (`FizzySyncEngineSteadyPullTests`):
+- `pullMapsAssignees` — list payload carries the full wire-shape
+  assignee object (role/active/email_address/created_at/url/avatar_url
+  all present); after sync the paired card's blob holds
+  `[CardAssignee(id:"u1", name:"Ada Lovelace")]`.
+- `pullClearsOrPreservesAssignees` — two-round LWW test: round 1 remote
+  sends `"assignees":[]` against a pre-seeded blob → cleared; blob is
+  re-seeded, round 2 remote OMITS the key with a newer `last_active_at`
+  (pull branch confirmed via `fizzyUpdatedAt`) → blob preserved verbatim,
+  genuinely distinguishing left-alone from cleared.
+
+**Verification:** 352 → **354 tests / 72 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+### 29. Issue #19 Wave 2 Task 4 — assignment toggles push to Fizzy ✅
+
+**Date:** 2026-06-10 · Red → Green in ONE commit (repo bend: RED state
+was a compile error — `toggleAssignment`/`assignees` didn't exist on
+`CardDetailViewModel` — verified via `build-for-testing` before
+implementing).
+
+**ViewModel** (`CardDetailViewModel`):
+- `@Published var assignees: [CardAssignee]` (seeded from the blob in
+  `init`) + `@Published var showAssigneePicker` (Task 5 hook).
+- `fizzyClient` access widened `private let` → `let` (Task 5's picker
+  sheet needs it to fetch users).
+- `canEditAssignments` — true only for paired cards
+  (`fizzyNumber > 0`) with a live client; the row renders fizzy-only.
+- `toggleAssignment(_ user: FizzyUser)` — mirrors `toggleLabel`:
+  unpaired/no-client guard is a FULL no-op (zero network, zero state
+  change — assignments are remote-authoritative, no local-only mode);
+  optimistic blob flip persisted via the repository; POST
+  `/cards/:number/assignments` (server-side toggle); on failure,
+  state-recheck revert (only if no later toggle changed this user's
+  state while the POST was in flight) + `errorMessage`.
+
+**Repository** (`CardRepository.updateAssignees(for:to:)`): writes the
+blob, bumps `modifiedAt`, saves. Not added to the protocol (matches
+`clearLabels`/`clearDueDate` precedent).
+
+**Tests:**
+- New suite `CardDetailViewModelAssignmentPushTests` (`.serialized`,
+  MockURLProtocol harness cloned from the tag-push suite, paired card
+  `fizzyNumber=7`): 204 toggle adds to VM + blob and POSTs
+  `/cards/7/assignments`; toggle on an already-assigned user (fresh VM
+  built after seeding the blob) removes them; 422 reverts the
+  optimistic change and surfaces `errorMessage`.
+- `CardDetailViewModelTests.unpairedToggleAssignmentNoOp` — unpaired,
+  no-client VM: toggle leaves `assignees` empty and
+  `MockURLProtocol.requests` empty.
+
+**Verification:** 354 → **358 tests / 73 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fix (M1, 2026-06-10):** added
+`failedToggleRespectsNewerState` to
+`CardDetailViewModelAssignmentPushTests` — gated-first-POST analogue
+of the tag suite's `failedPushRespectsNewerState`, covering the
+non-revert arm of the state-recheck (mutation-checked: an
+unconditional revert now fails via the `modifiedAt` no-re-save
+assertion). 358 → **359 tests / 73 suites green** on the pinned sim.
+
+### 30. Issue #19 Wave 2 Task 5 — assignee avatar row + picker UI ✅
+
+**Date:** 2026-06-10 · Gating tests pass immediately (no RED phase —
+`canEditAssignments` shipped in Task 4; the tests lock the exposure
+gate rather than drive new logic).
+
+**Components:**
+- `Components/InitialsAvatar.swift` — colored initials circle.
+  Initials-only by Captain's ruling (Fizzy avatar URLs require the
+  bearer token, which AsyncImage can't send); fill color is
+  FNV-derived via `FizzySyncMapping.labelColorHex(forName:)` (same
+  determinism as auto-created label colors). `accessibilityLabel` is
+  the full name.
+- `Features/Card/AssigneePickerView.swift` — multi-select picker
+  mirroring `LabelPickerView` (plain List, checkmarks, Done button,
+  no dismiss-on-tap, `.presentationDetents([.medium])`). User list
+  fetched live via `client.users()` filtered to `active`; local
+  `assignedIDs` set flips optimistically, toggles route through
+  `onToggle` → `CardDetailViewModel.toggleAssignment`. Load failure →
+  `ContentUnavailableView`. `.task`/`.toolbar` attach to concrete
+  views (Group/NavigationStack content), not a Form `Section`.
+
+**CardDetailView:**
+- Assignees row after the Labels row, gated on
+  `viewModel.canEditAssignments` (fizzy-paired + live client only):
+  "Assign" button when empty, overlapping `InitialsAvatar` strip
+  (spacing -6) opening the picker when populated, with combined
+  accessibility label/hint.
+- New `.sheet(isPresented: $viewModel.showAssigneePicker)` alongside
+  the label-picker sheet; content guards `viewModel.fizzyClient`
+  against nil. Toggle failures surface through the existing
+  "Sync Error" alert (`errorMessage`).
+
+**Tests (gating, pass-on-arrival by design):**
+- `CardDetailViewModelAssignmentPushTests.pairedCardCanEditAssignments`
+  — paired card + client → `canEditAssignments == true`.
+- `CardDetailViewModelTests.unpairedCardCannotEditAssignments` —
+  unpaired, no-client VM → `canEditAssignments == false`.
+
+**Verification:** 359 → **361 tests / 73 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fixes (2026-06-10):** `InitialsAvatar` picks black/white initials
+by relative luminance (FNV colors span the full RGB space — white text was
+illegible on light fills); `AssigneePickerView` takes `assignedIDs` as a
+plain `let` (LabelPickerView pattern) so failed-toggle reverts visibly flip
+checkmarks back instead of leaving stale local `@State`. Still **361 tests
+/ 73 suites green** on the pinned sim; macOS build clean, 0 warnings.
+
+---
+
+### 31. Issue #19 Wave 2 — CLOSE-OUT SUMMARY: Assignments ✅
+
+**Date:** 2026-06-10 · Plan: `docs/superpowers/plans/2026-06-10-19-assignments-wave.md`
+· Commits `1b52b7c..2f2a54b` (10) · Entries 26–30 above cover the per-task detail.
+
+**What shipped:**
+- **Wire decode**: `FizzyCard.assignees: [FizzyUser]?` +
+  `FizzyUser.avatarURL` (`avatar_url`), proven against the verbatim
+  `column_cards_doc.json` fixture.
+- **CoreData v7**: additive optional Binary `assigneesData` blob on Card
+  + `CardAssignee` struct accessor (Captain's ruling: JSON blob, no
+  dedicated entity — assignees are remote-authoritative like tags);
+  inferred v6→v7 lightweight migration proven, plus a current-model pin
+  test guarding against a pbxproj `currentVersion` regression.
+- **Sync pull** persists card assignees with key-presence semantics:
+  `nil` (key absent, e.g. single-card doc) leaves the blob alone, `[]`
+  clears it; equality guard avoids dirtying the object on no-change pulls.
+- **Assignment toggles push** `POST /cards/:n/assignments` from the
+  detail view for paired cards — optimistic blob flip, revert-on-failure
+  with state-recheck so a newer concurrent toggle is never clobbered;
+  unpaired/no-client is a full no-op.
+- **Assignee UI**: `InitialsAvatar` (FNV-colored circle,
+  luminance-picked black/white initials) in an overlapping strip on the
+  card detail, plus `AssigneePickerView` multi-select sheet (live
+  `client.users()` fetch filtered to active, checkmarks driven by VM
+  state so failed-toggle reverts flip back visibly). Row gated on
+  `canEditAssignments` (fizzy-paired + live client only).
+
+**Commits (in order):**
+- `1b52b7c` docs(19): implementation plan — assignments wave
+- `34d97c2` feat(19): decode card assignees + user avatar_url from wire (TDD #26)
+- `f10efdd` feat(19): CoreData v7 — assigneesData blob on Card + CardAssignee (TDD #27)
+- `a6fd78a` test(19): pin current CoreData model version carries assigneesData (review fix M1)
+- `a9786fe` test(19): sync pull maps assignees to Card blob (RED)
+- `05dafc9` feat(19): sync pull persists card assignees (GREEN) (TDD #28)
+- `7815328` feat(19): assignment toggles push to Fizzy, optimistic w/ revert (TDD #29)
+- `4c0640a` test(19): stale assignment-toggle failure must not revert newer state (review fix M1)
+- `1d260fe` feat(19): assignee avatar row + picker in card detail (TDD #30)
+- `2f2a54b` fix(19): legible initials on light avatar colors; live picker checkmarks (review fixes)
+
+**Review fixes (all mandated fixes landed and re-approved):**
+- Task 2 M1: current-model pin test for `assigneesData` (`a6fd78a`).
+- Task 4 M1: `failedToggleRespectsNewerState` — non-revert arm of the
+  state-recheck, mutation-checked (`4c0640a`).
+- Task 5: luminance-based initials contrast + picker checkmarks driven
+  by reverted VM state instead of stale `@State` (`2f2a54b`).
+
+**Known gray areas (documented, by design):**
+- Assignees are list-payload-only: a card freshly opened via detail
+  (never pulled) shows the last-pulled blob; reconciliation happens on
+  the next pull.
+- `has_more_assignees` is NOT decoded — cards with truncated assignee
+  lists show only the embedded page (MVP limitation).
+- Avatar images deferred (avatar_url requires the bearer token;
+  AsyncImage can't send headers) — initials only. `avatarURL` IS
+  decoded, so a future authenticated image loader needs no wire change.
+- Echo-PUT after a successful toggle (`modifiedAt` bump → next sync
+  pushes; assignees aren't in the PUT payload so nothing is clobbered)
+  — same known minor as tags (tracked in the #20 family).
+- Alert-under-sheet: the toggle-failure alert can't present while the
+  picker sheet is up — shared debt with `LabelPickerView`, noted by
+  review.
+- Avatar strip + label strip use `onTapGesture`, not `Button` (macOS
+  keyboard access / VoiceOver trait) — shared debt, follow-up candidate.
+
+**Verification:** 348/71 (wave-1 baseline) → **361 tests / 73 suites**
+(+13 tests, +2 suites), all green on pinned iPhone 17 sim (UDID
+`1CCA4B1C…`); macOS build clean, 0 warnings. Every task went through
+spec + quality review; all mandated fixes landed and were re-approved.
+
+---
+
+### 32. Issue #19 Wave 3 Task 1 — CoreData v8: isWatched + isPinned flags on Card ✅
+
+**Date:** 2026-06-10 · TDD: RED (3 failing V8 tests — "FenixKanban 8"
+model version didn't exist) → GREEN (model created, `.xccurrentversion`
+bumped). Test + impl in one commit since RED was a missing model
+version, not code.
+
+**Model (v8):** copy of v7 with two additive non-optional Booleans on
+`Card` — `isPinned` and `isWatched` (`defaultValueString="NO"`,
+`usesScalarValueType="YES"`, inserted alphabetically after `isGolden`).
+Additive-only, so v7→v8 is a pure lightweight migration;
+`usedWithCloudKit="YES"` untouched. No on-disk survival test — same
+rationale as v7 (nothing renames, nothing moves).
+
+**Refactor (wave-2 holistic-review follow-up):** the private
+`model(named:)` helper duplicated verbatim between
+`CoreDataMigrationV6Tests` and `CoreDataMigrationV7Tests` is now the
+internal free function `migrationTestModel(named:)` in
+`FenixKanbanTests/Persistence/MigrationModelLoading.swift` (same body:
+loads versioned `.mom`s from the compiled `.momd` via
+`Bundle(for: PluginRegistry.self)`, `nil` → current model, strips
+`managedObjectClassName` to avoid dual-registration warnings). Both
+suites switched over, zero behavior change — V6/V7 assertions untouched
+and green throughout.
+
+**Tests:** new suite `CoreDataMigrationV8Tests` (3 tests):
+- `v8ModelShape` — Card gains both Booleans (non-optional, default
+  `false`); `assigneesData` still present.
+- `v7ToV8Inferable` — `NSMappingModel.inferredMappingModel` succeeds.
+- `currentModelHasWatchPinFlags` — current compiled model carries both
+  flags (mirrors the wave-2 M1 review fix: catches a pbxproj
+  `currentVersion` regression).
+
+**Verification:** 361 → **364 tests / 74 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+---
+
+### 33. Issue #19 Wave 3 Task 2 — sync engine reconciles isPinned from GET /my/pins ✅
+
+**Date:** 2026-06-10 · TDD: RED (`a8b28ed`, 3 failing tests — `isPinned`
+never set by sync) → GREEN (this commit).
+
+**Engine:** `steadyStateSync` now ends with `reconcilePins(localBoard:)`
+(after all push/pull reconciliation, before `setLastSync`/save, so the
+cycle's single save covers pin changes). Pins are user-scoped and
+account-wide; the card wire shape never carries pinned state, so
+`GET /my/pins` (`FizzyClient.myPins()`, unpaginated) is the only source
+of truth — remote-authoritative per the Captain's ruling. Two deliberate
+properties:
+- **Best-effort:** `try? await client.myPins()` — a failed fetch leaves
+  local pin state alone and never fails (or errors) the sync.
+- **No `modifiedAt` bump:** pin state is not part of the card-content
+  LWW contract; bumping would cause echo-PUTs on the next cycle.
+
+**Tests:** new suite `FizzySyncEnginePinReconciliationTests` (3 tests):
+- `syncReconcilesPinsFromMyPins` — serves
+  `Fixtures/fizzy/pins_doc.json` VERBATIM (wire-shape rule); the synced
+  card whose id matches the fixture's pin gets `isPinned == true`, the
+  other stays `false`.
+- `syncClearsUnpinnedCards` — locally-pinned card + empty remote pin
+  set → unpinned (remote-authoritative clear).
+- `pinsFetchFailureLeavesPinStateAlone` — `/my/pins` answering 422:
+  `sync()` does not throw and the pre-sync `isPinned == true` survives.
+
+**Side effect handled:** every steady-sync mock handler now sees an
+extra `GET …/my/pins` — routed (`[]`, 200) as the first GET case in all
+40 handlers that drive `sync()` across `FizzySyncEngineTests`,
+`FizzySyncEngineAdoptionResilienceTests` (8),
+`FizzySyncEngineBoardIsolationTests` (steady-state only) and
+`FizzySyncProviderTests` (sync-translation test). `syncFirst`-only
+handlers untouched — first-sync modes don't reconcile pins.
+
+**Verification:** 364 → **367 tests / 75 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+---
+
+### 34. Issue #19 Wave 3 Task 3 — watch/pin toggles from CardDetailViewModel ✅
+
+**Date:** 2026-06-10 · TDD: RED (compile errors — `toggleWatched`/
+`togglePinned`/`isWatched`/`isPinned` didn't exist on the VM, verified
+via build-for-testing) → GREEN (this commit; test + impl in one commit
+since RED was a compile error, not a runtime failure).
+
+**ViewModel:** `toggleWatched()`/`togglePinned()` mirror the
+`toggleAssignment` pattern — paired+client guard at top (unpaired =
+full no-op, zero network), optimistic flip of the new `@Published
+isWatched`/`isPinned`, persist via repository, POST/DELETE
+`/cards/:n/watch` (or `/pin`), state-recheck revert on failure +
+`errorMessage`. Gate refactor: new `isFizzyPaired` computed property;
+`canEditAssignments` kept as a delegating alias (existing tests and
+Task 5's UI use both). Captain's rulings encoded in doc comments:
+watch state is LOCAL WRITE-ONLY (Fizzy never reports it — no wire
+field, no watchers endpoint; cross-client drift is a documented MVP
+limitation); pin state is remote-authoritative via `/my/pins` on sync
+(Task 2).
+
+**Repository:** `setWatched(_:for:)`/`setPinned(_:for:)` next to
+`updateAssignees`. Deliberately NO `modifiedAt` bump — these flags
+aren't part of the card-content LWW contract (never in the PUT
+payload); bumping would cause spurious echo-PUTs on the next sync.
+
+**Tests:** new suite `CardDetailViewModelWatchPinPushTests` (6 tests,
+harness cloned from `CardDetailViewModelAssignmentPushTests`):
+- `watchPostsToWatchEndpoint` / `unwatchDeletes` — POST then DELETE
+  `/cards/7/watch`, flag mirrored to VM + Card.
+- `pinPostsToPinEndpoint` / `unpinDeletes` — same for `/cards/7/pin`.
+- `failedWatchToggleReverts` / `failedPinToggleReverts` — 422 reverts
+  the optimistic flip and surfaces `errorMessage`.
+
+Plus `unpairedWatchPinNoOp` in the base `CardDetailViewModelTests`
+suite — both toggles on an unpaired card are no-ops with zero network.
+
+**Verification:** 367 → **374 tests / 76 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fix (M1, 2026-06-10):** `watchPostsToWatchEndpoint`/
+`pinPostsToPinEndpoint` now snapshot `card.modifiedAt` and assert it's
+unchanged after the toggle — locks in the no-`modifiedAt`-bump contract
+on `setWatched`/`setPinned` (a re-added bump = echo-PUT regression
+previously left all tests green; mutation-checked: temporary bump in
+`setWatched` failed the test). Still **374 tests / 76 suites green** on
+the pinned sim.
+
+---
+
+### 35. Issue #19 Wave 3 Task 4 — golden toggles push goldness from all surfaces ✅
+
+**Date:** 2026-06-10 · TDD: RED (compile error — `BoardViewModel` had
+no `fizzyClient:` init parameter, verified via build-for-testing) →
+GREEN (this commit; test + impl in one commit since RED was a compile
+error, not a runtime failure).
+
+**Latent bug fixed:** golden toggles were local-only everywhere, but
+the sync engine's `applyRemote` is remote-authoritative on `golden`
+(`card.isGolden = remote.golden` on every pull) and the PUT payload
+never carries golden — so a golden flip on a paired card silently
+reverted on a later pull. Fix: push via the existing goldness
+endpoints (`markCardGolden` POST `/cards/:n/goldness`,
+`unmarkCardGolden` DELETE) from BOTH golden-toggle surfaces.
+
+**Design:** golden KEEPS its `modifiedAt` bump (unlike watch/pin) —
+golden is pulled card content, and the bump blocks the LWW pull branch
+until the push cycle completes, protecting against stale-pull reverts.
+The new `goldenTogglePostsGoldness` test locks this in.
+
+**CardDetailViewModel:** `toggleGolden()` is now async — local flip via
+new `applyGoldenLocally(_:)` (flip + modifiedAt bumps + save +
+objectWillChange), then paired+client guard, POST/DELETE goldness,
+state-recheck revert + `errorMessage` on failure. Both
+`CardDetailView` toolbar buttons (iOS + macOS branches) wrap the call
+in `Task { await … }`.
+
+**BoardViewModel:** init gains `fizzyClient: FizzyClient? = nil`
+(default keeps all existing construction sites/tests compiling);
+`toggleGolden(for:)` gains a trailing fire-and-forget
+`pushGolden(for:)` — board surfaces have no alert affordance, so a
+failed push reverts silently with a state-recheck (only if nothing
+changed it since). `toggleGolden(cardID:)` funnels through
+`toggleGolden(for:)` so it inherits the push. `BoardView.init` wires
+the client via
+`(PluginRegistry.shared.provider(named: "Fizzy") as? FizzySyncProvider)?.makeClient()`,
+mirroring `CardDetailView.init`.
+
+**Tests:** 3 new in `CardDetailViewModelWatchPinPushTests`
+(`goldenTogglePostsGoldness` — POST + modifiedAt-bump assertion,
+`goldenToggleUnmarksDeletes` — DELETE, `failedGoldenToggleReverts` —
+422 reverts + errorMessage); new suite `BoardViewModelGoldenPushTests`
+(2 tests: paired board toggle pushes goldness awaited via bounded
+yield loop; unpaired board toggle stays local with zero network).
+`toggleGoldenFlips` updated to `await` (unpaired → no push →
+assertions unchanged).
+
+**Verification:** 374 → **379 tests / 77 suites green** (+1 suite from
+the new board push sub-suite) on pinned iPhone 17 sim (UDID
+`1CCA4B1C…`); macOS build clean, 0 warnings.
+
+**Review fixes (M1/L1/L3, 2026-06-10):** M1 — new
+`boardTogglePushFailureReverts` test (422 handler, yield-await until
+the silent revert lands) locks the previously untested catch path in
+`BoardViewModel.pushGolden` (state-recheck + silent revert). L1 —
+`fizzyNumber` is now captured as `let number` BEFORE the
+fire-and-forget Task (alongside `isGolden`), and the revert guards
+`!card.isDeleted, card.managedObjectContext != nil` before touching
+the card — a deleted-and-saved NSManagedObject could otherwise throw
+"could not fulfill a fault" after arbitrary network delay. L3 —
+`boardTogglePushesGoldness` now also asserts `card.isGolden == true`
+after the push, locking that a successful push triggers no spurious
+revert. 379 → **380 tests / 77 suites green** on the pinned sim;
+macOS build clean, 0 warnings.
+
+---
+
+### 36. Issue #19 Wave 3 Task 5 — watch/pin toggles in card detail + card-face indicators ✅
+
+**Date:** 2026-06-10 · Gating tests pass immediately (no RED phase —
+`isFizzyPaired` shipped in Task 3; the tests lock the exposure gate
+rather than drive new logic).
+
+**CardDetailView:**
+- Watch + Pin `Toggle` rows after the Assignees row (same Section,
+  sibling rows), gated on `viewModel.isFizzyPaired` — watch is local
+  write-only state (server never reports it); pin reconciles from
+  GET /my/pins on sync. Each toggle uses a get/set `Binding` whose
+  setter fires `Task { await viewModel.toggleWatched()/togglePinned() }`,
+  so the displayed state always tracks the view model (failed pushes
+  revert and the binding snaps back). Labels spelled `SwiftUI.Label`
+  (CoreData `Label` entity collision); accessibility hints on both.
+  Toggle failures surface through the existing "Sync Error" alert
+  (`errorMessage`).
+
+**CardView:**
+- `pin.fill` / `eye.fill` indicators inline in the title HStack after
+  the `Spacer()` (NOT a top-trailing overlay — that corner collides
+  with two-line titles, and the golden ticket already owns
+  top-leading). `imageScale(.small)`, `.secondary` tint (content tint,
+  not chrome — Liquid Glass safe), accessibility labels "Pinned" /
+  "Watching". Reads the codegen'd v8 `card.isPinned`/`card.isWatched`
+  directly.
+
+**Tests (gating, pass-on-arrival by design):**
+- `CardDetailViewModelWatchPinPushTests.pairedCardIsFizzyPaired` —
+  paired card + client → `isFizzyPaired == true`.
+- `CardDetailViewModelTests.unpairedCardIsNotFizzyPaired` — unpaired,
+  no-client VM → `isFizzyPaired == false`.
+
+**Verification:** 380 → **382 tests / 77 suites green** on pinned
+iPhone 17 sim (UDID `1CCA4B1C…`); macOS build clean, 0 warnings.
+
+---
+
+### 37. Issue #19 Wave 3 — CLOSE-OUT SUMMARY: Watch / Pin / Golden ✅
+
+**Date:** 2026-06-10 · Plan:
+`docs/superpowers/plans/2026-06-10-19-watch-pin-golden-wave.md`
+· Commits `2c33c4b..450d746` (9) · Entries 32–36 above cover the
+per-task detail.
+
+**What shipped:**
+- **CoreData v8**: two additive non-optional Booleans on `Card` —
+  `isWatched` + `isPinned` (`defaultValueString="NO"`, scalar);
+  v7→v8 inferred lightweight migration proven, current-model pin test
+  guards the pbxproj `currentVersion`. Plus the wave-2 holistic-review
+  refactor: shared `migrationTestModel(named:)` loader replaces the
+  V6/V7 duplicated helper.
+- **Pin reconciliation**: `steadyStateSync` ends with
+  `reconcilePins(localBoard:)` — `GET /my/pins` is the only source of
+  truth (card wire shape never carries pinned state); best-effort
+  (`try?`, a failed fetch leaves local state alone), remote-
+  authoritative (clears local pins absent from the response), no
+  `modifiedAt` bump. Fixture `pins_doc.json` consumed verbatim.
+- **Watch + pin toggles push**: `toggleWatched()`/`togglePinned()` on
+  `CardDetailViewModel` — paired+client guard (unpaired = full no-op,
+  zero network), optimistic flip, POST/DELETE `/cards/:n/watch` /
+  `/pin`, state-recheck revert + `errorMessage` on failure. Repository
+  `setWatched`/`setPinned` deliberately skip the `modifiedAt` bump
+  (not card content; bump = echo-PUT). New `isFizzyPaired` gate;
+  `canEditAssignments` kept as delegating alias.
+- **Golden push (latent bug fix)**: golden toggles were local-only,
+  but sync pull is remote-authoritative on `golden` — a flip on a
+  paired card silently reverted on the next pull. Now BOTH golden
+  surfaces push via the goldness endpoints (POST/DELETE
+  `/cards/:n/goldness`): `CardDetailViewModel.toggleGolden()` (async,
+  revert + alert on failure) and `BoardViewModel.toggleGolden(for:)`
+  (fire-and-forget `pushGolden`, silent state-recheck revert — board
+  has no alert affordance). Golden KEEPS its `modifiedAt` bump (LWW
+  pull-block protection for pulled content — test-locked).
+- **UI**: Watch + Pin `Toggle` rows in card detail (gated on
+  `isFizzyPaired`, `Binding` setters fire the async VM toggles so
+  failed pushes snap the switch back; failures surface via the
+  existing Sync Error alert) + `pin.fill`/`eye.fill` indicators inline
+  in the card-face title HStack (`.secondary` content tint — Liquid
+  Glass safe; accessibility labels "Pinned"/"Watching").
+
+**Commits (in order):**
+- `2c33c4b` docs(19): implementation plan — watch/pin/golden wave
+- `e022477` feat(19): CoreData v8 — isWatched + isPinned flags on Card (TDD #32)
+- `a8b28ed` test(19): sync reconciles isPinned from GET /my/pins (RED)
+- `6d522cb` feat(19): sync reconciles isPinned from GET /my/pins (GREEN) (TDD #33)
+- `bce4d9b` feat(19): watch + pin toggles push to Fizzy, optimistic w/ revert (TDD #34)
+- `24c67dd` test(19): pin the no-modifiedAt-bump contract on watch/pin setters (review fix M1)
+- `05e107a` feat(19): golden toggles push goldness to Fizzy from all surfaces (TDD #35)
+- `0eb1242` fix(19): board golden push — failure-path test, deleted-card guard (review fixes M1/L1/L3)
+- `450d746` feat(19): watch/pin toggles in card detail + card-face indicators (TDD #36)
+
+**Review fixes (all mandated fixes landed and re-approved):**
+- Task 3 M1: `modifiedAt`-unchanged assertions on the watch/pin push
+  tests — locks the no-bump contract, mutation-verified (`24c67dd`).
+- Task 4 M1/L1/L3: `boardTogglePushFailureReverts` locks the
+  previously untested `pushGolden` catch path (mutation-verified);
+  `fizzyNumber` captured before the fire-and-forget Task + deleted-card
+  guard (`!card.isDeleted`, non-nil context) on the revert; success
+  path now asserts no spurious revert (`0eb1242`).
+
+**Known gray areas (documented, by design):**
+- Watch state is write-only/local-best-guess — drifts if toggled from
+  another client; no server read API exists. Rapid out-of-order watch
+  requests can also desync (no reconciler) — same family.
+- Pin reconcile can race a just-toggled pin if the sync's pins fetch
+  predates the toggle's POST — next cycle self-heals. Window widens
+  when Phase 6's polling timer lands (mitigation candidate: skip
+  reconcile while a pin op is in flight).
+- `GET /my/pins` is unpaginated, capped at 100 pins — silent
+  truncation could unpin local cards beyond the cap (irrelevant at MVP
+  scale; comment-worthy when multi-board lands).
+- Pins-fetch failures are silently swallowed (`try?`) — the only
+  best-effort engine path not recorded in `result.errors`; persistent
+  failure is invisible (noted by review, deferred).
+- Board-surface golden push failures revert silently (board has no
+  alert affordance; detail surface shows the Sync Error alert).
+- Watch/pin flags skip the `modifiedAt` bump (no echo-PUT —
+  mutation-test locked); golden keeps it (LWW pull-block protection
+  for pulled content — also test-locked).
+- Detail VM's `isWatched`/`isPinned` are init-time snapshots — a sync
+  landing while detail is open can leave the Toggle stale while the
+  card face (live `@ObservedObject`) is correct; same snapshot family
+  as labels/assignees (#20).
+- `BoardViewModel` resolves its `FizzyClient` at view init — pairing
+  mid-session leaves an alive board VM with a nil client until view
+  identity changes.
+- CloudKit: v8's two Boolean attrs join the #20 schema-deploy
+  checklist (schema-additive; defaults satisfy CloudKit's
+  optional-or-default rule).
+- Test-infra debt: ~10th duplicated sync-test Harness and ~8th fixture
+  loader — extraction is a standalone follow-up candidate.
+
+**Verification:** 361/73 (wave-2 close-out baseline) → **382 tests /
+77 suites** (+21 tests, +4 suites), all green on pinned iPhone 17 sim
+(UDID `1CCA4B1C…`); macOS build clean, 0 warnings. Final full pass
+re-run at close-out: `Test run with 382 tests in 77 suites passed`,
+macOS `BUILD SUCCEEDED` with zero warnings. Every task went through
+spec + quality review; 3 review-fix commits landed, two of them
+mutation-verified.
+
+---
+
+### 38. HOTFIX — CloudKit forbids label→labels rename migration ✅
+
+**Date:** 2026-06-10 · RED → GREEN (regression test first; this was a
+RED-able production bug).
+
+**The bug (FATAL, on-device only):** real iOS device with a pre-v6
+store crashed at launch — `loadPersistentStores` failed with
+NSCocoaErrorDomain 134110, "Cannot migrate store in-place: CloudKit
+integration forbids renaming 'label' to 'labels'" → `fatalError` in
+`PersistenceController.init`.
+
+**Root cause:** v6 renamed `Card.label` (to-one) → `Card.labels`
+(to-many) via a renaming identifier (`elementID="label"`), which
+survived in the v6, v7 AND v8 model contents. The production app uses
+`NSPersistentCloudKitContainer`, whose schema is additive-only —
+rename migrations are rejected at store-load time on any device
+holding a pre-v6 store.
+
+**Why CI was blind:** all 382 tests were green because every test
+harness uses `useCloudKit: false` and the migration tests use plain
+`NSPersistentContainer` — the CloudKit rename check never ran.
+
+**The fix (Captain's ruling — Option A):** removed ` elementID="label"`
+from the Card `labels` relationship in all three model contents
+(`FenixKanban {6,7,8}.xcdatamodel`). The v5→current migration is now
+"remove `label`, add `labels`" — additive, CloudKit-legal. Renaming
+identifiers are not part of entity version hashes, so existing healthy
+stores are unaffected.
+
+**Accepted data tradeoff:** v5-era card→label links are NOT carried
+forward (v5 was the first-tag-only era — at most one label per card;
+Fizzy re-pulls tags on next sync). Label entities and their attributes
+survive the migration; only the link is dropped, by design.
+
+**RED (regression guard):** new
+`FenixKanbanTests/Persistence/CloudKitModelCompatibilityTests.swift` —
+bans explicit renaming identifiers (any
+`renamingIdentifier != property name`) on every property and entity of
+v6/v7/v8 and the current compiled model. Failed pre-fix on all 4
+cases with "Card.labels carries renaming identifier label — forbidden
+on a CloudKit model"; green post-fix.
+
+**Updated contract:** `CoreDataMigrationV6Tests.migratesLabelDataForward`
+asserted the v5 to-one link carried into `labels` — renamed to
+`migratesV5StoreForward`: migration still succeeds from a real v5
+on-disk store, the card and Label (name + colorHex) survive, but link
+carriage is no longer asserted (comment documents the CloudKit ruling).
+
+**Verification:** **384 tests / 78 suites green** (382 + 2 new; the
+version-parameterized test runs 3 cases) on pinned iPhone 17 sim
+(UDID `1CCA4B1C…`) — including the v5→v8 on-disk migration inferred
+WITHOUT the rename; macOS `BUILD SUCCEEDED`, zero warnings.
+
+---
+
+### 39. ticket.slash is not an SF Symbol — phantom-symbol sweep ✅
+
+**Date:** 2026-06-10 · RED → GREEN (regression test first; caught live
+on-device).
+
+**The bug (cosmetic, runtime-only):** device console logged `No symbol
+named 'ticket.slash' found in system symbol set` — `ticket.slash` does
+not exist in SF Symbols. The "Remove Golden Ticket" context-menu item
+on golden cards (`ColumnView.swift` line 106) rendered a blank icon.
+Phantom symbol names compile fine; the failure only surfaces at render
+time, so 384 green tests never noticed.
+
+**RED:** new `FenixKanbanTests/UI/SFSymbolValidityTests.swift`
+("SF Symbol validity" suite) — locates the app source tree from
+`#filePath` (walks up to `FenixKanban.xcodeproj`, `try #require`s the
+tree so a CI-artifact run fails loudly instead of passing vacuously),
+recursively reads every app `.swift` file, extracts each
+`systemImage:` / `systemName:` / `systemImageName:` string literal
+(both branches of ternaries included; only symbol-shaped strings —
+lowercase/digits/dots — are candidates, so titles and interpolations
+are skipped), and asserts each resolves via `UIImage(systemName:)`
+(`NSImage(systemSymbolName:)` on macOS). Failed pre-fix on exactly
+one symbol: `"ticket.slash" (ColumnView.swift:106)`. No other phantom
+symbols and no false positives across the 53 literals (32 unique) the
+sweep validates.
+
+**GREEN:** context menu now uses
+`card.isGolden ? "ticket.fill" : "ticket"` — mirrors the existing
+golden precedent everywhere else (CardDetailView toolbar
+`ticket.fill`/`ticket` by current state, CardView badge and
+GoldZoneChip `ticket.fill`); the label text ("Remove Golden Ticket" /
+"Mark as Golden") carries the action semantics.
+
+**Verification:** **385 tests / 79 suites green** (384 + 1 new) on
+pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS `BUILD SUCCEEDED`,
+zero warnings.
+
+---
+
+### 40. Persistent adoption markers — CloudKit clobber heals, not duplicates ✅
+
+**Date:** 2026-06-10 · RED → GREEN (issue #21, Option B stopgap; live
+in production that night — 30 of 32 cards duplicated across two real
+sync cycles).
+
+**The bug (#21):** `Card`'s fizzy pairing fields (`fizzyID` /
+`fizzyNumber` / `fizzyUpdatedAt`) are CloudKit-synced attributes, and a
+CloudKit import can clobber a freshly written pairing back to
+nil/zero. The next sync's push step then sees "unpaired local card"
+and POSTs a duplicate. The #14 marker-adoption safety net would heal
+this deterministically (`<!--fk:UUID-->` in the remote description
+re-pairs the nil-fizzyID local card to its remote twin) — but #15
+stripped the marker from the remote right after first adoption, so the
+net was gone exactly when the clobber needed it.
+
+**The fix (Captain's ruling — temporarily reverses #15):** markers now
+persist on remote cards by design. In `FizzySyncEngine`:
+`needsMarkerStrip` and both `stripMarkerRemotely` call sites removed
+from the LWW loop (the strip-only branch collapses to a genuine
+no-op), `stripMarkerRemotely` deleted, and `putCard` now re-embeds the
+marker in its PUT description (mirroring `postCard`) so local edits no
+longer wipe it as a side effect. Local stripping in `applyRemote` is
+untouched — local copies stay marker-free. Remote stripping returns
+once pairing moves to a local-only (non-CloudKit) store after the
+A′ wave.
+
+**RED:** `FizzySyncEngineResilienceTests.cloudKitClobberHealsWithoutDuplicate`
+— three syncs against a faithful stateful mock server (POSTs join the
+served remote state verbatim, PUTs are applied to it, so the same test
+is honest pre- and post-fix): sync 1 pairs via POST, sync 2 is a
+steady-state cycle, then the simulated CloudKit import nulls all three
+pairing fields, and sync 3 must heal. `createdAt` backdated 10 minutes
+defeats the title±60s orphan heuristic and the zeroed number defeats
+re-pair-by-number, isolating the marker path. Failed pre-fix with
+`(postCount → 2) == 1` — sync 2's strip-PUT had removed the marker, so
+sync 3 duplicated the card on both sides.
+
+**Retargeted (coverage inverted, never deleted):**
+`pullAdoptsByMarker` (asserted one strip-PUT with marker-free body →
+asserts NO PUT; handler records any PUT as an issue);
+`stripPutFailureRecordsErrorAndRetries` →
+`adoptionStableWithPersistentMarker` (strip-retry semantics are gone —
+now proves repeated syncs against a marker-bearing remote stay quiet:
+no PUT/POST churn, `itemsUpdated == 0` at steady state);
+`saveFailureDoesNotDuplicateOnNextSync` (`putCount == 1` "marker
+stripped after adoption" → `putCount == 0` "markers persist");
+`markerWinsOverHeuristic` (strip-PUT handler case removed — unexpected
+PUTs now recorded).
+
+**Verification:** **386 tests / 79 suites green** (385 + 1 new) on
+pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS `BUILD SUCCEEDED`,
+zero warnings.
+
+**Review fix (M1), 2026-06-10:** review of the GREEN commit (83842bb)
+found `putCard`'s marker re-embed had zero coverage — the retargeting
+removed the suite's only PUT-body description assertion, so reverting
+that hunk left all 386 tests green while the local-edit marker-wipe
+hazard returned. Added
+`FizzySyncEngineResilienceTests.putReembedsMarkerWithLocalEdit`: a
+paired card with `modifiedAt > fizzyUpdatedAt` syncs, the LWW push
+PUTs, and the captured PUT body's `description` must both preserve the
+edited text and end with `<!--fk:UUID-->`. Mutation-checked: with the
+re-embed hunk temporarily reverted (bare `cardDescription` in the PUT)
+the new test fails on the missing marker suffix while the rest of the
+suite stays green; hunk restored byte-identical (clean `git diff` on
+`FizzySyncEngine.swift`). **387 tests / 79 suites green** on the
+pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.
+
+**Task 2 (issue #21 plumbing), 2026-06-11:** Threaded `FizzyCardPairingStore`
+through engine, repository, provider, and all test harnesses. Pure DI — no
+behavior changes, engine does not read/write the store yet. `CardRepository`
+gains a defaulted `pairingStore: .shared` parameter (UI call-sites untouched);
+`FizzySyncEngine` gains a required `pairingStore:` parameter (explicit at every
+construction site). `FizzySyncProvider.makeEngine` passes `.shared`. All 11
+harnesses + 8 inline constructions in the four Fizzy engine test files use
+per-test temp-file stores cleaned up in `tearDown`. **391 tests / 80 suites
+green** on the pinned sim; macOS `BUILD SUCCEEDED`, zero warnings.
+
+**Task 3 (issue #21 A′ core), 2026-06-11:** Steady-state sync now keys
+every pairing decision off the device-local `FizzyCardPairingStore` —
+CloudKit attribute clobbers are structurally incapable of unpairing a
+card. New engine helpers: `pairing(for:)`, `recordPairing` (store write
+lands BEFORE `context.save()`, so save failures can't lose a pairing),
+`healHints` (re-writes `fizzyID`/`fizzyNumber` hint attributes without
+bumping `modifiedAt` — no echo-PUTs), and `seedPairingStoreIfCold`
+(cold store adopts legacy attribute hints, resolving number-only
+residue against the remote list). The marker-ADOPTION block in
+`steadyStateSync` and the re-pair-by-number block are deleted (the
+store subsumes both); marker post/put/strip machinery stays until
+Task 4. `reconcilePins`, LWW, soft-delete, orphan-claim, and push all
+consult the store. `FizzySyncProvider` gains an injectable
+`pairingStore` (default `.shared`) so provider tests stop writing the
+real Application Support sidecar.
+
+**RED:** `FizzySyncEngineResilienceTests.cloudKitClobberCannotUnpair`
+— sanitizer-faithful stateful mock (HTML comments stripped on every
+stored write, matching production Fizzy per the 2026-06-10 forensics);
+backdated `createdAt` defeats the heuristic, zeroed number defeats
+re-pair-by-number, sanitizer kills the marker. Failed pre-fix first on
+`(pairing(for:) → nil) == "fz-21"` (store never written), then
+`(postCount → 2) == 1` — the duplicate POST.
+
+**Test rework:** deleted `pullAdoptsByMarker` + `markerWinsOverHeuristic`
+(mechanism gone — server strips markers); `adoptionStableWithPersistentMarker`
+→ `pairedSteadyStateStaysQuiet`; `saveFailureDoesNotDuplicateOnNextSync`
+reworked (store survives the save failure); `clobberedFizzyIDRepairsByNumber`
+→ `coldStoreSeedsByNumberHint`; new `coldStoreSeedsFromAttributeHints`
+(upgrade/reinstall/second-device path). One guard assertion in
+`pullClearsOrPreservesAssignees` retargeted from `card.fizzyUpdatedAt`
+(attribute no longer written in steady state) to the store's
+`fizzyUpdatedAt` — same "pull branch ran" meaning.
+
+**Verification:** **390 tests / 80 suites green** (391 − 2 deleted
++ 1 added) on pinned iPhone 17 sim (UDID `1CCA4B1C…`); macOS
+`BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings on both
+platforms.
+
+**Review fix (M1), 2026-06-11:** `seedPairingStoreIfCold` guard was
+all-or-nothing (`pairingStore.isEmpty`) — a partially-warm store
+(partial first sync, late CloudKit import on a second device) skipped
+seeding remaining hint cards, letting the push loop POST duplicates.
+Fix: rename to `seedPairingStoreFromHints`, drop the `isEmpty` guard,
+add a per-card `guard pairing(for: card) == nil else { continue }` so
+already-paired cards are skipped while unpaired hint cards are always
+adopted. RED: `partialStoreStillSeedsRemainingHints` — Issue.record
+fired on a POST for Beta, `result.errors` non-empty, `pairing(for:
+bUUID)` nil, cardCount 3. GREEN: **391 tests / 80 suites**, macOS
+`BUILD SUCCEEDED`, zero warnings.
+
+### Task 4 — Delete adoption-marker machinery (issue #21 A′), 2026-06-11
+
+**Files:** `FenixKanban/Core/Services/Fizzy/FizzySyncEngine.swift`,
+`FenixKanbanTests/Services/Fizzy/FizzySyncEngineAdoptionResilienceTests.swift`
+
+**Test rework (1:1 replacements):** `postCarriesMarker` →
+`postSendsCleanDescription`; `putReembedsMarkerWithLocalEdit` →
+`putSendsCleanDescription`; `unownedMarkerCreatesCardNormally` →
+`remoteDescriptionImportsVerbatim`.
+
+**RED:** `postSendsCleanDescription` failed (`"Hello\n\n<!--fk:…-->"
+!= "Hello"`); `putSendsCleanDescription` failed (`["Edited
+body\n\n<!--fk:…-->"] != ["Edited body"]`). `remoteDescriptionImportsVerbatim`
+passed on arrival (stripping a marker-free description is a no-op).
+
+**Engine changes:** deleted the entire `// MARK: - Adoption marker
+(issue #14)` section (`adoptionMarker(for:)`, `adoptionMarkerPattern`,
+`adoptionMarkerUUID(in:)`, `strippingAdoptionMarker(from:)`);
+simplified `putCard` and `postCard` to send `card.cardDescription`
+verbatim; `applyRemote`: `card.cardDescription = remote.description`
+(deleted the stripping call + comment). No remaining `marker`/`#14`
+references in the engine.
+
+**Grep sweep:** `grep -rn "adoptionMarker\|strippingAdoptionMarker"
+FenixKanban FenixKanbanTests` → no output.
+
+**Verification:** **391 tests / 80 suites green** on pinned iPhone 17
+sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`),
+zero warnings.
+
+---
+
+### Task 5 — Issue #21 A′: first-sync modes pair through the store ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`syncFirstPushLocal`, `syncFirstReplaceLocal`, and `syncFirstMerge` were still
+pairing via raw attribute writes (`card.fizzyID = created.id` etc.) instead of
+the store. This made store-paired cards invisible to the push guard (they had
+nil attributes) and left the replace wipe with stale store entries.
+
+**Changes to `FizzySyncEngine.swift`:**
+- `syncFirstPushLocal`: calls `seedPairingStoreFromHints(localCards:remoteCards:[])` before the loop; loop condition `pairing(for: card) == nil`; POST success → `recordPairing(...)` replacing three attribute writes.
+- `syncFirstReplaceLocal`: in the wipe loop, `if let id = card.id { pairingStore.removePairing(for: id) }` before `context.delete(card)`. Pull half already pairs via `applyRemote → recordPairing` (Task 3).
+- `syncFirstMerge`: after both fetches + localCards built, `seedPairingStoreFromHints(localCards:remoteCards:)`; push-loop condition `pairing(for: card) == nil && !remoteTitlesLower.contains(...)`; POST success → `recordPairing(...)`.
+
+**New tests** — `FizzySyncEngineFirstSyncStoreTests` in `FizzySyncEngineAdoptionResilienceTests.swift` (reuses `AdoptionHarness`):
+- `pushModeUsesStore`: store-paired card not re-POSTed; new card recorded; `fizzyID` hint healed.
+- `replaceModeResetsStore`: wiped card's pairing removed; pulled card recorded.
+- `mergeModeRecordsPairings`: pushed card recorded in the store.
+
+**RED:** `pushModeUsesStore` failed (`postedTitles == ["AlreadyPaired", "Fresh"]` instead of `["Fresh"]`; `fizzyID == nil`); `replaceModeResetsStore` failed (pairing not removed); `mergeModeRecordsPairings` failed (`fizzyID == nil`).
+
+**Verification:** **394 tests / 81 suites green** on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### Task 6 — Issue #21 A′: delete path reads the pairing store ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`CardRepository.deleteCard` was calling `CardTombstone.record(for: card, in:)` which read `card.fizzyNumber` directly — the CloudKit-clobberable hint attribute. A clobbered number (zeroed) meant no tombstone → the deletion never reached the Fizzy server.
+
+**Root fix:** `CardTombstone.record(for:in:)` → `record(number:in:)` (takes a plain `Int64`). `deleteCard` resolves the number via the pairing store first, falling back to the hint attribute for pre-A′ data: `card.id.flatMap { pairingStore.pairing(for: $0)?.fizzyNumber } ?? card.fizzyNumber`. After recording the tombstone, `pairingStore.removePairing(for:)` clears the entry.
+
+**Caller sweep:** `grep -rn "CardTombstone.record" FenixKanban FenixKanbanTests` found two callers:
+1. `CardRepository.deleteCard` — updated to new signature + store lookup (primary fix).
+2. `BoardRepository.deleteColumn` (cascade delete of a column's cards) — does not hold a `pairingStore`; adapted to `record(number: card.fizzyNumber, in:)` using the hint attribute directly (cascade delete is a less critical path; store-unaware but functionally equivalent to the pre-A′ behavior).
+
+**Files changed:**
+- `FenixKanban/Core/Persistence/CardTombstone+CoreDataClass.swift`: signature `record(for:in:)` → `record(number:in:)`
+- `FenixKanban/Core/Repositories/CardRepository.swift`: `deleteCard` — store-first number lookup + pairing removal
+- `FenixKanban/Core/Repositories/BoardRepository.swift`: `deleteColumn` cascade — adapted to new `record(number:in:)` signature
+
+**New test** — appended to `FizzySyncEngineResilienceTests` in `FizzySyncEngineAdoptionResilienceTests.swift`:
+- `deleteUsesStorePairingWhenHintsClobbered`: card with store pairing (fizzyNumber 21) but clobbered attributes (fizzyNumber=0); `deleteCard` called; tombstone has number 21; pairing removed from store.
+
+**RED observed:** `tombstones.map(\.fizzyNumber) == []` (empty — old `record(for:)` read zeroed attribute → nil guard returned); pairing still present.
+
+**Verification:** **395 tests / 81 suites green** (+1 test) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### Task 6b — Issue #21 A′: column-delete cascade uses pairing store (review follow-on) ✅
+**Status:** Complete (Red → Green)  
+**Date:** 2026-06-11
+
+`BoardRepository.deleteColumn`'s card cascade loop was reading `card.fizzyNumber` directly (the hint attribute). If CloudKit clobbered a card's hints when its column was deleted: number → 0 → no tombstone → remote twin never DELETEd → AND the pairing-store entry was never removed → on next sync the remote card had no live local owner → pull loop re-imported it → deleted card RESURRECTED. Also, even with intact hints, `deleteColumn` never called `removePairing` → store entries leaked.
+
+**Root fix:** Injected `FizzyCardPairingStore` into `BoardRepository` (same pattern as `CardRepository`). Updated the cascade loop in `deleteColumn` to resolve the number store-first with hint fallback (identical expression to `deleteCard`) and call `pairingStore.removePairing(for:)` for each card.
+
+**`AdoptionHarness` updated:** `boardRepo` now constructed with `pairingStore: pairingStore` so test isolation is correct.
+
+**Warning fix (folded in):** Changed `let noDesc = h.cardRepo.createCard(...)` → `_ = h.cardRepo.createCard(...)` in `postSendsCleanDescription` (test-target unused-binding warning).
+
+**Files changed:**
+- `FenixKanban/Core/Repositories/BoardRepository.swift`: added `pairingStore` property + injected init; updated `deleteColumn` cascade
+- `FenixKanbanTests/Services/Fizzy/FizzySyncEngineAdoptionResilienceTests.swift`: new test + harness update + warning fix
+
+**New test** — `deleteColumnCascadeUsesStorePairing`: column with one card, store pairing (fizzyNumber 34) but clobbered attributes (fizzyNumber=0); `deleteColumn` called; tombstone has number 34; pairing removed.
+
+**RED observed:** Build error `extra argument 'pairingStore' in call` — `BoardRepository` did not yet accept the parameter.
+
+**Verification:** **396 tests / 81 suites green** (+1 test vs Task 6) on pinned iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), zero warnings.
+
+---
+
+### 41. Issue #21 A′ — Local-Only Card Pairing Store: Complete Close-Out ✅
+
+**Date:** 2026-06-11
+**Plan:** `docs/superpowers/plans/2026-06-11-21-aprime-local-pairing-store.md`
+**Commits (Tasks 1–6b):** `81ae764` + `899e514` (T1), `cc9e597` (T2), `3b49746` + `c1e2614` (T3 RED/GREEN), `3cb2b22` (review M1: per-card hint seeding), `bd76e97` (T4), `72cc3d8` (T5), `753c70e` (T6), `b07f022` (T6b)
+
+**Forensic finding — Option B void:**
+Live forensics on 2026-06-10 confirmed that Fizzy's ActionText sanitizer strips
+HTML comments **on write** — not at read time. Of 41 cards that had received a
+marker POST, zero retained the marker in the database. This made the entire
+`// MARK: - Adoption marker (issue #14)` machinery a structural no-op against
+production from day one. The Option B approach (commits `e7d64d2`/`83842bb`/
+`ad4586f`) was "harmless but ineffective" per the captain's ruling. Option A
+(device-local store) is the only durable path.
+
+**A′ design (no Core Data model change — stays at v8):**
+
+- `FizzyCardPairingStore` (JSON sidecar in Application Support, atomic writes,
+  `NSLock`-protected, `@unchecked Sendable`): the single authority on which local
+  card UUID maps to which remote `fizzyID` / `fizzyNumber`. Neither CloudKit nor
+  the Fizzy server can reach this file. Sub-second `Date` fidelity preserved via
+  the default Codable `Double` encoding (never `.iso8601` — LWW comparisons
+  require exact precision through the JSON round-trip).
+
+- CloudKit attributes `fizzyID` / `fizzyNumber` demoted to a **self-healing hint
+  channel**: written at pairing time, re-healed every steady-state sync
+  (`healHints` — never bumps `modifiedAt`; no echo-PUTs), read only by the UI's
+  per-card routes and for cold-store seeding. `fizzyUpdatedAt` is now
+  store-only (the attribute carries it as a bootstrap hint, but steady-state
+  reads come from `FizzyCardPairing.fizzyUpdatedAt`).
+
+- `seedPairingStoreFromHints` (renamed from `seedPairingStoreIfCold` after review
+  M1): runs per-card rather than all-or-nothing, so a partially-warm store (partial
+  first sync, second device receiving hints via CloudKit) still adopts every
+  unpaired hint card. Number-only residue (fizzyID clobbered to nil) resolves
+  against the remote list.
+
+- Save-failure duplication **structurally dead**: `recordPairing` writes to the
+  store BEFORE `context.save()`. A failed save can no longer lose a pairing.
+
+- Delete/cascade paths tombstone from the store: `CardRepository.deleteCard` and
+  `BoardRepository.deleteColumn` both resolve `fizzyNumber` from the store first,
+  falling back to the hint attribute. `removePairing` is called on every delete so
+  store entries never leak.
+
+- Marker machinery **deleted**: the entire `MARK: - Adoption marker (issue #14)`
+  section removed from `FizzySyncEngine.swift`. `putCard` and `postCard` send
+  `card.cardDescription` verbatim. `applyRemote` stores `remote.description`
+  verbatim. No `<!--fk:UUID-->` anywhere in the engine.
+
+**Sanitizer-faithful mock policy (new project standard):**
+Any test that exercises a write→read round-trip through a stateful mock MUST pass
+stored description writes through `sanitizedDescription` (strips HTML comments via
+the same regex Fizzy applies on write). The `cloudKitClobberCannotUnpair` flagship
+test established the pattern; `saveFailureDoesNotDuplicateOnNextSync` was reworked
+to the same standard. The lesson from the slug-with-`/` bug (entry #UAT fix) now
+extends to the sanitizer: a mock that does not strip on write can certify a
+fictional server and let real-API bugs past a green test suite.
+
+**Test rework map:**
+
+| Old test | Fate | New test |
+|---|---|---|
+| `pullAdoptsByMarker` | DELETED — server strips markers, mechanism void | (covered by flagship below) |
+| `markerWinsOverHeuristic` | DELETED — no markers | (covered by flagship below) |
+| `adoptionStableWithPersistentMarker` | REWORKED | `pairedSteadyStateStaysQuiet` |
+| `saveFailureDoesNotDuplicateOnNextSync` | REWORKED (sanitizing mock) | same name |
+| `cloudKitClobberHealsWithoutDuplicate` | REWORKED | `cloudKitClobberCannotUnpair` (flagship) |
+| `clobberedFizzyIDRepairsByNumber` | REWORKED | `coldStoreSeedsByNumberHint` |
+| `postCarriesMarker` | REWORKED | `postSendsCleanDescription` |
+| `putReembedsMarkerWithLocalEdit` | REWORKED | `putSendsCleanDescription` |
+| `unownedMarkerCreatesCardNormally` | REWORKED | `remoteDescriptionImportsVerbatim` |
+| NEW | ADDED | `coldStoreSeedsFromAttributeHints` (upgrade/reinstall/second-device) |
+| NEW (T5) | ADDED | `pushModeUsesStore`, `replaceModeResetsStore`, `mergeModeRecordsPairings` |
+| NEW (T6) | ADDED | `deleteUsesStorePairingWhenHintsClobbered` |
+| NEW (T6b) | ADDED | `deleteColumnCascadeUsesStorePairing` |
+
+**Flagship test — `cloudKitClobberCannotUnpair`:**
+Sanitizer-faithful stateful server + all three hint attributes clobbered to nil/zero
+between sync 2 and sync 3 + createdAt backdated 10 minutes (defeats the title±60s
+orphan heuristic) + fizzyNumber zeroed (defeats re-pair-by-number) + sanitizer kills
+any marker: sync 3 produces zero POSTs (the store is the authority), hint attributes
+heal, and sync 4 is completely quiet (zero PUTs — hint healing does not bump
+`modifiedAt`).
+
+**Review fixes:**
+
+- **M1 (per-card seeding, commit `3cb2b22`):** `seedPairingStoreIfCold`'s `isEmpty`
+  guard was all-or-nothing; a partially-warm store skipped remaining hint cards →
+  duplicate POSTs on partial-first-sync or second-device scenarios. Fixed to per-card
+  `guard pairing(for: card) == nil`, renamed `seedPairingStoreFromHints`. RED test
+  `partialStoreStillSeedsRemainingHints` confirmed via Issue.record on the spurious POST.
+
+- **6b cascade (commit `b07f022`):** `BoardRepository.deleteColumn`'s cascade loop
+  read `card.fizzyNumber` directly (hint attribute) and never called `removePairing` →
+  clobbered hints → no tombstone → remote card survived → resurrected on next sync.
+  Fixed by injecting `FizzyCardPairingStore` into `BoardRepository`. Mutation-checked:
+  reverting the cascade store-lookup made `deleteColumnCascadeUsesStorePairing` fail
+  while all other tests stayed green.
+
+- **Unused-var warning (folded into 6b):** `let noDesc = ...` → `_ = ...` in
+  `postSendsCleanDescription`.
+
+**What was deleted:**
+- Entire `// MARK: - Adoption marker (issue #14)` section from `FizzySyncEngine`:
+  `adoptionMarker(for:)`, `adoptionMarkerPattern`, `adoptionMarkerUUID(in:)`,
+  `strippingAdoptionMarker(from:)`.
+- `needsMarkerStrip` logic and `stripMarkerRemotely` from the LWW loop.
+- The marker-adoption block from `steadyStateSync` (replaced by
+  `seedPairingStoreFromHints` + store-keyed pairing).
+- The re-pair-by-number block from `steadyStateSync` (subsumed by seeding).
+- `CardTombstone.record(for:in:)` (replaced by `record(number:in:)` — takes
+  a resolved `Int64`, not a managed object with a potentially clobbered attribute).
+
+**Doc sweep (Task 7):**
+- `FizzySyncEngine.swift` header: updated from the stale "Phase 4a only" note to
+  accurately describe the full engine, naming `FizzyCardPairingStore` as a
+  constructor dependency alongside `FizzyAuthState` and `FizzyBoardMapping`; explains
+  the authority/hint-channel split.
+- `FizzyAuthStatusView.swift`: one-line comment on `cardsSyncedCount` — the
+  `fizzyID != nil` predicate counts via hint attributes (healed every sync; cosmetic
+  and eventually consistent, issue #21 A′).
+- `TDD_IMPLEMENTATION_STATUS.md`: doubled `---` separator (lines 291–293 pre-fix)
+  removed; this entry written.
+
+**Final verification:** **396 tests / 81 suites green** on pinned iPhone 17 sim
+(`1CCA4B1C…`); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`), **zero warnings
+on both platforms**.
+
+### #42 — Re-pair without sign-out + create remote board from pair view (issue #18 slice 0, 2026-06-11)
+
+UAT-driven: Susanoo's mapping pointed at a deleted local board with no UI
+escape that didn't cost the token (and fizzy's email magic-links are down,
+so a lost token is unrecoverable). RED: `changePairingKeepsToken`
+(FizzySyncProviderTests) — `FizzySyncProvider.changePairing` didn't exist.
+GREEN: `changePairing()` clears the mapping only; `FizzyAuthStatusView`
+gains "Change Board Pairing…" (confirm alert → `onRepairRequested` →
+phase recompute → pair view); `FizzyAuthPairView` gains "New Fizzy
+Board…" (alert + TextField → `client.createBoard` → reload + select) so
+pairing against a fresh empty remote board (Playground-first testing,
+captain's directive) needs no web UI. `mapping.clear()` and
+`client.createBoard` were already test-locked. **397 tests / 81 suites
+green**; macOS zero warnings.
+
+### #43 — Resolve relative Location headers against baseURL (live UAT find, 2026-06-11)
+
+Live "New Fizzy Board…" failed with URLError -1002 "unsupported URL": the
+real server answers board creation with a RELATIVE Location (Rails *_path
+style) while cards get absolute URLs — and the existing
+`createBoardFollowsLocation` test mocked only the absolute shape (the
+wire-shape rule, now in header form). RED:
+`createBoardFollowsRelativeLocation` — the mock-served GET went out
+scheme-less (`/ACCT/boards/…`), the exact -1002 condition (issues record
+as «unknown» from the URLProtocol thread; suite red regardless). GREEN:
+`post()` resolves `URL(string:relativeTo: baseURL).absoluteURL` — a no-op
+for absolute Locations. **398 tests / 81 suites green**; macOS zero
+warnings.
+
+### #44 — Consolidation: back-merge main into develop (2026-06-11)
+
+Branch bookkeeping, no new code. `develop`, `origin/develop`, and the
+session branch were already at the same commit; the only work missing
+from `develop` was `89d6dc8` (PR #8 — silence the Swift 6
+strict-concurrency warning on `serviceKey` in
+`AuthenticationServiceTests`), which had landed on `main` only.
+Merged `origin/main` into `develop` (one-line test delta, no conflicts)
+so `develop` is again a superset of `main`. Full suite on the pinned
+iPhone 17 simulator (UDID 1CCA4B1C…, two-sim flake rule): **TEST
+SUCCEEDED**, 398 tests / 81 suites green.
+
+### #45 — Issue #20: snapshot-staleness + deleted-card guard families; backfill ruled void (2026-06-11)
+
+**Scope ruling first:** #20's headline item (flag-gated backfill of migrated
+card→label links for CloudKit export) is **void** — the issue was filed at
+2026-06-10 19:01 CDT, 38 minutes before `f07b3d7` (19:39 CDT) dropped the
+`label→labels` renaming identifier under the Captain's ruling. v5-era links
+are dropped by the migration *by design* (CloudKit forbids rename
+migrations; Fizzy re-pulls tags), so there are no migrated links to
+backfill and no re-export gap. What survived from the #20 thread was the
+two CardDetailViewModel families.
+
+**Snapshot-staleness family** (labels / assignees / watched / pinned): the
+init-time snapshots went stale when a sync or CloudKit merge landed under
+an open detail sheet — the labels variant clobbered a remote-added label on
+the next `save()` (RED proved it: `card.labels → []`). One mechanism fixes
+all four: observe `NSManagedObjectContextObjectsDidChange` on the card's
+context (BoardListViewModel precedent — fires for local saves AND CloudKit
+merges) and re-read the four sync-authoritative fields when the card is
+among updated/refreshed. Text-edit fields (title/description/dueDate/
+isCompleted) deliberately not refreshed — that would clobber in-progress
+typing (documented LWW). Six RED tests including the assignment-toggle
+preserve case.
+
+**Deleted-card guard family**: all five fizzy catch-revert paths
+(label/assignment/watch/pin/golden) now stand down when a sync
+soft-deleted the card mid-flight (`!card.isDeleted` +
+`managedObjectContext != nil`, BoardViewModel:140 precedent), placed
+before any card read — toggleGolden's catch reads `card.isGolden`, which
+faults on a zombie. RED runs surfaced the exact predicted Core Data error
+("Mutating a managed object … after it has been removed from its
+context") on four of five paths; the mid-flight deletion is simulated
+from the MockURLProtocol handler via a main-queue hop while the toggle is
+suspended at its await.
+
+**Still open on #20 (captain-gated):** dev-run `initializeCloudKitSchema()`
++ CloudKit Dashboard deploy checklist — v6 `Card.labels` many-to-many
+(CDMR), v7 `assigneesData`, v8 `isWatched`/`isPinned` — before any
+CloudKit-enabled release.
+
+**Final verification:** **408 tests / 83 suites green** on the pinned
+iPhone 17 sim (`1CCA4B1C…`); macOS `BUILD SUCCEEDED`
+(`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+### #46 — Issue #10: MockURLProtocol per-session state; parallel testing enabled (2026-06-11)
+
+The bandaid's present shape differed from the issue text:
+`FizzyClientSerialContainer` (df4b24c) had already dissolved into per-suite
+`.serialized` modifiers PLUS scheme-level `parallelizable = "NO"` — the
+scheme flag was the thing actually protecting the mock's static
+`handler`/`delayedHandler`/`requests` (per-suite `.serialized` only
+serializes WITHIN a suite; cross-suite races were prevented by the whole
+bundle running serially).
+
+RED: `MockURLProtocolIsolationTests` — two `MockHTTPState` instances with
+different handlers drive 40 interleaved requests through two sessions
+(`cannot find 'MockHTTPState' in scope`; the static design cannot express
+two simultaneous handlers — API-absent RED, #42 precedent).
+
+GREEN: `MockHTTPState` holds handler/delayedHandler/requests per instance
+(NSLock, `@unchecked Sendable`, `TagPushCallCounter` precedent);
+`makeSession()` injects a UUID token via `httpAdditionalHeaders`, and the
+protocol resolves its state from a lock-protected token registry (the
+registry is the one remaining static: write-once per state, UUID-keyed,
+bounded by suite instances per process — the #10 race was the
+unsynchronized shared mutable state, not statics per se). The URL loading
+system provably merges session additional headers into the request the
+protocol sees — the isolation test verifies this empirically.
+
+Migration: all 12 consumer files (~390 refs); 97 dead `reset()` calls
+deleted (Swift Testing re-instantiates the suite struct per test, so a
+suite-stored `MockHTTPState` is per-test automatically); the 10
+duplicated engine harnesses each carry `let mock` (exposed to tests as
+`h.mock`); five harness-less engine tests get local instances; 8
+FizzyClient suites drop `.serialized` (pure HTTP, no Core Data). Other
+suites keep `.serialized` (within-suite Core Data ordering is out of
+#10's scope). Fixtures elsewhere were already parallel-ready
+(UUID-suffixed pairing-store temp files, unique UserDefaults suite
+names, per-suite in-memory stores over the read-only `sharedModel`).
+
+Scheme: `parallelizable = "YES"` — acceptance criterion 4 upgraded from
+"FizzyClient suites parallel" to whole-bundle clone-based parallel
+execution.
+
+**Final verification:** serial run **409 tests / 84 suites green**, then
+**three consecutive parallel runs green** (pinned iPhone 17 sim
+`1CCA4B1C…`, clone-based); macOS `BUILD SUCCEEDED`
+(`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+### #47 — Mission setup: union-merge status log + .env scaffolding (2026-06-12)
+
+Added `.gitattributes` with `merge=union` for `TDD_IMPLEMENTATION_STATUS.md` to allow parallel PRs to append status sections without merge conflicts. Created `.env.example` containing placeholders for Fizzy API credentials and test knobs, and updated `.gitignore` to exclude the actual `.env` file. These changes are documentation‑only; no code was modified. CI build and test gates remain unchanged, ensuring the PR passes standard checks before merging.
+
+### #56 — Generated CONTRIBUTING.md from DELIVERABLES.md spec (2026-06-12)
+
+Implemented a comprehensive CONTRIBUTING.md based on Deliverable 1. The document now includes the TDD red‑green‑refactor workflow, phase checklists, definition of done, hotfix exception policy, branch/PR guidelines, and platform‑specific considerations. The local LLM drafted the content; a review confirmed fidelity to branch naming conventions and formatter references as defined in the spec. No code changes were made—docs-only update.
+
+### #48 — Fizzy Sync Engine Card Pull Refactor (2026-06-12)
+
+Switched card pull from the board‑wide list endpoint to per‑column GET `/boards/:id/columns/:col/cards`. Cards now land in their source column keyed by Fizzy column ID, with a name fallback. The board-wide list carries no column data, so pulls previously landed in an arbitrary column.
+
+Implemented steady‑state pull logic that applies remote column moves without echo‑push, ensuring local state stays in sync with server changes. During first sync, we replace/merge local columns with Fizzy column IDs to maintain identity across sessions.
+
+Deletion handling now verifies card existence via the single‑card endpoint: a 404 confirms deletion, 200 indicates survival, and unverifiable cards are retained. Per‑column lists exclude closed or non‑current cards, so missing cards are reliably detected.
+
+Added a push loop guard that skips context‑deleted cards, fixing a latent resurrection bug where soft‑deleted cards were re‑POSTed. Updated legacy test to align with the verified‑deletion contract.
+
+All 413/413 tests pass on a pinned iPhone 17 simulator, and the macOS build compiles with zero warnings.
+
+### #49 — live‑API test infrastructure (2026-06-12)
+
+Added `LiveTestEnv` (test-bundle enum) that pulls `FIZZY_TOKEN`, `FIZZY_ACCOUNT`, `FIZZY_BASE_URL`, `FIZZY_EXPECTED_CARDS`, and `FIZZY_ALLOW_MUTATION` from the process environment. Live test suites are gated with `Swift Testing .enabled(if:)`; when any credential is missing the suite self‑skips, ensuring CI runs without live traffic. Added `LiveSmokeTests` which performs a GET to `/my/identity`, decodes the response, and asserts that the returned account slug matches `FIZZY_ACCOUNT` (normalizing a leading slash).  
+
+Updated the Makefile integration target to load an optional `.env` file, prefix its variables with `TEST_RUNNER_`, and forward them to the pinned iPhone 17 simulator test runner. This keeps environment handling consistent across local and CI runs.  
+
+All unit tests now pass with the live suite skipped when credentials are absent, and a macOS build produces zero warnings. Verification confirmed via `swift test` output on the CI agent and local machine.
+
+
+---
+
+### #57 — 429 Retry-After backoff (2026-06-12)
+
+`FizzyClient.performWithRetry` now honors `Retry-After` on HTTP 429. Previously every 429 was returned immediately to the caller which threw `FizzyError.rateLimited` — there was no retry path. The fix adds a 429 branch inside the retry loop: when attempts remain, sleep `min(Retry-After, 30s)` via the injected `Clock` (falling back to the existing 1s/2s/4s ladder when the header is absent or unparseable), then continue. The 429 path shares the identical 4-request budget (attempt 0…3) as the 5xx and URLError ladders — a hostile server that always returns 429 will exhaust the budget and produce `.rateLimited` as before, not spin forever.
+
+Three new tests in `FizzyClientRetryTests` cover the behavior: (a) 429 + `Retry-After: 1` followed by 200 → call succeeds with exactly 2 requests recorded; (b) persistent 429 → throws `.rateLimited` after exactly 4 requests (exhausted budget); (c) 429 without `Retry-After` → still retries and succeeds with 2 requests, confirming ladder-delay fallback. All three were RED before the one-function change and GREEN after. Full iOS test run: 412 tests / 84 suites green, zero failures; macOS build succeeded with zero warnings.
+
+### #58 — Foreground auto-refresh + sync visibility (2026-06-12)
+
+Introduced foreground auto-sync (every 300 s while the scene is `.active`) and a set of observable sync-state surfaces so the user always knows what Fizzy is doing. The work is organized around a minimal protocol seam (`SyncTriggering`: two requirements — `isPaired` and `triggerSync()`) that keeps `SyncScheduler` free of any Fizzy internals. `FizzySyncProvider` conforms via a small extension; tests inject a `SyncSpy` that records calls without touching the network.
+
+`SyncScheduler` is `@Observable @MainActor` and owns a `Task` loop that sleeps `interval` seconds before calling the provider. Two reentrancy guards prevent double-work: the scheduler's `isSyncing` flag short-circuits the tick when the previous call hasn't returned, and `FizzySyncEngine`'s own pre-existing guard returns an empty result if the HTTP phase races through. `SyncActivityState` (also `@Observable`) carries `phase` (idle / syncing / error(String)) and `lastSyncAt`; it is exposed directly on the scheduler and forwarded into `SyncSettingsView` so the Auto-Sync section shows live status without an `@EnvironmentObject`. Cloud badges on `CardView` resolve via `CardSyncBadgeState.resolve(hasPairing:boardIsPaired:)` — a pure static function that reads `FizzyCardPairingStore.shared` at body-evaluation time, keeping all badge logic off the view layer and in testable code.
+
+RED: `SyncSchedulerTests` — 8 tests covering (a) fires after interval while active, (b) suspends when inactive, (c) no double-fire when in-flight, (d) no fire when unpaired; plus `CardSyncBadgeStateTests` — 4 badge-resolution cases. All failed with `cannot find type 'SyncTriggering'/'SyncScheduler'/'CardSyncBadgeState' in scope`. GREEN: all 421 tests / 86 suites pass (pinned sim `1CCA4B1C…`, parallel); macOS `BUILD SUCCEEDED` (`CODE_SIGNING_ALLOWED=NO`); zero warnings on both platforms.
+
+
+### #59 — Apple technology archive: iOS 27 / macOS 27 Liquid Glass deltas (2026-06-12)
+
+Live-fetched (Apple docs JSON backend, iOS 27 beta release notes, WWDC26 coverage) and appended
+to docs/apple-technology-overviews.md per Captain's order before further UI dispatch. Key deltas:
+27's material refinements apply at runtime without recompile; new user transparency slider widens
+the accessibility test matrix; no glassEffect/GlassEffectContainer API changes or deprecations;
+macOS/iPadOS 27 hides menu item symbol images by default. Repo ruling recorded: deployment floor
+stays iOS 26/macOS 26, 27-only APIs behind #available(iOS 27, *), floor-raise temptations become
+gray-area issues. Toolchain note: Susanoo runs iOS 27.0 beta; the Mac mini has Xcode 26.5 only —
+on-device verification path is empirical (devicectl) until an Xcode 27 beta is installed.
+
+### #50–#69 — Mission #28 consolidated log: playground restore + fizzy parity (2026-06-12)
+
+Single-day orchestrated mission (full narrative, manifests, and elf scorecard: GitHub issue #28).
+Per-task sections were moved out of PR bodies mid-mission after EOF-append conflicts silently
+blocked CI on conflicted PRs; this consolidated entry settles the ledger.
+
+- **#50** Live E2E restore (PR #48): replaceLocal pulls all 32 Playground cards into Ready with
+  zero-delta second sync — executed green against the live server. Precondition executed the same
+  day: 160→32 dedup purge (kept lowest numbers) + triage of all survivors into Ready.
+- **#51** Susanoo runbook + deploy: build with Xcode 26.5, install/launch via Xcode 27 beta
+  devicectl (26.5 cannot mount the iOS 27 ddi). FK launched on-device.
+- **#52** fizzyctl tool target (PR #42): Foundation-only client reuse; 28 parse tests.
+- **#54** docs/fizzy-api-notes.md: live-probed toggle semantics (tag_ids on PUT rejected),
+  untriaged-card visibility, relative .json Locations, per-column ETags.
+- **#55** Live UAT automation + wire fixtures (PR pending at entry time).
+- **#56–#59** CONTRIBUTING.md (PR #32) · auto-refresh scheduler + badges (PR #38) · Liquid Glass
+  iOS 27 deltas in the tech archive (PR #37).
+- **#60** CoreData v9 (PR #39): Card.lifecycleStatusRaw/closedAt + local-only CardStep/
+  CachedComment; lightweight migration verified from v8; #22 removal deferred to v10.
+- **#61** ETag-conditional pulls (PR #40): 304 no-op polling cycles via in-memory per-column
+  card-list cache; soft-delete/LWW/push logic untouched by design.
+- **#62** BGAppRefreshTask (PR #41): bounded background sync; test-host guard hardening; the
+  300s-sleeping test spy that crashed CI runners replaced with a cancellation-correct blocker.
+- **#63/#64** Comments (PR #43) and steps (PR #44) cache-first read/write over the v9 entities.
+- **#65** Deterministic SyncScheduler timing (PR #46): ManualClock + waitForSleeper kills the
+  wall-clock flake (10/10 runs); the interim quarantine on develop is superseded.
+- **#66** AddCardIntent + board snapshot writer (PR #45); widget target deferred on an xcodegen
+  platform-filter blocker (sources shipped in-tree).
+- **#67** Lifecycle sync engine (PR #47): wire closed/postponed → lifecycleStatus; the unlisted-
+  card guard transitions instead of deleting; local edits survive transitions.
+- **#68** Lifecycle UI (PR #49): close/reopen/not-now actions with write-through + revert; closed-
+  card filter toggle per issue #34 default A.
+- **#69** Push parity (PR #50): local column moves via triage; tags/assignees as exact toggle
+  diffs against fresh remote state. Engine chain complete (conflicts land as #70).
+
+Recurring verification: every PR gated on the full unit suite (pinned/dedicated sims) + zero-
+warning macOS builds + the ~10-min CI gate; live-API suites are env-gated and skip in CI.
+
+### #70 — Conflict surfacing + offline awareness + steps retry (2026-06-12)
+
+LWW conflicts are now visible and reversible: when remote also moved past the watermark and
+title/description diverged, the engine emits a ConflictRecord (transient in FizzySyncResult,
+durable in the FizzyConflictStore sidecar) while keep-mine remains the silent default —
+convergence unchanged. resolveKeepMine PUTs local; resolveTakeTheirs re-fetches the single-card
+truth. Commutative fields never conflict. The provider routes errors into SyncActivityState
+(.error phase; lastSyncAt only advances when a cycle ran) and pendingPushCount surfaces failed
+PUTs. Provider tick also re-pushes pending step writes (task #29), symmetric with comments.
+10 tests; full suite green; macOS zero warnings. GREEN salvaged from the interrupted C11
+subagent, reviewed and adopted; steps retry by the orchestrator.
+
+### #71 — Deterministic BackgroundRefresh timing via ManualClock (2026-06-12)
+
+BackgroundRefreshCoordinator gains Clock injection (default ContinuousClock — production
+unchanged); the budget deadline uses clock.sleep. Timing tests rewritten on ManualClock +
+waitForSleeper per the #65 pattern; the wall-clock elapsed assertion removed. 10/10 consecutive
+runs green, max 0.012s per test. Completes the wall-clock-test elimination.
+
+### #72 — FenixKanbanWidgets extension target wired (2026-06-12)
+
+The #66 deferral is closed: xcodegen 2.45.4 confirmed unable to emit platformFilters on the
+embed phase, so scripts/patch-widget-platform-filter.rb (xcodeproj gem, add-ui-test-target.rb
+style) patches the generated project; make generate chains it. iOS + macOS builds green, UI-test
+overlay composes, 2 new BoardSnapshot wire-shape tests. Bonus root-cause: local Keychain-suite
+failures on unsigned runs are errSecMissingEntitlement — CI signs sim builds.
+
+### #55 (completion note) — Live UAT verified against the real server (2026-06-12)
+
+After the token refresh, UAT items 4 (golden pull), 6 (401 recovery), and 7 (re-pair merge,
+zero remote creates) all passed live; no-creds runs skip cleanly; [itest] hygiene verified —
+Playground holds exactly 32 cards post-run. Phase 5 UAT ledger items 4–7: closed.

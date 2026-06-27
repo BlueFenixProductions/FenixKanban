@@ -34,11 +34,13 @@ struct FizzyUser: Codable, Equatable {
     let emailAddress: String
     let createdAt: Date
     let url: URL?
+    let avatarURL: URL?          // absent on /my/identity payloads — optional
 
     enum CodingKeys: String, CodingKey {
         case id, name, role, active, url
         case emailAddress = "email_address"
         case createdAt = "created_at"
+        case avatarURL = "avatar_url"
     }
 }
 
@@ -75,9 +77,31 @@ struct FizzyColumn: Codable, Equatable {
     }
 }
 
+/// Column color. The wire shape differs between docs/endpoints: cards.md
+/// nests `{ "name": "Lime", "value": "var(--color-card-4)" }`, while
+/// columns.md sends the bare CSS-variable string `"var(--color-card-4)"`.
+/// Decoding accepts both (bare strings get `name == ""`); encoding always
+/// writes the object form.
 struct FizzyColor: Codable, Equatable {
     let name: String
     let value: String
+
+    init(name: String, value: String) {
+        self.name = name
+        self.value = value
+    }
+
+    init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(),
+           let raw = try? single.decode(String.self) {
+            self.name = ""
+            self.value = raw
+        } else {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.name = try container.decode(String.self, forKey: .name)
+            self.value = try container.decode(String.self, forKey: .value)
+        }
+    }
 }
 
 // MARK: - Card
@@ -93,15 +117,17 @@ struct FizzyCard: Codable, Equatable {
     let hasAttachments: Bool
     let tags: [String]
     let closed: Bool?           // present only on single-card endpoint
+    let postponed: Bool?        // "Not Now" state; single-card + column-cards shapes
     let golden: Bool
     let lastActiveAt: Date
     let createdAt: Date
     let url: URL?
     let column: FizzyColumn?    // present only on single-card endpoint per Fizzy docs
     let steps: [FizzyStep]?     // present only on single-card endpoint
+    let assignees: [FizzyUser]?  // present only on the column-cards list endpoint
 
     enum CodingKeys: String, CodingKey {
-        case id, number, title, status, description, tags, closed, golden, url, column, steps
+        case id, number, title, status, description, tags, closed, postponed, golden, url, column, steps, assignees
         case descriptionHTML = "description_html"
         case imageURL = "image_url"
         case hasAttachments = "has_attachments"
@@ -110,7 +136,7 @@ struct FizzyCard: Codable, Equatable {
     }
 }
 
-struct FizzyStep: Codable, Equatable {
+struct FizzyStep: Codable, Equatable, Identifiable {
     let id: String
     let content: String
     let completed: Bool

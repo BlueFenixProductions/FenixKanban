@@ -11,7 +11,7 @@ import CoreData
 /// Phase 5 only handles the manual entry points (`fetchRemoteBoards`,
 /// `sync`). The foreground polling timer lands in Phase 6.
 @MainActor
-final class FizzySyncProvider: BoardSyncProvider {
+final class FizzySyncProvider: BoardSyncProvider, SyncTriggering {
 
     let providerName: String = "Fizzy"
     let iconName: String = "bolt.circle.fill"
@@ -21,19 +21,30 @@ final class FizzySyncProvider: BoardSyncProvider {
     private let persistence: PersistenceController
     private let urlSession: URLSession
     private let clock: any Clock<Duration> & Sendable
+    /// Device-local pairing authority handed to every engine the provider
+    /// builds (issue #21 A′). Injectable so tests never touch the real
+    /// Application Support sidecar.
+    private let pairingStore: FizzyCardPairingStore
+    /// Device-local conflict store. Injectable so tests never touch the real
+    /// Application Support sidecar.
+    private let conflictStore: FizzyConflictStore
 
     init(
         authState: FizzyAuthState,
         mapping: FizzyBoardMapping,
         persistence: PersistenceController,
         urlSession: URLSession = .shared,
-        clock: any Clock<Duration> & Sendable = ContinuousClock()
+        clock: any Clock<Duration> & Sendable = ContinuousClock(),
+        pairingStore: FizzyCardPairingStore = .shared,
+        conflictStore: FizzyConflictStore = .shared
     ) {
         self.authState = authState
         self.mapping = mapping
         self.persistence = persistence
         self.urlSession = urlSession
         self.clock = clock
+        self.pairingStore = pairingStore
+        self.conflictStore = conflictStore
     }
 
     /// `true` when both token and slug are present in the Keychain.
@@ -55,6 +66,14 @@ final class FizzySyncProvider: BoardSyncProvider {
     /// later will re-bind cards via the engine's orphan-claim logic.
     func signOut() async throws {
         authState.clear()
+        mapping.clear()
+    }
+
+    /// Clears the board pairing while keeping the Keychain token (issue
+    /// #18 re-pair flow). Re-pairing must never cost the token — minting a
+    /// new one requires the email flow, which may be unavailable. The UI
+    /// routes back to `FizzyAuthPairView` after calling this.
+    func changePairing() {
         mapping.clear()
     }
 
@@ -88,6 +107,13 @@ final class FizzySyncProvider: BoardSyncProvider {
             throw FizzyError.requiresInteractiveAuth
         }
         let result = try await engine.sync()
+
+        // Publish a fresh widget snapshot after every successful sync so
+        // the PlaygroundBoardWidget always reflects the latest board state.
+        // Failures are silent — a stale snapshot is better than a crash.
+        let writer = BoardSnapshotWriter(context: persistence.viewContext)
+        _ = try? writer.writeSnapshot()
+
         return SyncResult(
             itemsCreated: result.itemsCreated,
             itemsUpdated: result.itemsUpdated,
@@ -103,6 +129,136 @@ final class FizzySyncProvider: BoardSyncProvider {
         mapping.lastSyncAt
     }
 
+    // MARK: - SyncTriggering (Phase 6 foreground scheduler)
+
+    /// `true` when both token and board pairing are configured.
+    var isPaired: Bool {
+        authState.isConfigured && mapping.isPaired
+    }
+
+    /// Fires one sync cycle via the engine and routes results to the provided
+    /// `activityState` (called by the scheduler's `fireTick`).
+    ///
+    /// Errors (thrown or non-empty result.errors) mark `activityState` as
+    /// `.error` rather than `.idle`; `lastSyncAt` advances on partial failures
+    /// because the cycle ran. Also re-posts pending comments.
+    func triggerSync(activityState: SyncActivityState) async {
+        guard let engine = makeEngine() else { return }
+        do {
+            let result = try await engine.sync()
+            activityState.update(from: result, conflictStore: conflictStore)
+            if !result.errors.isEmpty {
+                let summary = result.errors.first ?? "Sync error"
+                activityState.markError(summary)
+            }
+            // lastSyncAt advances even on partial-failure cycles (cycle ran)
+            activityState.lastSyncAt = .now
+        } catch {
+            activityState.markError(error.localizedDescription)
+            // Note: lastSyncAt is NOT advanced — the cycle did not complete.
+        }
+        await retryPendingComments()
+        await retryPendingSteps()
+    }
+
+    /// Fires one sync cycle via the engine. Silently absorbs errors so the
+    /// scheduler's loop doesn't crash on transient failures; errors are
+    /// surfaced through `activityState` on the scheduler.
+    ///
+    /// Also re-posts any pending (unsent) comments — issue #16 retry seam.
+    /// This hook lives here rather than in FizzySyncEngine or FizzyClient so
+    /// neither orchestrator is aware of the comment cache (single-responsibility).
+    func triggerSync() async {
+        guard let engine = makeEngine() else { return }
+        _ = try? await engine.sync()
+        await retryPendingComments()
+        await retryPendingSteps()
+    }
+
+    /// Re-posts all `pendingWrite == true` CachedComment entries found in
+    /// the viewContext. No-op when unauthenticated. Called from `triggerSync()`
+    /// on every scheduler tick.
+    func retryPendingComments() async {
+        guard let client = makeClient() else { return }
+        let context = persistence.viewContext
+        let request: NSFetchRequest<CachedComment> = CachedComment.fetchRequest()
+        request.predicate = NSPredicate(format: "pendingWrite == YES")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CachedComment.createdAt, ascending: true)]
+        let pending = (try? context.fetch(request)) ?? []
+        for comment in pending {
+            guard !comment.isDeleted, comment.managedObjectContext != nil else { continue }
+            let cardNumber = Int(comment.cardFizzyNumber)
+            let body = comment.body ?? ""
+            guard !body.isEmpty else { continue }
+            do {
+                let created = try await client.createComment(cardNumber: cardNumber, body: body)
+                comment.fizzyCommentID = created.id
+                comment.pendingWrite = false
+                if context.hasChanges { try? context.save() }
+            } catch {
+                // Leave pending; will be retried on the next tick.
+            }
+        }
+    }
+
+    /// Re-pushes pending step writes (task #29 — symmetric with
+    /// `retryPendingComments`; both run on every scheduler tick). A step
+    /// with no `fizzyStepID` is a failed create → POST; one with an ID is a
+    /// failed update → PUT. Failures stay pending for the next tick.
+    func retryPendingSteps() async {
+        guard let client = makeClient() else { return }
+        let context = persistence.viewContext
+        let request: NSFetchRequest<CardStep> = CardStep.fetchRequest()
+        request.predicate = NSPredicate(format: "pendingWrite == YES")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CardStep.sortOrder, ascending: true)]
+        let pending = (try? context.fetch(request)) ?? []
+        for step in pending {
+            guard !step.isDeleted, step.managedObjectContext != nil,
+                  let card = step.card else { continue }
+            let resolved = card.resolvedFizzyNumber(pairingStore)
+            guard resolved > 0 else { continue }
+            let cardNumber = Int(resolved)
+            do {
+                if let stepID = step.fizzyStepID {
+                    _ = try await client.updateStep(
+                        cardNumber: cardNumber, id: stepID,
+                        content: step.content, completed: step.completed
+                    )
+                } else {
+                    let created = try await client.createStep(
+                        cardNumber: cardNumber,
+                        content: step.content ?? "",
+                        completed: step.completed
+                    )
+                    step.fizzyStepID = created.id
+                }
+                step.pendingWrite = false
+            } catch {
+                continue // stays pending; next tick retries
+            }
+        }
+        if context.hasChanges { try? context.save() }
+    }
+
+    // MARK: - Conflict resolution (task #70)
+
+    /// All currently open conflicts, for the UI to display.
+    func conflicts() -> [ConflictRecord] {
+        conflictStore.all
+    }
+
+    /// Keep-mine resolution: PUT local title/desc, advance watermark, clear record.
+    func resolveKeepMine(cardID: UUID) async throws {
+        guard let engine = makeEngine() else { return }
+        try await engine.resolveKeepMine(cardID: cardID)
+    }
+
+    /// Take-theirs resolution: re-fetch remote, apply, clear record.
+    func resolveTakeTheirs(cardID: UUID) async throws {
+        guard let engine = makeEngine() else { return }
+        try await engine.resolveTakeTheirs(cardID: cardID)
+    }
+
     // MARK: - Internal accessors (used by FizzyAuthView sub-views)
 
     /// Exposed so `FizzyAuthView` and its sub-views can drive verify / pair
@@ -110,6 +266,7 @@ final class FizzySyncProvider: BoardSyncProvider {
     var authStateRef: FizzyAuthState { authState }
     var mappingRef: FizzyBoardMapping { mapping }
     var persistenceRef: PersistenceController { persistence }
+    var pairingStoreRef: FizzyCardPairingStore { pairingStore }
 
     /// Builds a `FizzyClient` using a caller-supplied token + slug.
     /// Used by the verify view when the slug isn't known yet (the verify
@@ -142,7 +299,9 @@ final class FizzySyncProvider: BoardSyncProvider {
             client: client,
             authState: authState,
             mapping: mapping,
-            context: persistence.viewContext
+            context: persistence.viewContext,
+            pairingStore: pairingStore,
+            conflictStore: conflictStore
         )
     }
 }

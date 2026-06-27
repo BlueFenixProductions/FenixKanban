@@ -1,0 +1,1890 @@
+[
+  {
+    "id": "03gaikob6onhwqzcrdzz824yc",
+    "number": 100,
+    "title": "fizzy API integration plugin",
+    "status": "published",
+    "description": "sync with local fizzy.bluefenix.net to test. The goal is for complete API integration coverage.",
+    "description_html": "<div class=\"action-text-content\">\n  sync with local fizzy.bluefenix.net to test. The goal is for complete API integration coverage.\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:01.995Z",
+    "created_at": "2026-06-11T02:05:55.305Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/100",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/100/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/100/reactions"
+  },
+  {
+    "id": "03gaikp6fyxl1jvt303yz20fl",
+    "number": 101,
+    "title": "Push should be generative ",
+    "status": "published",
+    "description": "It should allow creating a new board in new columns",
+    "description_html": "<div class=\"action-text-content\">\n  It should allow creating a new board in new columns\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:01.778Z",
+    "created_at": "2026-06-11T02:06:02.714Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/101",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/101/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/101/reactions"
+  },
+  {
+    "id": "03gaikq1n4id8zl9gxcq35wro",
+    "number": 102,
+    "title": "label not settable in macOS : adapt all dialogs to macOS usability",
+    "status": "published",
+    "description": "the detail diaolog is too cramped; controls might be there just squished. keep iOS as is: macOS views onto the same settings need to feel like mac settings, not iOS. ESPECIALLY card detail. It should feel like editing an important note on desktop.",
+    "description_html": "<div class=\"action-text-content\">\n  the detail diaolog is too cramped; controls might be there just squished. keep iOS as is: macOS views onto the same settings need to feel like mac settings, not iOS. ESPECIALLY card detail. It should feel like editing an important note on desktop.\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:01.540Z",
+    "created_at": "2026-06-11T02:06:10.105Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/102",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/102/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/102/reactions"
+  },
+  {
+    "id": "03gaikqwv6pz3m3mdqrxebjaa",
+    "number": 103,
+    "title": "Backup should be invisible",
+    "status": "published",
+    "description": "And pop up as an option if the user disconnects from fizzy",
+    "description_html": "<div class=\"action-text-content\">\n  And pop up as an option if the user disconnects from fizzy\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:01.342Z",
+    "created_at": "2026-06-11T02:06:17.507Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/103",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/103/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/103/reactions"
+  },
+  {
+    "id": "03gaikrrwex2enuv2ygluhg3o",
+    "number": 104,
+    "title": "Pull should run a silent background backup ",
+    "status": "published",
+    "description": "And Mike the local working copy",
+    "description_html": "<div class=\"action-text-content\">\n  And Mike the local working copy\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:01.147Z",
+    "created_at": "2026-06-11T02:06:24.862Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/104",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/104/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/104/reactions"
+  },
+  {
+    "id": "03gaiksnrf0dvhbjhc09grax2",
+    "number": 105,
+    "title": "Add ability to copy cards between boards",
+    "status": "published",
+    "description": "Also move it to another board ability",
+    "description_html": "<div class=\"action-text-content\">\n  Also move it to another board ability\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:00.999Z",
+    "created_at": "2026-06-11T02:06:32.412Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/105",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/105/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/105/reactions"
+  },
+  {
+    "id": "03gaiktinh7yx88qblzjhlb3m",
+    "number": 106,
+    "title": "Sub-issues are a good feature idea #fizzy ",
+    "status": "published",
+    "description": "Follows Kanban philosophy of targeted cards the smallest unit of work that makes sense. Prevents scope creep of you plan thoroughly. ",
+    "description_html": "<div class=\"action-text-content\">\n  Follows Kanban philosophy of targeted cards the smallest unit of work that makes sense. Prevents scope creep of you plan thoroughly. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:00.825Z",
+    "created_at": "2026-06-11T02:06:39.732Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/106",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/106/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/106/reactions"
+  },
+  {
+    "id": "03gaikucwm01nkifnxilrps5h",
+    "number": 107,
+    "title": "Merge should default to labeling dupes then not duplicating again. ",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:00.533Z",
+    "created_at": "2026-06-11T02:06:46.903Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/107",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/107/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/107/reactions"
+  },
+  {
+    "id": "03gaikv85w4zqi94p6r5itsgj",
+    "number": 108,
+    "title": "Add image/file attachments per card",
+    "status": "published",
+    "description": "Only needs to be visible in card detail view. Details are relevant for context. I have a photo I would like to attach to this card. Re: a screenshot of the about page of an app that I want to reverse engineer with gemma4. ",
+    "description_html": "<div class=\"action-text-content\">\n  Only needs to be visible in card detail view. Details are relevant for context. I have a photo I would like to attach to this card. Re: a screenshot of the about page of an app that I want to reverse engineer with gemma4. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:41:00.321Z",
+    "created_at": "2026-06-11T02:06:54.318Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/108",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/108/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/108/reactions"
+  },
+  {
+    "id": "03gaikw2qv6zizuai7x4zguza",
+    "number": 109,
+    "title": "Golden ↔️ isGolden sync: once connected, should go back and forth. ",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:59.969Z",
+    "created_at": "2026-06-11T02:07:01.559Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/109",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/109/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/109/reactions"
+  },
+  {
+    "id": "03gaikwxboqdfbmrxadcsvhgx",
+    "number": 110,
+    "title": "Change icon to use view-dashboard-variant",
+    "status": "published",
+    "description": "As the background in the main color of bluefenix.net (#2563EB) and a floating black version of the Fenix logo ",
+    "description_html": "<div class=\"action-text-content\">\n  As the background in the main color of bluefenix.net (#2563EB) and a floating black version of the Fenix logo \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:59.675Z",
+    "created_at": "2026-06-11T02:07:08.805Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/110",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/110/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/110/reactions"
+  },
+  {
+    "id": "03gaikxs3i772s6zj9m5u65ak",
+    "number": 111,
+    "title": "This should bump the counter to 20",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:59.437Z",
+    "created_at": "2026-06-11T02:07:16.099Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/111",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/111/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/111/reactions"
+  },
+  {
+    "id": "03gaikynbvgf01sf4f9cq46bg",
+    "number": 112,
+    "title": "needs a splashscreen",
+    "status": "published",
+    "description": "Make it fun; like have some fun with it using nano banana or something for obviously ai generated silliness. It’s open source who cares?",
+    "description_html": "<div class=\"action-text-content\">\n  Make it fun; like have some fun with it using nano banana or something for obviously ai generated silliness. It’s open source who cares?\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:59.107Z",
+    "created_at": "2026-06-11T02:07:23.504Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/112",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/112/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/112/reactions"
+  },
+  {
+    "id": "03gaikzid3j1lcicvsu5ghmjd",
+    "number": 113,
+    "title": "Allow in column sorting of cards",
+    "status": "published",
+    "description": "Card should be able to be moved up or down in their current column. ",
+    "description_html": "<div class=\"action-text-content\">\n  Card should be able to be moved up or down in their current column. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:58.843Z",
+    "created_at": "2026-06-11T02:07:30.856Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/113",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/113/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/113/reactions"
+  },
+  {
+    "id": "03gail0cy81tgc9djoylsshji",
+    "number": 114,
+    "title": "use bluefenixproductions.com Claude.md as  a guide ",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:58.654Z",
+    "created_at": "2026-06-11T02:07:38.104Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/114",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/114/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/114/reactions"
+  },
+  {
+    "id": "03gail189h7t9chlu4x0a9y8k",
+    "number": 115,
+    "title": "Add ability to edit board names ",
+    "status": "published",
+    "description": "You can only currently set it at the beginning.",
+    "description_html": "<div class=\"action-text-content\">\n  You can only currently set it at the beginning.\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:58.431Z",
+    "created_at": "2026-06-11T02:07:45.525Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/115",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/115/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/115/reactions"
+  },
+  {
+    "id": "03gail22zmdsrdq4lo4pv18a3",
+    "number": 116,
+    "title": "Add light mode",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:58.186Z",
+    "created_at": "2026-06-11T02:07:52.808Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/116",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/116/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/116/reactions"
+  },
+  {
+    "id": "03gail2xsy7shzrvsinoh195d",
+    "number": 117,
+    "title": "In landscape view, if the sidebar is visible, the board should be selectable. ",
+    "status": "published",
+    "description": "Currently tapping on the sidebar does nothing. If I’m in landscape mode, I should be able to select a different board using the sidebar.",
+    "description_html": "<div class=\"action-text-content\">\n  Currently tapping on the sidebar does nothing. If I’m in landscape mode, I should be able to select a different board using the sidebar.\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:57.950Z",
+    "created_at": "2026-06-11T02:08:00.111Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/117",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/117/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/117/reactions"
+  },
+  {
+    "id": "03gail3szcfzpgsj11v3wq18q",
+    "number": 118,
+    "title": "keep iCloud sync icon persistent",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:57.801Z",
+    "created_at": "2026-06-11T02:08:07.498Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/118",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/118/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/118/reactions"
+  },
+  {
+    "id": "03gail4o8bihf7vdn9yddeq1n",
+    "number": 119,
+    "title": "Branded app icon",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:57.605Z",
+    "created_at": "2026-06-11T02:08:14.906Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/119",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/119/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/119/reactions"
+  },
+  {
+    "id": "03gail5itrb07unyrch5m1fac",
+    "number": 120,
+    "title": "Add delete confirmation",
+    "status": "published",
+    "description": "For when a user accidentally touches the delete button when trying to move a card to a different column.",
+    "description_html": "<div class=\"action-text-content\">\n  For when a user accidentally touches the delete button when trying to move a card to a different column.\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:57.349Z",
+    "created_at": "2026-06-11T02:08:22.155Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/120",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/120/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/120/reactions"
+  },
+  {
+    "id": "03gail6dudfwvhskurveqhy5s",
+    "number": 121,
+    "title": "Allow sorting board order on homepage",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:57.150Z",
+    "created_at": "2026-06-11T02:08:29.507Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/121",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/121/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/121/reactions"
+  },
+  {
+    "id": "03gail78th4tjyb27k953zk53",
+    "number": 122,
+    "title": "Moving cards to a different column in portrait mode crashes the app",
+    "status": "published",
+    "description": "",
+    "description_html": "<div class=\"action-text-content\">\n  \n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:56.957Z",
+    "created_at": "2026-06-11T02:08:36.847Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/122",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/122/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/122/reactions"
+  },
+  {
+    "id": "03gail83tyadcv0rapcogiyqt",
+    "number": 123,
+    "title": "Fizzy.do style golden ticket priority ",
+    "status": "published",
+    "description": "It’s a great metaphor for promoting real important card visibility. Native glass styling; research similar ui patterns for iOS ",
+    "description_html": "<div class=\"action-text-content\">\n  It’s a great metaphor for promoting real important card visibility. Native glass styling; research similar ui patterns for iOS \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:56.804Z",
+    "created_at": "2026-06-11T02:08:44.197Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/123",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/123/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/123/reactions"
+  },
+  {
+    "id": "03gail8yo6tz3n6c0vfo4eds2",
+    "number": 124,
+    "title": "Card count fails to update on sync",
+    "status": "published",
+    "description": "There were three cards that showed up in the Fenix Kanban board but the count on the homepage remains one. \n\nIf the app is shut down and reloaded, the count is correct. ",
+    "description_html": "<div class=\"action-text-content\">\n  There were three cards that showed up in the Fenix Kanban board but the count on the homepage remains one. \n\nIf the app is shut down and reloaded, the count is correct. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:56.614Z",
+    "created_at": "2026-06-11T02:08:51.509Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/124",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/124/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/124/reactions"
+  },
+  {
+    "id": "03gail9t1ki0mqur9rmmb7h08",
+    "number": 125,
+    "title": "GitHub projects integration",
+    "status": "published",
+    "description": "This could be a paid add-on, adding to the monetization scheme. Or maybe the actual monetization scheme. All current features run in the free version, but the GitHub integration is an in app purchase. Possibly allow skinning to GitHub design specs using the latest available. Use webhooks integration using fizzy.io source as a reference. ",
+    "description_html": "<div class=\"action-text-content\">\n  This could be a paid add-on, adding to the monetization scheme. Or maybe the actual monetization scheme. All current features run in the free version, but the GitHub integration is an in app purchase. Possibly allow skinning to GitHub design specs using the latest available. Use webhooks integration using fizzy.io source as a reference. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:56.388Z",
+    "created_at": "2026-06-11T02:08:58.705Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/125",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/125/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/125/reactions"
+  },
+  {
+    "id": "03gailanehq67r3p5oecv9cod",
+    "number": 126,
+    "title": "Add Trello export",
+    "status": "published",
+    "description": "Another an app paid plug-in with the idea being this app has a simplified interface for something that someone might want to upload two Trello for work.",
+    "description_html": "<div class=\"action-text-content\">\n  Another an app paid plug-in with the idea being this app has a simplified interface for something that someone might want to upload two Trello for work.\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:56.247Z",
+    "created_at": "2026-06-11T02:09:05.924Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/126",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/126/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/126/reactions"
+  },
+  {
+    "id": "03gailbj1g8uqb8ei1hftjuwc",
+    "number": 127,
+    "title": "Allow font size customization in settings. ",
+    "status": "published",
+    "description": "For accessibility, user should be able to set larger text in the app without having to set the text size system wide. ",
+    "description_html": "<div class=\"action-text-content\">\n  For accessibility, user should be able to set larger text in the app without having to set the text size system wide. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:56.027Z",
+    "created_at": "2026-06-11T02:09:13.398Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/127",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/127/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/127/reactions"
+  },
+  {
+    "id": "03gailcdumfg6y3mbhnw4o57x",
+    "number": 128,
+    "title": "Add AI integration",
+    "status": "published",
+    "description": "Another paid plug in for sending commands your favorite LLM. ",
+    "description_html": "<div class=\"action-text-content\">\n  Another paid plug in for sending commands your favorite LLM. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:55.761Z",
+    "created_at": "2026-06-11T02:09:20.700Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/128",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/128/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/128/reactions"
+  },
+  {
+    "id": "03gaild88m2lqbktszy8n4wy6",
+    "number": 129,
+    "title": "Import/Export to md",
+    "status": "published",
+    "description": "Is there a way to take the data in the columns in the boards and export it in a format that renders as a Kanban board in Obsidian for example? Folders with Md files -> boards and cards",
+    "description_html": "<div class=\"action-text-content\">\n  Is there a way to take the data in the columns in the boards and export it in a format that renders as a Kanban board in Obsidian for example? Folders with Md files -&gt; boards and cards\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:55.597Z",
+    "created_at": "2026-06-11T02:09:27.902Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/129",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/129/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/129/reactions"
+  },
+  {
+    "id": "03gaile3r5vq5k43hklkeoqyd",
+    "number": 130,
+    "title": "Add Siri support ",
+    "status": "published",
+    "description": "“Add a note to the [ ] board that says x”",
+    "description_html": "<div class=\"action-text-content\">\n  “Add a note to the [ ] board that says x”\n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:55.354Z",
+    "created_at": "2026-06-11T02:09:35.371Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/130",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/130/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/130/reactions"
+  },
+  {
+    "id": "03gailexwsp24lepg0wkijthf",
+    "number": 131,
+    "title": "Integrate due date with Apple calendar / urgent reminders",
+    "status": "published",
+    "description": "Allow creating a calendar event from a card. ",
+    "description_html": "<div class=\"action-text-content\">\n  Allow creating a calendar event from a card. \n\n\n</div>\n",
+    "image_url": null,
+    "has_attachments": false,
+    "tags": [],
+    "closed": false,
+    "postponed": false,
+    "golden": false,
+    "last_active_at": "2026-06-12T10:40:54.454Z",
+    "created_at": "2026-06-11T02:09:42.520Z",
+    "url": "https://fizzy.bluefenix.net/1/cards/131",
+    "board": {
+      "id": "03g6wodfwdenxzhzmcxxpl84t",
+      "name": "Playground",
+      "all_access": true,
+      "created_at": "2026-05-25T11:07:17.961Z",
+      "auto_postpone_period_in_days": 365,
+      "url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t",
+      "creator": {
+        "id": "03g6wodfjm4n9hbpuvz5j464g",
+        "name": "Chris Pelatari",
+        "role": "owner",
+        "active": true,
+        "email_address": "chris@bluefenix.net",
+        "created_at": "2026-05-25T11:07:17.880Z",
+        "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+        "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+      }
+    },
+    "column": {
+      "id": "03gaikln6car6gsnm1mln6pag",
+      "name": "Ready",
+      "color": {
+        "name": "Blue",
+        "value": "var(--color-card-default)"
+      },
+      "created_at": "2026-06-11T02:05:32.552Z",
+      "cards_url": "https://fizzy.bluefenix.net/1/boards/03g6wodfwdenxzhzmcxxpl84t/columns/03gaikln6car6gsnm1mln6pag/cards"
+    },
+    "creator": {
+      "id": "03g6wodfjm4n9hbpuvz5j464g",
+      "name": "Chris Pelatari",
+      "role": "owner",
+      "active": true,
+      "email_address": "chris@bluefenix.net",
+      "created_at": "2026-05-25T11:07:17.880Z",
+      "url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g",
+      "avatar_url": "https://fizzy.bluefenix.net/1/users/03g6wodfjm4n9hbpuvz5j464g/avatar"
+    },
+    "assignees": [],
+    "has_more_assignees": false,
+    "comments_url": "https://fizzy.bluefenix.net/1/cards/131/comments",
+    "reactions_url": "https://fizzy.bluefenix.net/1/cards/131/reactions"
+  }
+]

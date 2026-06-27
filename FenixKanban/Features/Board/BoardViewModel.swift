@@ -11,14 +11,18 @@ final class BoardViewModel: ObservableObject {
     private let boardRepository: BoardRepository
     private let cardRepository: CardRepository
     private let context: NSManagedObjectContext
+    private let fizzyClient: FizzyClient?
+    private let pairingStore: FizzyCardPairingStore
     private var debounceTask: Task<Void, Never>?
     private var observerToken: NSObjectProtocol?
 
-    init(board: Board, context: NSManagedObjectContext) {
+    init(board: Board, context: NSManagedObjectContext, fizzyClient: FizzyClient? = nil, pairingStore: FizzyCardPairingStore = .shared) {
         self.board = board
         self.context = context
         self.boardRepository = BoardRepository(context: context)
         self.cardRepository = CardRepository(context: context)
+        self.fizzyClient = fizzyClient
+        self.pairingStore = pairingStore
         refreshColumns()
         observeChanges()
     }
@@ -114,6 +118,37 @@ final class BoardViewModel: ObservableObject {
         card.column?.board?.modifiedAt = Date()
         try? context.save()
         refreshColumns()
+        pushGolden(for: card)
+    }
+
+    /// Fire-and-forget push for board-surface golden toggles (context menu,
+    /// swipe). The board has no alert affordance, so a failed push reverts
+    /// silently — without the push, the next pull reverted it anyway
+    /// (#19 wave 3).
+    private func pushGolden(for card: Card) {
+        let resolved = card.resolvedFizzyNumber(pairingStore)
+        guard resolved > 0, let client = fizzyClient else { return }
+        let isGolden = card.isGolden
+        let number = Int(resolved)
+        Task { @MainActor in
+            do {
+                if isGolden {
+                    try await client.markCardGolden(number: number)
+                } else {
+                    try await client.unmarkCardGolden(number: number)
+                }
+            } catch {
+                // State-recheck: only revert if the card still exists and
+                // nothing changed it since.
+                if !card.isDeleted, card.managedObjectContext != nil,
+                   card.isGolden == isGolden {
+                    card.isGolden = !isGolden
+                    card.modifiedAt = Date()
+                    try? self.context.save()
+                    self.refreshColumns()
+                }
+            }
+        }
     }
 
     func toggleGolden(cardID: UUID) {
@@ -122,6 +157,83 @@ final class BoardViewModel: ObservableObject {
         request.fetchLimit = 1
         guard let card = try? context.fetch(request).first else { return }
         toggleGolden(for: card)
+    }
+
+    // MARK: - Lifecycle actions (board-surface context menu / swipe)
+
+    /// Fire-and-forget lifecycle action from a board-surface control (context
+    /// menu). The board has no alert surface; a failed push reverts silently —
+    /// the next pull is reconciler of last resort (#19 pattern).
+    func performLifecycleAction(_ action: CardLifecycleAction, on card: Card) {
+        Task { @MainActor in
+            guard !card.isDeleted, card.managedObjectContext != nil else { return }
+            let previous = card.lifecycleStatus
+            let targetStatus: CardLifecycleStatus
+            switch action {
+            case .close: targetStatus = .closed
+            case .reopen: targetStatus = .active
+            case .postpone: targetStatus = .notNow
+            }
+            card.lifecycleStatus = targetStatus
+            card.modifiedAt = Date()
+            card.column?.modifiedAt = Date()
+            card.column?.board?.modifiedAt = Date()
+            try? context.save()
+            refreshColumns()
+
+            let resolved = card.resolvedFizzyNumber(pairingStore)
+            guard resolved > 0, let client = fizzyClient else { return }
+            let number = Int(resolved)
+            do {
+                switch action {
+                case .close:
+                    try await client.closeCard(number: number)
+                case .reopen:
+                    try await client.reopenCard(number: number)
+                case .postpone:
+                    try await client.postponeCard(number: number)
+                }
+            } catch {
+                // State-recheck revert (fire-and-forget, no alert surface on board)
+                if !card.isDeleted, card.managedObjectContext != nil,
+                   card.lifecycleStatus == targetStatus {
+                    card.lifecycleStatus = previous
+                    card.modifiedAt = Date()
+                    try? context.save()
+                    refreshColumns()
+                }
+            }
+        }
+    }
+
+    // MARK: - Lifecycle filter (#34 default A)
+
+    /// Board-level toggle — persisted globally via AppStorage; @AppStorage
+    /// cannot be a stored property on a non-View type, so we proxy through a
+    /// computed property backed by UserDefaults directly.
+    ///
+    /// Per-board persistence would require a per-board settings mechanism that
+    /// does not yet exist; @AppStorage global was chosen (reported in PR body).
+    var showClosedCards: Bool {
+        get { UserDefaults.standard.bool(forKey: "showClosedCards") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "showClosedCards")
+            objectWillChange.send()
+        }
+    }
+
+    /// Returns the cards that should be visible in `column` given the current
+    /// `showClosed` preference. Active cards are always shown; closed/notNow
+    /// are hidden by default and visible when the toggle is on.
+    func visibleCards(in column: Column, showClosed: Bool) -> [Card] {
+        column.sortedCards.filter { card in
+            switch card.lifecycleStatus {
+            case .active:
+                return true
+            case .closed, .notNow:
+                return showClosed
+            }
+        }
     }
 
     private func observeChanges() {
